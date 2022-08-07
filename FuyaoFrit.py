@@ -16,16 +16,32 @@ import System
 import ghpythonlib.components as ghcomp
  
 # SampleEtoRoomNumber dialog class
-Class FuyaoFrit:
+class FuyaoFrit:
     def __init__(self):
         self.inner_curve = None
         self.outer_curve = None
         self.refer_curve = None
     
-    def handle_curves(self):
-        curve1 = self.outer_curve
-        curve2 = ghcomp.FlipCurve(curve1)
-        oc = ghcomp.Pufferfish.CloseCurve(curve1)
-        
-        
+    # 确定是否将outer curve flip
+    def reorder_outer_curve(self):
+        curve = self.outer_curve
+        flip_curve, _ = ghcomp.FlipCurve(curve)
+        close_curve, _ = ghcomp.Pufferfish.CloseCurve(curve)
+        offset_curve = ghcomp.OffsetCurve(close_curve, distance=1.0, corners=1)
+        offset_curve_area, _ = ghcomp.Area(offset_curve)
+        print("close curve")
+        curve_area, _ = ghcomp.Area(close_curve)
+        print("calculate area: {0} {1}".format(offset_curve_area, curve_area))
+        if curve_area < offset_curve_area:
+            print("We flip the outer curve.")
+            self.outer_curve = flip_curve
     
+    def reorder_inner_curve(self):
+        pass
+     
+    def init_curves(self):
+        self.reorder_outer_curve()
+        self.reorder_inner_curve()
+
+    def run(self):
+        self.init_curves()

@@ -21,11 +21,17 @@ import Eto.Drawing as drawing
 import Eto.Forms as forms
 from Eto.Drawing import Size, Font, FontStyle
 import ghpythonlib.components as ghcomp
+import FuyaoFrit
+reload(FuyaoFrit)
+import sys
+print(sys.path)
 
 class MainDialog(forms.Dialog[bool]):
  
     # Dialog box Class initializer
     def __init__(self):
+        
+        self.fuyaoFrit = FuyaoFrit.FuyaoFrit()
         # Initialize dialog box
         self.Title = '福耀印刷花点排布工具'
         self.Padding = drawing.Padding(10)
@@ -46,11 +52,12 @@ class MainDialog(forms.Dialog[bool]):
         self.pick_label = forms.Label(Text='拾取几何轮廓')
         
         self.inner_btn = forms.Button(Text='选取内边界曲线')
-        self.inner_btn.Click += self.SelectObjButtonClick
+        self.inner_btn.Click += self.PickInnerCurve
         self.outer_btn = forms.Button(Text='选取外边界曲线')
-        self.outer_btn.Click += self.SelectObjButtonClick
+        self.outer_btn.Click += self.PickOuterCurve
         self.refer_btn = forms.Button(Text='选取参考轮廓线')
-        self.refer_btn.Click += self.SelectObjButtonClick
+        self.refer_btn.Click += self.PickReferCurve
+        self.active_btn = 0
         
         # 花点参数设置（mm）
         self.params_label = forms.Label(Text='参数设置')
@@ -70,6 +77,7 @@ class MainDialog(forms.Dialog[bool]):
         self.iter_num_text = forms.TextBox(Text='100')
         
         self.generate_btn = forms.Button(Text='生成')
+        self.generate_btn.Click += self.GenerateBtnClick
         
         # 布局
         layout = forms.DynamicLayout()
@@ -99,19 +107,41 @@ class MainDialog(forms.Dialog[bool]):
         # Set the dialog content
         self.Content = layout
         
+        
     # Start of the class functions
     def OnGetRhinoObjects(self, sender, e):
-        objectId = rs.GetCurveObject("Select curve")
+        objectId = rs.GetCurveObject("Select curve:")
         if objectId is None: 
-            MessageBox.Show("未选中任何曲线")
+            print("Warning: No curve is selected")
             return
         print(objectId)
         len = ghcomp.Length(objectId[0])
-        print(len)
-        # MessBox.Show(len)
+        print("select curve length: {0}".format(len))
+        if self.active_btn == 1:
+            self.fuyaoFrit.inner_curve = objectId[0]
+        elif self.active_btn == 2:
+            self.fuyaoFrit.outer_curve = objectId[0]
+        elif self.active_btn == 3:
+            self.fuyaoFrit.refer_curve = objectId[0]
+        self.active_btn = 0
         
-    def SelectObjButtonClick(self, sender, e):
+    def PickInnerCurve(self, sender, e):
+        # self.active_btn = 1
         Rhino.UI.EtoExtensions.PushPickButton(self, self.OnGetRhinoObjects)
+    
+    def PickOuterCurve(self, sender, e):
+        self.active_btn = 2
+        Rhino.UI.EtoExtensions.PushPickButton(self, self.OnGetRhinoObjects)
+    
+    def PickReferCurve(self, sender, e):
+        self.active_btn = 3
+        Rhino.UI.EtoExtensions.PushPickButton(self, self.OnGetRhinoObjects)
+
+    def GenerateBtnClick(self, sender, e):
+        # check data
+        # run fuyao frit
+        self.fuyaoFrit.run()
+
         
 if __name__ == "__main__":
     dialog = MainDialog();
