@@ -13,7 +13,7 @@ from Rhino.Input import *
 from Rhino.Input.Custom import *
 from scriptcontext import doc
 import rhinoscriptsyntax as rs
-import Rhino
+import Rhino as rc
 import scriptcontext
 import System
 import Rhino.UI
@@ -126,7 +126,7 @@ class MainDialog(forms.Dialog[bool]):
         self.active_btn = 0
         
     def PickInnerCurve(self, sender, e):
-        # self.active_btn = 1
+        self.active_btn = 1
         Rhino.UI.EtoExtensions.PushPickButton(self, self.OnGetRhinoObjects)
     
     def PickOuterCurve(self, sender, e):
