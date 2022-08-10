@@ -362,9 +362,10 @@ class FuyaoFrit:
         inside_refer_pts, inside_radius, top_border2, bottom_border2, bottom_border_pts, top_border_pts = self.inside_pts(inner_refer_pts, outer_refer_pts, top_border, bottom_border)
 
         # draw points
+        color = rc.Display.ColorHSL(rnd.random(),1.0,0.5)
         for i in range(len(self.pts)):
-            rs.AddCircle(self.pts[i], self.rs[i])
-        
+            self.display.AddCircle(rc.Geometry.Circle(self.pts[i], self.rs[i]), color, 1) 
+
         
         scriptcontext.doc.Views.Redraw()
 
