@@ -18,6 +18,7 @@ import ghpythonlib.components as ghcomp
 
  
 # SampleEtoRoomNumber dialog class
+
 class FuyaoFrit:
     def __init__(self):
         self.inner_curve = None
@@ -28,6 +29,8 @@ class FuyaoFrit:
         self.hspace = [2.2]
         self.row_confs = []
         self.display_curves = []
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
     
     # 确定是否将outer curve flip
     def reorder_outer_curve(self):
@@ -112,7 +115,7 @@ class FuyaoFrit:
         x1 = ghcomp.Absolute(v)
         x2 = ghcomp.ArcCosine(x1)
         x3 = ghcomp.Division(x2, ghcomp.Pi())
-        print(x3)
+        # print(x3)
         x4 = ghcomp.Multiplication(x3, 180)
         angle_threshold = 10
         angle_filter, _ = ghcomp.SmallerThan(x4, 10)
@@ -122,7 +125,7 @@ class FuyaoFrit:
         filter = ghcomp.GateAnd(angle_filter, dis_filter)
         shift_filter = ghcomp.ShiftList(filter, 1, True)
         xor_filter = ghcomp.GateXor(filter, shift_filter)
-        print(xor_filter)
+        # print(xor_filter)
         true_index, _ = ghcomp.MemberIndex(xor_filter, True)
         index_start = true_index[0]
         index_end = true_index[1]
@@ -158,7 +161,9 @@ class FuyaoFrit:
         # 将refer_pts 投影到边的off
         this_offset = self.row_confs[-1]['offset']
         relative_offset = refer_dis - this_offset
-        
+        print(self.row_confs)
+        print(this_offset)
+        print(relative_offset)
         center_crv = ghcomp.OffsetCurve(crv, distance=relative_offset, corners=1)
         circle_pts, _, _ = ghcomp.CurveClosestPoint(refer_pts, center_crv)
         offset_curve = center_crv
@@ -167,26 +172,113 @@ class FuyaoFrit:
         top_border = ghcomp.OffsetCurve(top_subcrv_offset, distance=radius, corners=1)
         return top_subcrv, refer_pts, circle_pts, offset_curve, top_border
         
-        
-        
-       
-        
-        
-        
-        
-        
-        
-        
+    def band_area_filling(self):
+        row_confs = self.row_confs
+        row_num = ghcomp.ListLength(row_confs)
+        print(row_num)
+        inside_row_num = row_num - 2
+        bottom_inside_row_num = int((inside_row_num + 1) / 2)
+        #print(bottom_inside_row_num)
+        top_inside_row_num = inside_row_num - bottom_inside_row_num
+
+        inside_refer_pts = []
+        inside_radius = []
+        bottom_border_pts = []
+        top_border_pts = []
+
+        for i in range(bottom_inside_row_num):
+            current_row_conf = ghcomp.ListItem(row_confs, i + 1, True)
+            _, current_offset, _ = ghcomp.Dhictionary.DictSelect([current_row_conf], 'offset')
+            _, current_radius, _ = ghcomp.Dhictionary.DictSelect([current_row_conf], 'radius')
+            #print(current_radius)
+            current_crv = ghcomp.OffsetCurve(inner_crv, current_offset)
+            bottom_border = ghcomp.OffsetCurve(current_crv, current_radius)
+            P, t, D = ghcomp.CurveClosestPoint(inner_refer_pts, current_crv)
+            if i % 2 == 0:
+                # mapping to inner line
+                #print(ghcomp.ListLength(P))
+                P1 = ghcomp.CullIndex(P, ghcomp.ListLength(P) - 1)
+                #print(ghcomp.ListLength(P1))
+                P2 = ghcomp.CullIndex(P, 0)
+                P3 = ghcomp.Addition(P1, P2)
+                P4 = ghcomp.Division(P3, 2)
+                #print(ghcomp.ListLength(P4))
+                P5, _, _ = ghcomp.CurveClosestPoint(P4, current_crv)
+                inside_refer_pts += P5
+                if i == (bottom_inside_row_num - 1):
+                    bottom_border_pts += P5
+                for j in range(len(P5)):
+                    inside_radius.append(current_radius)
+
+            else:
+                # mapping to outer line
+                inside_refer_pts += P
+                if i == (bottom_inside_row_num - 1):
+                    bottom_border_pts += P
+                for j in range(len(P)):
+                    inside_radius.append(current_radius)
+                
+
+        for i in range(bottom_inside_row_num, inside_row_num):
+            next_row_conf = ghcomp.ListItem(row_confs, i+2, True)
+            current_row_conf = ghcomp.ListItem(row_confs, i+1, True)
+            _, current_offset, _ = ghcomp.Dhictionary.DictSelect([current_row_conf], 'offset')
+            _, current_radius, _ = ghcomp.Dhictionary.DictSelect([current_row_conf], 'radius')
+            #print(current_radius)
+            _, current_vspace, _ = ghcomp.Dhictionary.DictSelect([current_row_conf], 'vspace')
+            _, next_vspace, _ = ghcomp.Dhictionary.DictSelect([next_row_conf], 'vspace')
+            crv_offset = refer_dis - current_offset
+            current_crv = ghcomp.OffsetCurve(outer_crv, -crv_offset)
+            P, t, D = ghcomp.CurveClosestPoint(outer_refer_pts, current_crv)
+            print(i, current_vspace)
+            top_border = ghcomp.OffsetCurve(top_border, -next_vspace)
+            
+            if i % 2 == 0:
+                # mapping to inner line
+                #print('here')
+                #print(ghcomp.ListLength(P))
+                P1 = ghcomp.CullIndex(P, ghcomp.ListLength(P) - 1)
+                #print(ghcomp.ListLength(P1))
+                P2 = ghcomp.CullIndex(P, 0)
+                P3 = ghcomp.Addition(P1, P2)
+                P4 = ghcomp.Division(P3, 2)
+                #print(ghcomp.ListLength(P4))
+                P5, _, _ = ghcomp.CurveClosestPoint(P4, current_crv)
+                inside_refer_pts += P5
+                if i == bottom_inside_row_num:
+                    top_border_pts += P5
+                for j in range(len(P5)):
+                    inside_radius.append(current_radius)
+            else:
+                # mapping to outer line
+                inside_refer_pts += P
+                if i == bottom_inside_row_num:
+                    top_border_pts += P
+                for j in range(len(P)):
+                    inside_radius.append(current_radius)
+
+        top_border_updated = top_border
+        bottom_border_updated = bottom_border
+        print("finish")
+                
     def run(self):
         self.init_curves()
         self.calculate_row_conf()
         pts, vec, refer_pts, refer_vec, bottom_border = self.first_row_pts_from_inner()
         top_subcrv, refer_pts, circle_pts, offset_curve, top_border = self.first_row_pts_from_outer(refer_pts, refer_vec)
         
+        # c = ghcomp.ColourRGB(0, 0, 0, 255)
+        # ghcomp.CustomPreview(circle_pts, c)
+        # display.AddCurve(crv,color,i+1)
         # draw points
+        color = rc.Display.ColorHSL(rnd.random(),1.0,0.5)
         for p in circle_pts:
-            rs.AddCircle(p, self.row_confs[0]['radius'])
+            self.display.AddCircle(rc.Geometry.Circle(p, self.row_confs[0]['radius']), color, 1) 
         
-        
+        scriptcontext.doc.Views.Redraw()
+
+
         # self.custom_display()
+    def close(self):
+        self.display.Clear()
         

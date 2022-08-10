@@ -36,6 +36,7 @@ class MainDialog(forms.Dialog[bool]):
         self.Title = '福耀印刷花点排布工具'
         self.Padding = drawing.Padding(10)
         self.Resizable = True
+        self.Closing += self.OnFormClosed
  
         # 标题
         self.heading_label = forms.Label(Text= '福耀印刷花点排布工具', Font = Font('Microsoft YaHei', 14., FontStyle.Bold))
@@ -109,6 +110,9 @@ class MainDialog(forms.Dialog[bool]):
         
         
     # Start of the class functions
+    def OnFormClosed(self, sender, e):
+        self.fuyaoFrit.close()
+        
     def OnGetRhinoObjects(self, sender, e):
         objectId = rs.GetCurveObject("Select curve:")
         if objectId is None: 
