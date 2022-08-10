@@ -30,6 +30,7 @@ class FuyaoFrit:
         self.row_confs = []
 
         self.display_curves = []
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
         self.display = rc.Display.CustomDisplay(True)
         self.display.Clear()
         
@@ -362,9 +363,9 @@ class FuyaoFrit:
         inside_refer_pts, inside_radius, top_border2, bottom_border2, bottom_border_pts, top_border_pts = self.inside_pts(inner_refer_pts, outer_refer_pts, top_border, bottom_border)
 
         # draw points
-        color = rc.Display.ColorHSL(rnd.random(),1.0,0.5)
+        
         for i in range(len(self.pts)):
-            self.display.AddCircle(rc.Geometry.Circle(self.pts[i], self.rs[i]), color, 1) 
+            self.display.AddCircle(rc.Geometry.Circle(self.pts[i], self.rs[i]), self.display_color, 1) 
 
         
         scriptcontext.doc.Views.Redraw()
