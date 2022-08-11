@@ -15,6 +15,7 @@ from utils import safe_list_access
 import random as rnd
 import math
 import ghpythonlib.components as ghcomp
+import Rhino.Geometry as rg
 
  
 # SampleEtoRoomNumber dialog class
@@ -27,6 +28,10 @@ class FuyaoFrit:
         self.radius = [0.425, 0.6, 0.85]
         self.vspace = [1.4, 1.7]
         self.hspace = [2.2]
+        self.inner_radius = 0.89
+        self.horizontal = 2.2
+        self.vertical = 1.7
+        self.aligned = False
         self.row_confs = []
 
         self.display_curves = []
@@ -206,7 +211,7 @@ class FuyaoFrit:
         offset_curve = center_crv
         top_subcrv_offset = ghcomp.OffsetCurve(top_subcrv, distance=relative_offset, corners=1)
         radius = self.row_confs[-1]['radius']
-        top_border = ghcomp.OffsetCurve(top_subcrv_offset, distance=radius, corners=1)
+        top_border = ghcomp.OffsetCurve(top_subcrv_offset, distance=-radius, corners=1)
         
         return top_subcrv, refer_pts, circle_pts, offset_curve, top_border
         
@@ -344,29 +349,147 @@ class FuyaoFrit:
         
         return top_border, bottom_border
     
-    def pointAlongCurve(self, pts, crv, hspace):
-        pass
+    def pointAlongCurve(self, pts, crv):
+        hspace = self.hspace[0]
+        _, _, dis = ghcomp.CurveClosestPoint(pts, crv)
+        min_dis, _ = ghcomp.DeconstructDomain(ghcomp.Bounds(dis))
+        threshold = min_dis + hspace
+        pattern = ghcomp.SmallerThan(dis, threshold)
+        along_pts = ghcomp.Dispatch(pts, pattern)
         
+        return along_pts
         
+    def trim_bottom_border(self, top_border, bottom_border):
+        pts, _, _ = ghcomp.ControlPoints(top_border)
+        _, t, _ = ghcomp.CurveClosestPoint(pts, bottom_border)
+        domain = ghcomp.Bounds(t)
+        bottom_subcrv = ghcomp.SubCurve(bottom_border, domain)
         
+        return bottom_subcrv
         
+    def construct_border(self, top_border, bottom_border):
+        _, tA, tB = ghcomp.CurveXCurve(top_border, bottom_border)
+        top_subcrv = top_border
+        bottom_subcrv = bottom_border
+        if tA:
+            #if(type(tA) == 'float'):
+            top_subcrv = self.trim_curve(top_border, tA, tA)
+            #else:
+                #print("define tA type")
+                #a = type(tA)
+                #print(type(tA))
+                #top_subcrv = self.trim_curve(top_border, tA[0], tA[-1])
+        if tB:
+            #if(type(tB) == 'float'):
+            bottom_subcrv = self.trim_curve(bottom_border, tB, tB)
+            #else:
+                #bottom_subcrv = self.trim_curve(bottom_border, tB[0], tB[-1])
+        blocksrf = ghcomp.RuledSurface(top_subcrv, bottom_subcrv)
+        blockborder = ghcomp.JoinCurves(ghcomp.Merge(top_subcrv, bottom_subcrv))
+        blockborder, _= ghcomp.Pufferfish.CloseCurve(blockborder)
         
+        print("constructing border")
+        print(blocksrf)
+        print(blockborder)
         
+        return blocksrf, blockborder
         
+    def trim_curve(self, crv, t1, t2):
+        _, crv_domain = ghcomp.CurveDomain(crv)
+        tstart, tend = ghcomp.DeconstructDomain(crv_domain)
+        mid = (tstart + tend) / 2
+        if t1 > mid:
+            t1 = tstart
+        if t2 < mid:
+            t2 = tend
+        domain = ghcomp.ConstructDomain(t1, t2)
+        subcrv = ghcomp.SubCurve(crv, domain)
+        
+        return subcrv
+        
+    def block_fill(self, Crv, horizontal, vertical, surround, aligned):
+        Pt = []
+
+        threshold = min(horizontal, vertical)
+        stepCrv = int(math.ceil(Crv.GetLength()/surround))
+        
+        bbox = Crv.GetBoundingBox(True)
+        
+        leftup = bbox.Min
+        bottomright = bbox.Max
+        
+        xStart = leftup.X
+        xEnd = bottomright.X
+        yStart = leftup.Y
+        yEnd = bottomright.Y
+        
+        xLength = xEnd - xStart
+        yLength = yEnd - yStart 
+        
+        xCount = int(math.ceil(xLength / horizontal))
+        yCount = int(math.ceil(yLength / vertical))
+        print(xCount, yCount)
+        
+        for i in range(xCount + 1):
+            for j in range(yCount + 1):
+                if aligned == True:
+                    pt = rg.Point3d(xStart + i*horizontal, yStart + j*vertical, 0)
+                else:
+                    if j%2 == 0:
+                        pt = rg.Point3d(xStart + i*horizontal, yStart + j*vertical, 0)
+                    else:
+                        pt = rg.Point3d(xStart + (i+0.5)*horizontal, yStart + j*vertical, 0)
+                
+                PtCtmt = Crv.Contains(pt)
+                if PtCtmt == rg.PointContainment.Inside:
+                    Pt.append(pt)
+                #else:
+                    #print(PtCtmt)
+                
+                #else:
+                    #t = Crv.ClosestPoint(pt)
+                    #ptCrv = Crv.PointAt(t[1])
+                    #distance = ptCrv.DistanceTo(pt)
+                    #if distance < threshold/3:
+                        #Pt.append(pt)
+        
+        radius = self.inner_radius
+        print(len(Pt))
+        for i in range(len(Pt)):
+            self.pts.append(Pt[i])
+            self.rs.append(radius)
+            
+        return Pt, threshold, stepCrv
+    
     def run(self):
         self.init_curves()
         self.calculate_row_conf()
-        pts, vec, inner_refer_pts, refer_vec, bottom_border = self.first_row_pts_from_inner()
+        inner_pts, vec, inner_refer_pts, refer_vec, bottom_border = self.first_row_pts_from_inner()
         top_subcrv, outer_refer_pts, outer_pts, offset_curve, top_border = self.first_row_pts_from_outer(inner_refer_pts, refer_vec)
         shift_outer_pts = self.shift_half(outer_pts, offset_curve)
         outer_pts = self.shift_first_outer_row(outer_pts, shift_outer_pts)
-        inside_refer_pts, inside_radius, top_border2, bottom_border2, bottom_border_pts, top_border_pts = self.inside_pts(inner_refer_pts, outer_refer_pts, top_border, bottom_border)
-
+        
+        
+        inside_refer_pts, inside_radius, top_border, bottom_border, bottom_border_pts, top_border_pts = self.inside_pts(inner_refer_pts, outer_refer_pts, top_border, bottom_border)
+        top_pts, bottom_pts = self.select_border(inner_pts, top_border_pts, outer_pts, bottom_border_pts)
+        
+        
+        bottom_border = self.trim_bottom_border(top_border, bottom_border)
+        
+        
+        top_pts = self.pointAlongCurve(top_pts, top_border)
+        bottom_pts = self.pointAlongCurve(bottom_pts, bottom_border)
+        top_pts = ghcomp.ReverseList(top_pts)
+        border_pts = ghcomp.Merge(top_pts, bottom_pts)
+        
+        blocksrf, blockborder= self.construct_border(top_border, bottom_border)
+        #self.display.AddCurve(blocksrf)
+        
+        inner_pts, threshold, stepCrv = self.block_fill(blockborder, self.horizontal, self.vertical, self.hspace[0], self.aligned)
         # draw points
         
         for i in range(len(self.pts)):
-            self.display.AddCircle(rc.Geometry.Circle(self.pts[i], self.rs[i]), self.display_color, 1) 
-
+            self.display.AddCircle(rc.Geometry.Circle(self.pts[i], self.rs[i]), self.display_color, 1)
         
         scriptcontext.doc.Views.Redraw()
 
