@@ -25,12 +25,12 @@ class FuyaoFrit:
         self.inner_curve = None
         self.outer_curve = None
         self.refer_curve = None
-        self.radius = [0.425, 0.6, 0.85]
-        self.vspace = [1.4, 1.7]
-        self.hspace = [2.2]
-        self.inner_radius = 0.89
-        self.horizontal = 2.2
-        self.vertical = 1.7
+        self.radius = [0.5, 0.65, 0.775]
+        self.vspace = [0.72, 1]
+        self.hspace = [2.7]
+        self.inner_radius = 1
+        self.horizontal = 4
+        self.vertical = 1.15
         self.aligned = False
         self.row_confs = []
 
@@ -44,17 +44,28 @@ class FuyaoFrit:
     
     # 确定是否将outer curve flip
     def reorder_outer_curve(self):
+        tolerance = rc.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance
         curve = self.outer_curve
         flip_curve, _ = ghcomp.FlipCurve(curve)
+        
+        #offset_flip_curve = flip_curve.Offset(ghcomp.XYPlane(), 1.0, tolerance, rg.CurveOffsetCornerStyle.Smooth)
+        #offset_curve = curve.Offset(ghcomp.XYPlane, 1.0, tolerance, rg.CurveOffsetCornerStyle.Smooth)
+        
+        #offset_flip_curve = ghcomp.OffsetCurve(flip_curve, plane = ghcomp.XYPlane(), distance=1.0, corners=1)
+        #self.display.AddCurve(offset_flip_curve)
+        offset_curve = ghcomp.OffsetCurve(curve, plane = ghcomp.XYPlane(), distance=1.0, corners=1)
+        #self.display.AddCurve(offset_curve)
+        
         close_curve, _ = ghcomp.Pufferfish.CloseCurve(curve)
-        offset_curve = ghcomp.OffsetCurve(close_curve, distance=1.0, corners=1)
-        offset_curve_area, _ = ghcomp.Area(offset_curve)
-        print("close curve")
+        offset_close_curve, _ = ghcomp.Pufferfish.CloseCurve(offset_curve)
+        
+        offset_curve_area, _ = ghcomp.Area(offset_close_curve)
         curve_area, _ = ghcomp.Area(close_curve)
-        print("calculate area: {0} {1}".format(offset_curve_area, curve_area))
+        #print("calculate area: {0} {1}".format(offset_curve_area, curve_area))
         if curve_area < offset_curve_area:
             print("We flip the outer curve.")
             self.outer_curve = flip_curve
+            
     
     # 确定是否将inner curve flip
     def reorder_inner_curve(self):
@@ -76,6 +87,7 @@ class FuyaoFrit:
             if angle > ghcomp.Pi()/2:
                 self.inner_curve = adj_flip_curve
                 print("flip closed inner curve")
+                
             else:
                 self.inner_curve = adj_curve
 
@@ -140,7 +152,7 @@ class FuyaoFrit:
         pts, vec, _ = ghcomp.DivideCurve(center_curve, pts_num, False)
         refer_pts, t, _ = ghcomp.CurveClosestPoint(pts, crv)
         _, refer_vec, _ = ghcomp.EvaluateCurve(crv, t)
-        bottom_border = ghcomp.OffsetCurve(center_curve, distance=radius, corners=1)
+        bottom_border = ghcomp.OffsetCurve(center_curve, plane = ghcomp.XYPlane, distance=radius, corners=1)
         
         for i in range(len(pts)):
             self.pts.append(pts[i])
@@ -148,8 +160,10 @@ class FuyaoFrit:
         return pts, vec, refer_pts, refer_vec, bottom_border
     
     def first_row_pts_from_outer(self, refer_pts, refer_vec):
+        
         refer_dis = ghcomp.Length(self.refer_curve)
         crv = self.outer_curve
+        
         pts, t, D = ghcomp.CurveClosestPoint(refer_pts, crv)
         _, T, _ = ghcomp.EvaluateCurve(crv, t)
         # 角度过滤
@@ -179,12 +193,14 @@ class FuyaoFrit:
         hole_domain = ghcomp.Bounds([start_t, end_t])
         hole_curve = ghcomp.SubCurve(crv, hole_domain)
         top_subcrv = hole_curve
+        
         hole_curve_len = ghcomp.Length(top_subcrv)
         # check it!
         hspace = self.row_confs[-1]['hspace']
         hole_num = int(hole_curve_len / hspace)
         hole_pts, _, _ = ghcomp.DivideCurve(hole_curve, hole_num, False)
         hole_pts_len = ghcomp.ListLength(hole_pts)
+        
         
         filter_domain = ghcomp.ConstructDomain(index_start, index_end)
         filter_steps = index_end - index_start
@@ -203,15 +219,24 @@ class FuyaoFrit:
         # 将refer_pts 投影到边的off
         this_offset = self.row_confs[-1]['offset']
         relative_offset = refer_dis - this_offset
+        print("what is the problem with you")
         print(self.row_confs)
         print(this_offset)
         print(relative_offset)
-        center_crv = ghcomp.OffsetCurve(crv, distance=relative_offset, corners=1)
+        
+        center_crv = ghcomp.OffsetCurve(crv, plane = ghcomp.XYPlane(), distance=relative_offset, corners=1)
+        #print("center_crv")
+        self.display.AddCurve(center_crv)
+        
         circle_pts, _, _ = ghcomp.CurveClosestPoint(refer_pts, center_crv)
         offset_curve = center_crv
-        top_subcrv_offset = ghcomp.OffsetCurve(top_subcrv, distance=relative_offset, corners=1)
+        top_subcrv_offset = ghcomp.OffsetCurve(top_subcrv, plane = ghcomp.XYPlane(), distance=relative_offset, corners=1)
+        self.display.AddCurve(top_subcrv_offset)
+        
         radius = self.row_confs[-1]['radius']
-        top_border = ghcomp.OffsetCurve(top_subcrv_offset, distance=-radius, corners=1)
+        top_border = ghcomp.OffsetCurve(top_subcrv_offset, plane = ghcomp.XYPlane(), distance=radius, corners=1)
+        
+        #self.display.AddCurve(top_border)
         
         return top_subcrv, refer_pts, circle_pts, offset_curve, top_border
         
@@ -241,6 +266,8 @@ class FuyaoFrit:
         
     def inside_pts(self, inner_refer_pts, outer_refer_pts, top_border, bottom_border):
         #todo: input top_row_num and bottom_row_num
+        
+        refer_dis = ghcomp.Length(self.refer_curve)
         
         row_confs = self.row_confs
         inner_crv = self.inner_curve
@@ -277,8 +304,8 @@ class FuyaoFrit:
                 P4 = ghcomp.Division(P3, 2)
                 #print(ghcomp.ListLength(P4))
                 P5, _, _ = ghcomp.CurveClosestPoint(P4, current_crv)
-                print("P5")
-                print(P5)
+                #print("P5")
+                #print(P5)
                 inside_refer_pts += P5
                 if i == (bottom_inside_row_num - 1):
                     bottom_border_pts += P5
@@ -297,16 +324,19 @@ class FuyaoFrit:
         for i in range(bottom_inside_row_num, inside_row_num):
             next_row_conf = ghcomp.ListItem(row_confs, i+2, True)
             current_row_conf = ghcomp.ListItem(row_confs, i+1, True)
-            _, current_offset, _ = ghcomp.Dhictionary.DictSelect([current_row_conf], 'offset')
-            _, current_radius, _ = ghcomp.Dhictionary.DictSelect([current_row_conf], 'radius')
+            print(current_row_conf, next_row_conf)
+            current_offset= current_row_conf['offset']
             
-            _, current_vspace, _ = ghcomp.Dhictionary.DictSelect([current_row_conf], 'vspace')
-            _, next_vspace, _ = ghcomp.Dhictionary.DictSelect([next_row_conf], 'vspace')
+            current_radius= current_row_conf['radius']
+            
+            current_vspace= current_row_conf['vspace']
+            next_vspace= next_row_conf['vspace']
+            
             crv_offset = refer_dis - current_offset
-            current_crv = ghcomp.OffsetCurve(outer_crv, -crv_offset)
+            current_crv = ghcomp.OffsetCurve(outer_crv, plane = ghcomp.XYPlane(), distance = crv_offset)
             P, t, D = ghcomp.CurveClosestPoint(outer_refer_pts, current_crv)
             print(i, current_vspace)
-            top_border = ghcomp.OffsetCurve(top_border, -next_vspace)
+            top_border = ghcomp.OffsetCurve(top_border, plane = ghcomp.XYPlane(), distance = next_vspace)
             
             if i % 2 == 0:
                 # mapping to inner line
@@ -359,40 +389,46 @@ class FuyaoFrit:
         
         return along_pts
         
-    def trim_bottom_border(self, top_border, bottom_border):
+    def trim_border(self, top_border, bottom_border):
         pts, _, _ = ghcomp.ControlPoints(top_border)
         _, t, _ = ghcomp.CurveClosestPoint(pts, bottom_border)
         domain = ghcomp.Bounds(t)
         bottom_subcrv = ghcomp.SubCurve(bottom_border, domain)
         
-        return bottom_subcrv
+        pts, _, _ = ghcomp.ControlPoints(bottom_border)
+        _, t, _ = ghcomp.CurveClosestPoint(pts, top_border)
+        domain = ghcomp.Bounds(t)
+        top_subcrv = ghcomp.SubCurve(top_border, domain)
+        
+        return top_subcrv, bottom_subcrv
         
     def construct_border(self, top_border, bottom_border):
         _, tA, tB = ghcomp.CurveXCurve(top_border, bottom_border)
         top_subcrv = top_border
         bottom_subcrv = bottom_border
+        
         if tA:
-            #if(type(tA) == 'float'):
-            top_subcrv = self.trim_curve(top_border, tA, tA)
-            #else:
-                #print("define tA type")
-                #a = type(tA)
-                #print(type(tA))
-                #top_subcrv = self.trim_curve(top_border, tA[0], tA[-1])
+            try:
+                top_subcrv = self.trim_curve(top_border, tA[0], tA[-1])
+            except:
+                top_subcrv = self.trim_curve(top_border, tA, tA)
         if tB:
-            #if(type(tB) == 'float'):
-            bottom_subcrv = self.trim_curve(bottom_border, tB, tB)
-            #else:
-                #bottom_subcrv = self.trim_curve(bottom_border, tB[0], tB[-1])
+            try:
+                bottom_subcrv = self.trim_curve(bottom_border, tB[0], tB[-1])
+            except:
+                bottom_subcrv = self.trim_curve(bottom_border, tB, tB)
+        
+        #self.display.AddCurve(top_subcrv)
+        #self.display.AddCurve(bottom_subcrv)
+        
         blocksrf = ghcomp.RuledSurface(top_subcrv, bottom_subcrv)
-        blockborder = ghcomp.JoinCurves(ghcomp.Merge(top_subcrv, bottom_subcrv))
-        blockborder, _= ghcomp.Pufferfish.CloseCurve(blockborder)
+        edgelist = []
+        for i in range(blocksrf.Edges.Count):
+            edgelist.append(blocksrf.Edges[i].EdgeCurve)
+        blockborder = ghcomp.JoinCurves(edgelist)
+        #self.display.AddCurve(blockborder)
         
-        print("constructing border")
-        print(blocksrf)
-        print(blockborder)
-        
-        return blocksrf, blockborder
+        return blockborder
         
     def trim_curve(self, crv, t1, t2):
         _, crv_domain = ghcomp.CurveDomain(crv)
@@ -466,6 +502,9 @@ class FuyaoFrit:
         self.calculate_row_conf()
         inner_pts, vec, inner_refer_pts, refer_vec, bottom_border = self.first_row_pts_from_inner()
         top_subcrv, outer_refer_pts, outer_pts, offset_curve, top_border = self.first_row_pts_from_outer(inner_refer_pts, refer_vec)
+        
+        #self.display.AddCurve(top_border)
+        
         shift_outer_pts = self.shift_half(outer_pts, offset_curve)
         outer_pts = self.shift_first_outer_row(outer_pts, shift_outer_pts)
         
@@ -473,18 +512,24 @@ class FuyaoFrit:
         inside_refer_pts, inside_radius, top_border, bottom_border, bottom_border_pts, top_border_pts = self.inside_pts(inner_refer_pts, outer_refer_pts, top_border, bottom_border)
         top_pts, bottom_pts = self.select_border(inner_pts, top_border_pts, outer_pts, bottom_border_pts)
         
+        top_border, bottom_border = self.trim_border(top_border, bottom_border)
         
-        bottom_border = self.trim_bottom_border(top_border, bottom_border)
-        
+        #self.display.AddCurve(top_border)
+        #self.display.AddCurve(bottom_border)
         
         top_pts = self.pointAlongCurve(top_pts, top_border)
         bottom_pts = self.pointAlongCurve(bottom_pts, bottom_border)
         top_pts = ghcomp.ReverseList(top_pts)
         border_pts = ghcomp.Merge(top_pts, bottom_pts)
         
-        blocksrf, blockborder= self.construct_border(top_border, bottom_border)
-        #self.display.AddCurve(blocksrf)
+        #top_border, _ = ghcomp.FlipCurve(top_border)
+        blockborder= self.construct_border(top_border, bottom_border)
+        #self.display.AddCurve(blockborder)
         
+        #for i in range(len(blockborder)):
+        #    print(i)
+        #    self.display.AddCurve(blockborder[i])
+    
         inner_pts, threshold, stepCrv = self.block_fill(blockborder, self.horizontal, self.vertical, self.hspace[0], self.aligned)
         # draw points
         
