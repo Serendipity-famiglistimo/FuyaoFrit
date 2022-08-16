@@ -462,36 +462,44 @@ class FuyaoFrit:
         return Pt, threshold, stepCrv
     
     def run(self):
-        self.init_curves()
-        self.calculate_row_conf()
-        inner_pts, vec, inner_refer_pts, refer_vec, bottom_border = self.first_row_pts_from_inner()
-        top_subcrv, outer_refer_pts, outer_pts, offset_curve, top_border = self.first_row_pts_from_outer(inner_refer_pts, refer_vec)
-        shift_outer_pts = self.shift_half(outer_pts, offset_curve)
-        outer_pts = self.shift_first_outer_row(outer_pts, shift_outer_pts)
-        
-        
-        inside_refer_pts, inside_radius, top_border, bottom_border, bottom_border_pts, top_border_pts = self.inside_pts(inner_refer_pts, outer_refer_pts, top_border, bottom_border)
-        top_pts, bottom_pts = self.select_border(inner_pts, top_border_pts, outer_pts, bottom_border_pts)
-        
-        
-        bottom_border = self.trim_bottom_border(top_border, bottom_border)
-        
-        
-        top_pts = self.pointAlongCurve(top_pts, top_border)
-        bottom_pts = self.pointAlongCurve(bottom_pts, bottom_border)
-        top_pts = ghcomp.ReverseList(top_pts)
-        border_pts = ghcomp.Merge(top_pts, bottom_pts)
-        
-        blocksrf, blockborder= self.construct_border(top_border, bottom_border)
-        #self.display.AddCurve(blocksrf)
-        
-        inner_pts, threshold, stepCrv = self.block_fill(blockborder, self.horizontal, self.vertical, self.hspace[0], self.aligned)
-        # draw points
-        
-        for i in range(len(self.pts)):
-            self.display.AddCircle(rc.Geometry.Circle(self.pts[i], self.rs[i]), self.display_color, 1)
-        
-        scriptcontext.doc.Views.Redraw()
+        offset_curve1 = ghcomp.OffsetCurve(self.refer_curve, distance=1.0, corners=1)
+        adj_start, adj_end = ghcomp.EndPoints(offset_curve1)
+        print(adj_start)
+        print(adj_end)
+        flip_curve, _ = ghcomp.FlipCurve(self.refer_curve)
+        adj_start, adj_end = ghcomp.EndPoints(offset_curve1)
+        print(adj_start)
+        print(adj_end)
+#        self.init_curves()
+#        self.calculate_row_conf()
+#        inner_pts, vec, inner_refer_pts, refer_vec, bottom_border = self.first_row_pts_from_inner()
+#        top_subcrv, outer_refer_pts, outer_pts, offset_curve, top_border = self.first_row_pts_from_outer(inner_refer_pts, refer_vec)
+#        shift_outer_pts = self.shift_half(outer_pts, offset_curve)
+#        outer_pts = self.shift_first_outer_row(outer_pts, shift_outer_pts)
+#        
+#        
+#        inside_refer_pts, inside_radius, top_border, bottom_border, bottom_border_pts, top_border_pts = self.inside_pts(inner_refer_pts, outer_refer_pts, top_border, bottom_border)
+#        top_pts, bottom_pts = self.select_border(inner_pts, top_border_pts, outer_pts, bottom_border_pts)
+#        
+#        
+#        bottom_border = self.trim_bottom_border(top_border, bottom_border)
+#        
+#        
+#        top_pts = self.pointAlongCurve(top_pts, top_border)
+#        bottom_pts = self.pointAlongCurve(bottom_pts, bottom_border)
+#        top_pts = ghcomp.ReverseList(top_pts)
+#        border_pts = ghcomp.Merge(top_pts, bottom_pts)
+#        
+#        blocksrf, blockborder= self.construct_border(top_border, bottom_border)
+#        #self.display.AddCurve(blocksrf)
+#        
+#        inner_pts, threshold, stepCrv = self.block_fill(blockborder, self.horizontal, self.vertical, self.hspace[0], self.aligned)
+#        # draw points
+#        
+#        for i in range(len(self.pts)):
+#            self.display.AddCircle(rc.Geometry.Circle(self.pts[i], self.rs[i]), self.display_color, 1)
+#        
+#        scriptcontext.doc.Views.Redraw()
 
 
         # self.custom_display()
