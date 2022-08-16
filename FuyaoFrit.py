@@ -169,7 +169,7 @@ class FuyaoFrit:
                 self.pts.append(pts[i])
                 self.rs.append(radius)
         else:
-            dir, pts = self.get_dir(pts, self.inner_curve)
+            dir, _ = self.get_dir(pts, self.inner_curve)
             for i in range(len(pts)):
                 self.rec_pts.append(pts[i])
                 self.rec_rs.append(radius)
@@ -282,13 +282,13 @@ class FuyaoFrit:
                     self.pts.append(outer_pts[i])
                     self.rs.append(radius)
             else:
-                dir, outer_pts = self.get_dir(outer_pts, self.outer_curve)
+                dir, _ = self.get_dir(outer_pts, self.outer_curve)
                 for i in range(len(outer_pts)):
                     self.rec_pts.append(outer_pts[i])
                     self.rec_rs.append(radius)
                     self.rec_dirs.append(dir[i])
         else:
-            dir, outer_pts = self.get_dir(outer_pts, self.outer_curve)
+            dir, _ = self.get_dir(outer_pts, self.outer_curve)
             for i in range(len(outer_pts)):
                 self.half_pts.append(outer_pts[i])
                 self.half_rs.append(radius)
