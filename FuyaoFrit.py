@@ -25,14 +25,19 @@ class FuyaoFrit:
         self.inner_curve = None
         self.outer_curve = None
         self.refer_curve = None
-        self.radius = [0.5, 0.65, 0.775]
-        self.vspace = [0.72, 1]
-        self.hspace = [2.7]
-        self.inner_radius = 1
-        self.horizontal = 4
-        self.vertical = 1.15
+        self.radius = [0.425, 0.6, 0.85]
+        self.vspace = [1.4, 1.7]
+        self.hspace = [2.2]
+        self.inner_radius = 0.89
+        self.horizontal = 2.2
+        self.vertical = 1.7
         self.aligned = False
         self.row_confs = []
+        
+        self.half_bound = True
+        self.rec_band = True
+        self.half_sr = 0.25
+        self.rec_sr = 0.1
 
         self.display_curves = []
         self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
@@ -41,7 +46,13 @@ class FuyaoFrit:
         
         self.pts = []
         self.rs = []
-    
+        self.half_pts = []
+        self.half_rs = []
+        self.half_dirs = []
+        self.rec_pts = []
+        self.rec_rs = []
+        self.rec_dirs = []
+        
     # 确定是否将outer curve flip
     def reorder_outer_curve(self):
         tolerance = rc.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance
@@ -66,7 +77,6 @@ class FuyaoFrit:
             print("We flip the outer curve.")
             self.outer_curve = flip_curve
             
-    
     # 确定是否将inner curve flip
     def reorder_inner_curve(self):
         curve = self.inner_curve
@@ -101,11 +111,11 @@ class FuyaoFrit:
                 print("flip open inner curve")
             else:
                 self.inner_curve = curve
-    
+                
     def init_curves(self):
         self.reorder_outer_curve()
         self.reorder_inner_curve()
-    
+        
     def calculate_row_conf(self):
         crv_length = ghcomp.Length(self.refer_curve)
         print(crv_length)
@@ -134,7 +144,7 @@ class FuyaoFrit:
                 i += 1
         print(row_confs)
         self.row_confs = row_confs
-    
+        
     # 排布第一排的点
     def first_row_pts_from_inner(self):
         crv = self.inner_curve
@@ -154,11 +164,18 @@ class FuyaoFrit:
         _, refer_vec, _ = ghcomp.EvaluateCurve(crv, t)
         bottom_border = ghcomp.OffsetCurve(center_curve, plane = ghcomp.XYPlane, distance=radius, corners=1)
         
-        for i in range(len(pts)):
-            self.pts.append(pts[i])
-            self.rs.append(radius)
+        if self.rec_band == False:
+            for i in range(len(pts)):
+                self.pts.append(pts[i])
+                self.rs.append(radius)
+        else:
+            dir, pts = self.get_dir(pts, self.inner_curve)
+            for i in range(len(pts)):
+                self.rec_pts.append(pts[i])
+                self.rec_rs.append(radius)
+                self.rec_dirs.append(dir[i])
         return pts, vec, refer_pts, refer_vec, bottom_border
-    
+        
     def first_row_pts_from_outer(self, refer_pts, refer_vec):
         
         refer_dis = ghcomp.Length(self.refer_curve)
@@ -226,12 +243,12 @@ class FuyaoFrit:
         
         center_crv = ghcomp.OffsetCurve(crv, plane = ghcomp.XYPlane(), distance=relative_offset, corners=1)
         #print("center_crv")
-        self.display.AddCurve(center_crv)
+        #self.display.AddCurve(center_crv)
         
         circle_pts, _, _ = ghcomp.CurveClosestPoint(refer_pts, center_crv)
         offset_curve = center_crv
         top_subcrv_offset = ghcomp.OffsetCurve(top_subcrv, plane = ghcomp.XYPlane(), distance=relative_offset, corners=1)
-        self.display.AddCurve(top_subcrv_offset)
+        #self.display.AddCurve(top_subcrv_offset)
         
         radius = self.row_confs[-1]['radius']
         top_border = ghcomp.OffsetCurve(top_subcrv_offset, plane = ghcomp.XYPlane(), distance=radius, corners=1)
@@ -259,9 +276,24 @@ class FuyaoFrit:
         else:
             outer_pts = aligned_pts
         
-        for i in range(len(outer_pts)):
-            self.pts.append(outer_pts[i])
-            self.rs.append(radius)
+        if self.half_bound == False:
+            if self.rec_band == False:
+                for i in range(len(outer_pts)):
+                    self.pts.append(outer_pts[i])
+                    self.rs.append(radius)
+            else:
+                dir, outer_pts = self.get_dir(outer_pts, self.outer_curve)
+                for i in range(len(outer_pts)):
+                    self.rec_pts.append(outer_pts[i])
+                    self.rec_rs.append(radius)
+                    self.rec_dirs.append(dir[i])
+        else:
+            dir, outer_pts = self.get_dir(outer_pts, self.outer_curve)
+            for i in range(len(outer_pts)):
+                self.half_pts.append(outer_pts[i])
+                self.half_rs.append(radius)
+                self.half_dirs.append(dir[i])
+            
         return outer_pts
         
     def inside_pts(self, inner_refer_pts, outer_refer_pts, top_border, bottom_border):
@@ -283,6 +315,8 @@ class FuyaoFrit:
         inside_radius = []
         bottom_border_pts = []
         top_border_pts = []
+        
+        inside_dir = []
         
         for i in range(bottom_inside_row_num):
             current_row_conf = ghcomp.ListItem(row_confs, i + 1, True)
@@ -307,6 +341,8 @@ class FuyaoFrit:
                 #print("P5")
                 #print(P5)
                 inside_refer_pts += P5
+                p_dir, _ = self.get_dir(P5, self.inner_curve)
+                
                 if i == (bottom_inside_row_num - 1):
                     bottom_border_pts += P5
                 for j in range(len(P5)):
@@ -315,11 +351,12 @@ class FuyaoFrit:
             else:
                 # mapping to outer line
                 inside_refer_pts += P
+                p_dir, _ = self.get_dir(P, self.inner_curve)
                 if i == (bottom_inside_row_num - 1):
                     bottom_border_pts += P
                 for j in range(len(P)):
                     inside_radius.append(current_radius)
-                
+            inside_dir += p_dir
         
         for i in range(bottom_inside_row_num, inside_row_num):
             next_row_conf = ghcomp.ListItem(row_confs, i+2, True)
@@ -348,6 +385,7 @@ class FuyaoFrit:
                 #print(ghcomp.ListLength(P4))
                 P5, _, _ = ghcomp.CurveClosestPoint(P4, current_crv)
                 inside_refer_pts += P5
+                p_dir, _ = self.get_dir(P5, self.outer_curve)
                 if i == bottom_inside_row_num:
                     top_border_pts += P5
                 for j in range(len(P5)):
@@ -355,16 +393,25 @@ class FuyaoFrit:
             else:
                 # mapping to outer line
                 inside_refer_pts += P
+                p_dir, _ = self.get_dir(P, self.outer_curve)
                 if i == bottom_inside_row_num:
                     top_border_pts += P
                 for j in range(len(P)):
                     inside_radius.append(current_radius)
-        
+            inside_dir += p_dir
+            
         print("order inside pts")
         print(len(inside_refer_pts))
-        for i in range(len(inside_refer_pts)):
-            self.pts.append(inside_refer_pts[i])
-            self.rs.append(inside_radius[i])
+        if self.rec_band == False:
+            for i in range(len(inside_refer_pts)):
+                self.pts.append(inside_refer_pts[i])
+                self.rs.append(inside_radius[i])
+                
+        else:
+            for i in range(len(inside_refer_pts)):
+                self.rec_pts.append(inside_refer_pts[i])
+                self.rec_rs.append(inside_radius[i])
+                self.rec_dirs.append(inside_dir[i])
         return inside_refer_pts, inside_radius, top_border, bottom_border, bottom_border_pts, top_border_pts
         
     def select_border(self, top_border1, top_border2, bottom_border1, bottom_border2):
@@ -378,7 +425,7 @@ class FuyaoFrit:
             bottom_border = bottom_border1
         
         return top_border, bottom_border
-    
+        
     def pointAlongCurve(self, pts, crv):
         hspace = self.hspace[0]
         _, _, dis = ghcomp.CurveClosestPoint(pts, crv)
@@ -496,7 +543,97 @@ class FuyaoFrit:
             self.rs.append(radius)
             
         return Pt, threshold, stepCrv
-    
+        
+    def get_dir(self, refer_pts, crv):
+        _, t, _ = ghcomp.CurveClosestPoint(refer_pts, crv)
+        pt, tgt, _ = ghcomp.EvaluateCurve(crv, t)
+        
+        return tgt, pt
+        
+    def half_circle(self, pt, tgt, radius, small_radius):
+        arc, _ = ghcomp.Arc(pt, radius, ghcomp.Pi())
+        #arc, _ = ghcomp.FlipCurve(arc)
+        offset = ghcomp.Addition(radius, small_radius)
+        offset_vec = ghcomp.UnitX(offset)
+        left_c = ghcomp.Subtraction(pt, offset_vec)
+        right_c = ghcomp.Addition(pt, offset_vec)
+        left_a = ghcomp.ConstructDomain(ghcomp.Pi(1.5), ghcomp.Pi(2))
+        left_arc, _ = ghcomp.Arc(left_c, small_radius, left_a)
+        right_a = ghcomp.ConstructDomain(ghcomp.Pi(1), ghcomp.Pi(1.5))
+        right_arc, _ = ghcomp.Arc(right_c, small_radius, right_a)
+        
+        arc1 = ghcomp.GraftTree(arc)
+        arc2 = ghcomp.GraftTree(left_arc)
+        arc3 = ghcomp.GraftTree(right_arc)
+        arcs = ghcomp.Merge(ghcomp.Merge(arc2, arc1), arc3)
+        crvs = ghcomp.JoinCurves(arcs)
+        crvs = ghcomp.FlattenTree(crvs)
+        
+        crvs, _ = ghcomp.Pufferfish.CloseCurve(crvs, 0, 0.5, 0)
+        #half_circle0 = []
+        #for i in range(len(crvs)):
+            #half_circle0.append(crvs[i])
+            
+        rotate_angle = ghcomp.Addition(self.tgt_angle(tgt),ghcomp.Pi())
+        
+        half_circle = []
+        for i in range(len(pt)):
+            hc, _ = ghcomp.Rotate(crvs[i], rotate_angle[i], pt[i])
+            half_circle.append(hc)
+        #half_circle, _ = ghcomp.Rotate(crvs, rotate_angle, pt)
+        #for i in range(len(half_circle)):
+            #half_circle0.append(half_circle[i])
+        
+        y_offset = ghcomp.Subtraction(pt, ghcomp.UnitY(small_radius))
+        border_pt, _ = ghcomp.Rotate(y_offset, rotate_angle, pt)
+        
+        return half_circle, border_pt
+        
+    def rectangle(self, pt, tgt, radius):
+        rotate_angle = self.tgt_angle(tgt)
+        x, y, _ = ghcomp.Deconstruct(pt)
+        x_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(x, radius), ghcomp.Addition(x, radius))
+        y_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(y, radius), ghcomp.Addition(y, radius))
+        rec, _ = ghcomp.Rectangle(ghcomp.XYPlane(), x_domain, y_domain, ghcomp.Division(radius, 2))
+        rec, _ = ghcomp.Rotate(rec, rotate_angle, pt)
+        
+        return rec
+        
+    def tgt_angle(self, tgt):
+        angle, _ = ghcomp.Angle(tgt, ghcomp.UnitX())
+        _, y, _ = ghcomp.Deconstruct(tgt)
+        larger_pattern, _ = ghcomp.LargerThan(y,0)
+        factor = ghcomp.Subtraction(ghcomp.Multiplication(larger_pattern,2),1)
+        rotate_angle = ghcomp.Multiplication(angle, factor)
+        
+        return rotate_angle
+        
+    def circle_packing(self, pt, boundary):
+        srf = ghcomp.BoundarySurfaces(boundary)
+        mesh = ghcomp.MeshBrep(srf)
+        b_radius = self.bounding_radius()
+        goal_obj = ghcomp.Kangaroo2Component.ImageCircles(pt, mesh, b_radius, b_radius, boundary, 0.0001)
+        _, vertice, _ = ghcomp.Kangaroo2Component.Solver(goal_obj, False, 0, 0.1, False)
+        
+        return vertice
+        
+    def bounding_radius(self):
+        horizontal = self.horizontal
+        vertical = self.vertical
+        
+        if self.aligned == False:
+            hypotenuse = math.sqrt(0.25*horizontal*horizontal + vertical*vertical)
+        else:
+            hypotenuse = math.sqrt(horizontal*horizontal + vertical*vertical)
+        
+        min = horizontal/2
+        if vertical/2 < min:
+            min = vertical/2
+        if hypotenuse/2 < min:
+            min = hypotenuse/2
+        
+        return 1.1 * min
+        
     def run(self):
         self.init_curves()
         self.calculate_row_conf()
@@ -536,11 +673,25 @@ class FuyaoFrit:
         for i in range(len(self.pts)):
             self.display.AddCircle(rc.Geometry.Circle(self.pts[i], self.rs[i]), self.display_color, 1)
         
+        if len(self.rec_pts)!=0:
+            rec_crv = self.rectangle(self.rec_pts, self.rec_dirs, self.rec_rs)
+        for i in range(len(self.rec_pts)):
+            self.display.AddCurve(rec_crv[i], self.display_color, 1)
+        
+        if len(self.half_pts)!=0:
+            half_crv, _ = self.half_circle(self.half_pts, self.half_dirs, self.half_rs, self.half_sr)
+            #half_crv0, _ = self.half_circle(self.half_pts, ghcomp.UnitX(), self.half_rs, self.half_sr)
+            for i in range(len(half_crv)):
+                self.display.AddCurve(half_crv[i], self.display_color, 1)
+                #self.display.AddCurve(half_crv0[i], self.display_color, 1)
+                #self.display.AddCircle(rc.Geometry.Circle(self.half_pts[i], self.half_rs[i]), self.display_color, 1)
+        
         scriptcontext.doc.Views.Redraw()
 
 
 
         # self.custom_display()
+        
     def close(self):
         self.display.Clear()
         
