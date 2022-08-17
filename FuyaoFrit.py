@@ -16,12 +16,14 @@ import random as rnd
 import math
 import ghpythonlib.components as ghcomp
 import Rhino.Geometry as rg
+from CircleDot import CircleDot
 
  
 # SampleEtoRoomNumber dialog class
 
 class FuyaoFrit:
     def __init__(self):
+        self.dot = CircleDot(0, 0, 0)
         self.inner_curve = None
         self.outer_curve = None
         self.refer_curve = None

@@ -6,3 +6,9 @@
 # @Email: wangxu.93@hotmail.com
 # @Copyright (c) 2022 Institute of Trustworthy Network and System, Tsinghua University
 '''
+from Region import Region
+
+class BandRegion(Region):
+    def __init__(self):
+        Region.__init__(self)
+        pass

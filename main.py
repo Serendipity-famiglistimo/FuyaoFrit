@@ -106,6 +106,11 @@ class MainDialog(forms.Dialog[bool]):
     
         layout.EndVertical()
         # Set the dialog content
+        self.Menu = forms.MenuBar()
+        file_menu = self.Menu.Items.GetSubmenu("Files")
+        com1 = forms.Command()
+        com1.MenuText = "Open"
+        file_menu.Items.Add(com1, 0)
         self.Content = layout
         
         
@@ -149,4 +154,5 @@ class MainDialog(forms.Dialog[bool]):
         
 if __name__ == "__main__":
     dialog = MainDialog();
-    rc = dialog.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)
+    # rc = dialog.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)
+    Rhino.UI.EtoExtensions.ShowSemiModal(dialog, Rhino.RhinoDoc.ActiveDoc, Rhino.UI.RhinoEtoApp.MainWindow)
