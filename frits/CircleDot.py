@@ -7,7 +7,11 @@
 # @Copyright (c) 2022 Institute of Trustworthy Network and System, Tsinghua University
 '''
 import Rhino as rc
-from Dot import Dot
+from frits.Dot import Dot
+
+class CircleDotConfig:
+    def __init__(self):
+        self.r = 0
 
 class CircleDot(Dot):
     def __init__(self, x, y, r):
@@ -18,7 +22,6 @@ class CircleDot(Dot):
         self.right = r
         self.top = r
         self.bottom = r
-        
         self.radius = r
      
     

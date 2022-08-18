@@ -11,9 +11,12 @@ import Rhino
 import Eto.Forms as forms
 import Eto.Drawing as drawing
 from Eto.Drawing import Size, Font, FontStyle
-import RowControl
-import DefaultPage
-reload(RowControl)
+import view.RowConfigPanel as RowConfigPanel
+import view.DefaultPage as DefaultPage
+import view.BandPage as BandPage
+reload(BandPage)
+reload(RowConfigPanel)
+reload(DefaultPage)
 import os
 # from RowControl import RowControl
 
@@ -21,15 +24,17 @@ class FritDialog(forms.Dialog[bool]):
     def __init__(self):
         self.Title = '福耀印刷花点排布工具'
         self.Padding = drawing.Padding(10)
-        self.Resizable = True
+        self.Resizable = False
         self.Closing += self.OnFormClosed
-        self.MinimumSize = Size(600, 400)
+        self.MinimumSize = Size(800, 600)
         # 菜单
         self.create_menu()
-        tab = forms.TabControl()
-        tab.TabPosition = forms.DockPosition.Top
+        self.tab = forms.TabControl()
+        self.tab.TabPosition = forms.DockPosition.Top
         default_page = DefaultPage.DefaultPage()
-        tab.Pages.Add(default_page)
+        # default_page.create()
+        self.tab.Pages.Add(default_page)
+        self.tab.Pages.Add(BandPage.BandPage())
 
  
         # 标题
@@ -40,7 +45,7 @@ class FritDialog(forms.Dialog[bool]):
         # self.addButton.Click += self.AddButtonClick
         self.layout = forms.DynamicLayout()
         # default is circle dot
-        self.layout.AddRow(tab)
+        self.layout.AddRow(self.tab)
         self.Content = self.layout 
 
     def create_menu(self):
@@ -55,7 +60,7 @@ class FritDialog(forms.Dialog[bool]):
         open_menu.Image = drawing.Bitmap(current_path + '\\ico\\file-open.png')
         file_menu.Items.Add(open_menu, 0)
         
-        add_region_menu = forms.Command()
+        add_region_menu = forms.Command(self.AddBandRegionCommand)
         add_region_menu.MenuText = "添加区域"
         add_region_menu.Image = drawing.Bitmap(current_path + '\\ico\\add-region.png')
         edit_menu.Items.Add(add_region_menu)
@@ -64,13 +69,9 @@ class FritDialog(forms.Dialog[bool]):
     def OnFormClosed(self, sender, e):
         pass
 
-    def AddButtonClick(self, sender, e):
-        new_row = RowControl.RowControl(0)
-        self.dot_type_label = forms.Label(Text = '花点类型：')
-        self.layout.AddRow(self.dot_type_label)
-        self.layout.AddRow(new_row)
-        self.layout.Create()
-        self.Content = self.layout
+    def AddBandRegionCommand(self, sender, e):
+        page = BandPage.BandPage()
+        self.tab.Pages.Add(page)
         
 
 if __name__ == "__main__":

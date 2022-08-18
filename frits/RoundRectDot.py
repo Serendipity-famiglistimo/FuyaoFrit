@@ -7,11 +7,16 @@
 # @Copyright (c) 2022 Institute of Trustworthy Network and System, Tsinghua University
 '''
 import Rhino as rc
-from Dot import Dot
+from frits.Dot import Dot
 
-class HalfCircleDot(Dot):
+class RoundRectConfig:
+    def __init__(self):
+        self.k = 0
+        self.r = 0
+
+class RoundRectDot(Dot):
     def __init__(self, x, y, r):
-        Dot.__init__()
+        Dot.__init__(self)
         self.centroid.X = x
         self.centroid.Y = y
         self.left = r

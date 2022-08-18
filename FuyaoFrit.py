@@ -16,7 +16,7 @@ import random as rnd
 import math
 import ghpythonlib.components as ghcomp
 import Rhino.Geometry as rg
-from CircleDot import CircleDot
+from frits.CircleDot import CircleDot
 
  
 # SampleEtoRoomNumber dialog class

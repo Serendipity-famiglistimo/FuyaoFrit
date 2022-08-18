@@ -12,8 +12,15 @@ from Eto.Drawing import Size, Font, FontStyle
 class DefaultPage(forms.TabPage):
     def __init__(self):
         forms.TabPage.__init__(self)
+        self.create()
 
+    def create(self):
+        self.Text = '基本属性'
         # 标题
         self.heading_label = forms.Label(Text= '福耀印刷花点排布工具', Font = Font('Microsoft YaHei', 14., FontStyle.Bold))
         # self.m_headding.Color = drawing.Color.FromArgb(255, 0, 0)
-        self.heading_label.TextAlignment = forms.TextAlignment.Center 
+        self.heading_label.TextAlignment = forms.TextAlignment.Center
+
+        self.layout = forms.DynamicLayout()
+        self.layout.AddRow(self.heading_label)
+        self.Content = self.layout 
