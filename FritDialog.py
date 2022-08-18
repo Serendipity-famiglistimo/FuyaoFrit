@@ -10,7 +10,11 @@ import imp
 import Rhino
 import Eto.Forms as forms
 import Eto.Drawing as drawing
-from RowControl import RowControl
+from Eto.Drawing import Size, Font, FontStyle
+import RowControl
+reload(RowControl)
+# from RowControl import RowControl
+
 class FritDialog(forms.Dialog[bool]):
     def __init__(self):
         self.Title = '福耀印刷花点排布工具'
@@ -23,7 +27,7 @@ class FritDialog(forms.Dialog[bool]):
         # self.m_headding.Color = drawing.Color.FromArgb(255, 0, 0)
         self.heading_label.TextAlignment = forms.TextAlignment.Center
         self.addButton = forms.Button(Text='添加行')
-        self.addButton.Click = self.AddButtonClick
+        self.addButton.Click += self.AddButtonClick
         self.layout = forms.DynamicLayout()
         # default is circle dot
         self.layout.AddRow(self.addButton)
@@ -33,10 +37,13 @@ class FritDialog(forms.Dialog[bool]):
     def OnFormClosed(self, sender, e):
         pass
 
-    def AddButtonClick(self):
-        new_row = RowControl(0)
+    def AddButtonClick(self, sender, e):
+        new_row = RowControl.RowControl(0)
+        self.dot_type_label = forms.Label(Text = '花点类型：')
+        self.layout.AddRow(self.dot_type_label)
         self.layout.AddRow(new_row)
         self.layout.Create()
+        self.Content = self.layout
         
 
 if __name__ == "__main__":

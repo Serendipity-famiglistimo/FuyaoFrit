@@ -9,15 +9,15 @@
 import Eto.Forms as forms
 import Eto.Drawing as drawing
 
-class Group(forms.GroupBox):
+class RowControl(forms.GroupBox):
     def __init__(self, row_id):
         self.Text = '第{}排'.format(row_id)
         self.Padding = drawing.Padding(5)
 
         self.dot_type_label = forms.Label(Text = '花点类型：')
         self.dot_type_combo = forms.ComboBox()
-        self.dot_type_combo.Items = ["圆点", "圆角矩形", "其他"]
-        self.dot_type_combo.ReadOnly = True
+        self.dot_type_combo.DataStore = ["圆点", "圆角矩形", "其他"]
+        # self.dot_type_combo.ReadOnly = True
         # for circle dot
         self.circle_dot_radius_label = forms.Label(Text='圆点半径：')
         self.circle_dot_radius = forms.TextBox()
