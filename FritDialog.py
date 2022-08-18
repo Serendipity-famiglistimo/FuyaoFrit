@@ -12,6 +12,7 @@ import Eto.Forms as forms
 import Eto.Drawing as drawing
 from Eto.Drawing import Size, Font, FontStyle
 import RowControl
+import DefaultPage
 reload(RowControl)
 import os
 # from RowControl import RowControl
@@ -22,19 +23,24 @@ class FritDialog(forms.Dialog[bool]):
         self.Padding = drawing.Padding(10)
         self.Resizable = True
         self.Closing += self.OnFormClosed
-
+        self.MinimumSize = Size(600, 400)
         # 菜单
         self.create_menu()
+        tab = forms.TabControl()
+        tab.TabPosition = forms.DockPosition.Top
+        default_page = DefaultPage.DefaultPage()
+        tab.Pages.Add(default_page)
+
  
         # 标题
-        self.heading_label = forms.Label(Text= '带状区域', Font = Font('Microsoft YaHei', 14., FontStyle.Bold))
-        # self.m_headding.Color = drawing.Color.FromArgb(255, 0, 0)
-        self.heading_label.TextAlignment = forms.TextAlignment.Center
-        self.addButton = forms.Button(Text='添加行')
-        self.addButton.Click += self.AddButtonClick
+        # self.heading_label = forms.Label(Text= '带状区域', Font = Font('Microsoft YaHei', 14., FontStyle.Bold))
+        # # self.m_headding.Color = drawing.Color.FromArgb(255, 0, 0)
+        # self.heading_label.TextAlignment = forms.TextAlignment.Center
+        # self.addButton = forms.Button(Text='添加行')
+        # self.addButton.Click += self.AddButtonClick
         self.layout = forms.DynamicLayout()
         # default is circle dot
-        self.layout.AddRow(self.addButton)
+        self.layout.AddRow(tab)
         self.Content = self.layout 
 
     def create_menu(self):
