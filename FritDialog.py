@@ -13,6 +13,7 @@ import Eto.Drawing as drawing
 from Eto.Drawing import Size, Font, FontStyle
 import RowControl
 reload(RowControl)
+import os
 # from RowControl import RowControl
 
 class FritDialog(forms.Dialog[bool]):
@@ -38,12 +39,20 @@ class FritDialog(forms.Dialog[bool]):
 
     def create_menu(self):
         self.Menu = forms.MenuBar()
+        current_path = os.getcwd()
+        
         file_menu = self.Menu.Items.GetSubmenu("文件")
+        edit_menu = self.Menu.Items.GetSubmenu("编辑")
+        
         open_menu = forms.Command()
         open_menu.MenuText = "打开"
-        open_menu_img = drawing.ImageConverter.ConvertFromString('./ico/file-open.png')
-        open_menu.Image = open_menu_img
+        open_menu.Image = drawing.Bitmap(current_path + '\\ico\\file-open.png')
         file_menu.Items.Add(open_menu, 0)
+        
+        add_region_menu = forms.Command()
+        add_region_menu.MenuText = "添加区域"
+        add_region_menu.Image = drawing.Bitmap(current_path + '\\ico\\add-region.png')
+        edit_menu.Items.Add(add_region_menu)
 
     # Start of the class functions
     def OnFormClosed(self, sender, e):
