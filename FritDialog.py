@@ -21,6 +21,9 @@ class FritDialog(forms.Dialog[bool]):
         self.Padding = drawing.Padding(10)
         self.Resizable = True
         self.Closing += self.OnFormClosed
+
+        # 菜单
+        self.create_menu()
  
         # 标题
         self.heading_label = forms.Label(Text= '带状区域', Font = Font('Microsoft YaHei', 14., FontStyle.Bold))
@@ -32,6 +35,15 @@ class FritDialog(forms.Dialog[bool]):
         # default is circle dot
         self.layout.AddRow(self.addButton)
         self.Content = self.layout 
+
+    def create_menu(self):
+        self.Menu = forms.MenuBar()
+        file_menu = self.Menu.Items.GetSubmenu("文件")
+        open_menu = forms.Command()
+        open_menu.MenuText = "打开"
+        open_menu_img = drawing.ImageConverter.ConvertFromString('./ico/file-open.png')
+        open_menu.Image = open_menu_img
+        file_menu.Items.Add(open_menu, 0)
 
     # Start of the class functions
     def OnFormClosed(self, sender, e):
