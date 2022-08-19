@@ -17,16 +17,20 @@ from model.RowFrits import RowFrits
 from model.BandZone import BandZone
 import ghpythonlib.components as ghcomp
 
-class BandPage(forms.TabPage):
-    def __init__(self, mid, mdisplay):
-        forms.TabPage.__init__(self)
+
+class BandPageView(forms.TabPage):
+    
+    # .net 必须使用__new__显示调用构造函数！！！
+    def __new__(cls, *args):
+        return forms.TabPage.__new__(cls)    
+
+    def __init__(self, display):
         self.Text = '带状区域'
         self.row_num = 1
         self.panel = forms.Scrollable()
-        
         self.panel.Padding = drawing.Padding(10)
         self.model = BandZone()
-        self.display = mdisplay 
+        self.display = display 
         self.create_interface()
         
     def create_interface(self):
@@ -80,10 +84,10 @@ class BandPage(forms.TabPage):
 
     def AddButtonClick(self, sender, e):
         self.row_num += 1
-        row_frits = RowFrits()
-        row_frits.row_id = len(self.model.rows)
+        row_frits = RowFrits(len(self.model.rows), self.model)
+       
         self.model.rows.append(row_frits)
-        row_frits.band_model = self.model  # type: ignore
+        # row_frits.band_model = self.model  # type: ignore
         self.create_interface()
     
     def LoadButtonClick(self, sender, e):

@@ -38,7 +38,7 @@ class FritDialog(forms.Dialog[bool]):
         default_page = DefaultPage.DefaultPage()
         # default_page.create()
         self.tab.Pages.Add(default_page)
-        page = view.BandPage.BandPage(0, self.display)
+        page = view.BandPage.BandPageView(self.display)
         self.tab.Pages.Add(page)
 
  
@@ -72,10 +72,11 @@ class FritDialog(forms.Dialog[bool]):
 
     # Start of the class functions
     def OnFormClosed(self, sender, e):
+        # self.display.clear()
         pass
 
     def AddBandRegionCommand(self, sender, e):
-        page = BandPage.BandPage(self.display)
+        page = view.BandPage.BandPage(self.display)
         self.tab.Pages.Add(page)
         
 

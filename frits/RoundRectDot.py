@@ -8,6 +8,7 @@
 '''
 import Rhino as rc
 from frits.Dot import Dot
+import ghpythonlib.components as ghcomp
 
 class RoundRectConfig:
     def __init__(self):
@@ -24,19 +25,14 @@ class RoundRectDot(Dot):
         self.theta = theta
     
     def draw(self, display):
-        display = rc.Display.CustomDisplay(True)
         # display.AddCircle(rc.Geometry.Circle(self.centroid, self.radius), self.display_color, 1)
         display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
-        pts = []
-        pts.append(rc.Geometry.Point3d(self.centroid.X - self.k / 2, self.centroid.Y - self.k / 2, 0))
-        pts.append(rc.Geometry.Point3d(self.centroid.X - self.k / 2, self.centroid.Y + self.k / 2, 0))
-        pts.append(rc.Geometry.Point3d(self.centroid.X + self.k / 2, self.centroid.Y + self.k / 2, 0))
-        pts.append(rc.Geometry.Point3d(self.centroid.X + self.k / 2, self.centroid.Y - self.k / 2, 0))
-        pts.append(rc.Geometry.Point3d(self.centroid.X - self.k / 2, self.centroid.Y - self.k / 2, 0))
-        display.AddPolygon(pts, display_color, display_color, False, True)
-        # display.AddLine(rc.Geometry.Line(), display_color, 1)
-        # display.AddLine(rc.Geometry.Line(), display_color, 1)
-        # display.AddLine(rc.Geometry.Line(), display_color, 1)
-        # display.AddLine(rc.Geometry.Line(), display_color, 1)
-        # display.AddArc(rc.Geometry.Arc(), display_color, 1)
+        x = self.centroid.X
+        y = self.centroid.Y
+        x_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(x, self.k / 2), ghcomp.Addition(x, self.k / 2))
+        y_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(y, self.k / 2), ghcomp.Addition(y, self.k / 2))
+        rec, _ = ghcomp.Rectangle(ghcomp.XYPlane(), x_domain, y_domain, ghcomp.Division(self.r, 2))
+        rec, _ = ghcomp.Rotate(rec, self.theta, rc.Geometry.Point3d(x, y, 0))
+        display.AddCurve(rec, display_color, 1)
+
         
