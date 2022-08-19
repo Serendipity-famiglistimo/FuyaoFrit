@@ -15,12 +15,13 @@ class RoundRectConfig:
         self.r = 0
 
 class RoundRectDot(Dot):
-    def __init__(self, x, y, k, r):
+    def __init__(self, x, y, k, r, theta):
         Dot.__init__(self)
         self.centroid.X = x
         self.centroid.Y = y
         self.k = k
         self.r = r
+        self.theta = theta
     
     def draw(self, display):
         display = rc.Display.CustomDisplay(True)

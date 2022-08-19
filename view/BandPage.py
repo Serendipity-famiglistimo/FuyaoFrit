@@ -18,7 +18,7 @@ from model.BandZone import BandZone
 import ghpythonlib.components as ghcomp
 
 class BandPage(forms.TabPage):
-    def __init__(self):
+    def __init__(self, mid, mdisplay):
         forms.TabPage.__init__(self)
         self.Text = '带状区域'
         self.row_num = 1
@@ -26,7 +26,7 @@ class BandPage(forms.TabPage):
         
         self.panel.Padding = drawing.Padding(10)
         self.model = BandZone()
-        self.display = None 
+        self.display = mdisplay 
         self.create_interface()
         
     def create_interface(self):

@@ -13,8 +13,8 @@ import Eto.Drawing as drawing
 from Eto.Drawing import Size, Font, FontStyle
 import view.RowConfigPanel as RowConfigPanel
 import view.DefaultPage as DefaultPage
-import view.BandPage as BandPage
-reload(BandPage)
+import view.BandPage
+reload(view.BandPage)
 reload(RowConfigPanel)
 reload(DefaultPage)
 import os
@@ -38,7 +38,7 @@ class FritDialog(forms.Dialog[bool]):
         default_page = DefaultPage.DefaultPage()
         # default_page.create()
         self.tab.Pages.Add(default_page)
-        page = BandPage.BandPage()
+        page = view.BandPage.BandPage(0, self.display)
         self.tab.Pages.Add(page)
 
  
