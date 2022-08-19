@@ -14,10 +14,11 @@ from model.RowFrits import RowFrits, RowRelationType
 from frits import FritType
 
 class RowConfigPanel(forms.GroupBox):
-    def __init__(self, row_config):
-        self.row_config = row_config
+    def __init__(self, display, row_config):
+        self.model = row_config
         self.Text = '第{}排'.format(row_config.row_id)
         self.setup_view()
+        self.display = display
     
     def setup_view(self):
         self.RemoveAll()
@@ -26,37 +27,44 @@ class RowConfigPanel(forms.GroupBox):
         self.dot_type_combo = forms.ComboBox()
         # self.dot_type_combo.Padding = drawing.Padding(20, 0, 0, 0)
         self.dot_type_combo.DataStore = FritType.get_frit_type_strings()
-        self.dot_type_combo.SelectedIndex = self.row_config.dot_type
+        self.dot_type_combo.SelectedIndex = self.model.dot_type
         self.dot_type_combo.SelectedIndexChanged += self.change_dot_type 
         # self.dot_type_combo.ReadOnly = True
         # for circle dot
         self.circle_dot_radius_label = forms.Label(Text='圆点半径：')
-        self.circle_dot_radius = forms.TextBox(Text='{0}'.format(self.row_config.circle_config.r))
+        self.circle_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.r))
         self.circle_dot_radius.Size = drawing.Size(60, -1)
+        self.circle_dot_radius.TextChanged += self.circle_dot_radius_changed
         
         self.round_rect_edge_label = forms.Label(Text='圆角矩形边长：')
-        self.round_rect_edge = forms.TextBox(Text='{0}'.format(self.row_config.round_rect_config.k))
+        self.round_rect_edge = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.k))
         self.round_rect_edge.Size = drawing.Size(60, -1)
+        self.round_rect_edge.TextChanged += self.round_rect_edge_changed
+
         self.round_rect_radius_label = forms.Label(Text='圆角矩形半径：')
-        self.round_rect_radius = forms.TextBox(Text='{0}'.format(self.row_config.round_rect_config.r))
+        self.round_rect_radius = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.r))
         self.round_rect_radius.Size = drawing.Size(60, -1)
+        self.round_rect_radius.TextChanged += self.round_rect_radius_changed
 
         self.stepping_label = forms.Label(Text='水平间距：')
-        self.stepping_input = forms.TextBox(Text='{0}'.format(self.row_config.stepping))
+        self.stepping_input = forms.TextBox(Text='{0}'.format(self.model.stepping))
         self.stepping_input.Size = drawing.Size(60, -1)
+        self.stepping_input.TextChanged += self.stepping_input_changed
+
         self.position_label = forms.Label(Text='相对参考线距离：')
-        self.position_input = forms.TextBox(Text='{0}'.format(self.row_config.position))
+        self.position_input = forms.TextBox(Text='{0}'.format(self.model.position))
         self.position_input.Size = drawing.Size(60, -1)
+        self.position_input.TextChanged += self.position_input_changed
 
         self.relation_setting_label = forms.Label(Text='关系设置:', Font = Font('Microsoft YaHei', 12.))
         self.row_choice_label = forms.Label(Text='请选择边：')
         self.row_choice_combo = forms.ComboBox()
-        if self.row_config.row_id == 0:
+        if self.model.row_id == 0:
             self.row_choice_combo.Enabled = False
         else:
-            row_choice = ['第{}排'.format(i) for i in range(self.row_config.row_id)]
+            row_choice = ['第{}排'.format(i) for i in range(self.model.row_id)]
             self.row_choice_combo.DataStore = row_choice
-            self.row_choice_combo.SelectedIndex = self.row_config.row_id - 1
+            self.row_choice_combo.SelectedIndex = self.model.row_id - 1
             self.row_choice_combo.SelectedIndexChanged += self.change_row_choice
         self.row_relation_label = forms.Label(Text='关系：')
         self.row_relation_combo = forms.ComboBox()
@@ -67,6 +75,8 @@ class RowConfigPanel(forms.GroupBox):
         self.config_panel = forms.Panel()
         self.update_btn = forms.Button(Text='填充花点')
         self.update_btn.Size = drawing.Size(100, 30)
+        self.update_btn.Click += self.fill_row_frits
+
         self.layout = forms.DynamicLayout()
         self.layout.DefaultSpacing = drawing.Size(10, 10)
        
@@ -75,11 +85,11 @@ class RowConfigPanel(forms.GroupBox):
         self.layout.AddRow(self.basic_setting_label, None)
         self.layout.EndVertical()
         self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
-        if self.row_config.dot_type == FritType.CIRCLE_DOT:
+        if self.model.dot_type == FritType.CIRCLE_DOT:
             self.layout.AddRow(self.dot_type_label, self.dot_type_combo, self.circle_dot_radius_label, self.circle_dot_radius, self.stepping_label,
                 self.stepping_input, self.position_label, self.position_input, None)
             
-        elif self.row_config.dot_type == FritType.ROUND_RECT:
+        elif self.model.dot_type == FritType.ROUND_RECT:
             self.layout.AddRow(self.dot_type_label, self.dot_type_combo, self.round_rect_edge_label, self.round_rect_edge, self.round_rect_radius_label,
                 self.round_rect_radius, self.stepping_label, self.stepping_input, self.position_label, self.position_input, None)
         self.layout.EndVertical()
@@ -96,9 +106,9 @@ class RowConfigPanel(forms.GroupBox):
     
     def change_dot_type(self, sender, e):
         if self.dot_type_combo.SelectedIndex == 0:
-            self.row_config.dot_type = FritType.CIRCLE_DOT
+            self.model.dot_type = FritType.CIRCLE_DOT
         elif self.dot_type_combo.SelectedIndex == 1:
-            self.row_config.dot_type = FritType.ROUND_RECT
+            self.model.dot_type = FritType.ROUND_RECT
         
         self.setup_view()
 
@@ -107,4 +117,24 @@ class RowConfigPanel(forms.GroupBox):
 
     def change_row_choice(self, sender, e):
         pass
+    
+    def circle_dot_radius_changed(self, sender, e):
+        self.model.circle_config.r = float(self.circle_dot_radius.Text)
+    
+    def round_rect_edge_changed(self, sender, e):
+        self.model.round_rect_config.k = float(self.round_rect_edge.Text)
+    
+    def round_rect_radius_changed(self, sender, e):
+        self.model.round_rect_config.r = float(self.round_rect_radius.Text)
+    
+    def stepping_input_changed(self, sender, e):
+        self.model.stepping = float(self.stepping_input.Text)
+    
+    def position_input_changed(self, sender, e):
+        self.model.position = float(self.position_input.Text)
+
+    def fill_row_frits(self, sender, e):
+        self.model.fill_dots()
+        for d in self.model.dots:
+            d.draw(self.display)
     

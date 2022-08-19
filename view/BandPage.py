@@ -14,6 +14,8 @@ import rhinoscriptsyntax as rs
 from Eto.Drawing import Size, Font, FontStyle
 from view.RowConfigPanel import RowConfigPanel
 from model.RowFrits import RowFrits
+from model.BandZone import BandZone
+import ghpythonlib.components as ghcomp
 
 class BandPage(forms.TabPage):
     def __init__(self):
@@ -23,7 +25,8 @@ class BandPage(forms.TabPage):
         self.panel = forms.Scrollable()
         
         self.panel.Padding = drawing.Padding(10)
-        self.data = []
+        self.model = BandZone()
+        self.display = None 
         self.create_interface()
         
     def create_interface(self):
@@ -35,8 +38,16 @@ class BandPage(forms.TabPage):
         self.refer_btn = forms.Button(Text='选取参考轮廓线')
         self.refer_btn.Size = Size(100, 30)
         self.refer_btn.Click += self.PickReferCurve
-        self.is_pick_label = forms.Label(Text='当前未选择曲线')
-        self.is_pick_label.TextColor = drawing.Color.FromArgb(255, 0, 0)
+        # checkbox
+        self.flip_check = forms.CheckBox()
+        self.flip_check.Text = '是否反转该曲线'
+        self.is_pick_label = forms.Label()
+        if len(self.model.curves) == 0:
+            self.is_pick_label.Text = '未选择曲线'
+            self.is_pick_label.TextColor = drawing.Color.FromArgb(255, 0, 0)
+        else:
+            self.is_pick_label.Text = '选择了曲线{0}.'.format(self.model.curves[0])
+            self.is_pick_label.TextColor = drawing.Color.FromArgb(44,162,95)
 
         self.fill_label = forms.Label(Text='- 设置或加载填充规则', Font = Font('Microsoft YaHei', 12.))
         self.fill_btn = forms.Button(Text='手动添加新行')
@@ -51,6 +62,7 @@ class BandPage(forms.TabPage):
         self.layout.AddSeparateRow(self.pick_label, None)
         self.layout.BeginVertical(padding=drawing.Padding(20, 0, 0, 0))
         self.layout.AddRow(self.refer_btn, None)
+        self.layout.AddRow(self.flip_check, None)
         self.layout.AddRow(self.is_pick_label, None)
         self.layout.EndVertical()
         self.layout.AddSeparateRow(self.fill_label, None)
@@ -58,8 +70,8 @@ class BandPage(forms.TabPage):
        
    
         self.layout.BeginVertical()
-        for i in range(len(self.data)):
-            self.layout.AddRow(RowConfigPanel(self.data[i]))
+        for i in range(len(self.model.rows)):
+            self.layout.AddRow(RowConfigPanel(self.display, self.model.rows[i]))
         self.layout.EndVertical()
         self.layout.AddSpace()
         self.panel.Content = self.layout
@@ -69,13 +81,14 @@ class BandPage(forms.TabPage):
     def AddButtonClick(self, sender, e):
         self.row_num += 1
         row_frits = RowFrits()
-        row_frits.row_id = len(self.data)
-        self.data.append(row_frits)
+        row_frits.row_id = len(self.model.rows)
+        self.model.rows.append(row_frits)
+        row_frits.band_model = self.model  # type: ignore
         self.create_interface()
     
     def LoadButtonClick(self, sender, e):
         # 清空现有的填充规则
-        self.data.clear()
+        self.model.rows.clear()
         self.create_interface()
         pass
     
@@ -85,24 +98,15 @@ class BandPage(forms.TabPage):
             print("Warning: No curve is selected")
             return
         print(objectId)
-        
-        print("select curve length: {0}".format(len))
-        if self.active_btn == 1:
-            self.fuyaoFrit.inner_curve = objectId[0]
-        elif self.active_btn == 2:
-            self.fuyaoFrit.outer_curve = objectId[0]
-        elif self.active_btn == 3:
-            self.fuyaoFrit.refer_curve = objectId[0]
-        self.active_btn = 0
-        
-    def PickInnerCurve(self, sender, e):
-        self.active_btn = 1
-        Rhino.UI.EtoExtensions.PushPickButton(self, self.OnGetRhinoObjects)
-    
-    def PickOuterCurve(self, sender, e):
-        self.active_btn = 2
-        Rhino.UI.EtoExtensions.PushPickButton(self, self.OnGetRhinoObjects)
+        print(self.model.curves)
+        # python 2.7 clear list
+        del self.model.curves[:]
+        crv = objectId[0]
+        if self.flip_check.Checked:
+            crv, _ = ghcomp.FlipCurve(crv)
+        self.model.curves.append(crv)
+        print(self.model.curves)
+        self.create_interface()
     
     def PickReferCurve(self, sender, e):
-        self.active_btn = 3
         Rhino.UI.EtoExtensions.PushPickButton(self, self.OnGetRhinoObjects)

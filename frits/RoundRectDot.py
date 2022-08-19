@@ -15,18 +15,27 @@ class RoundRectConfig:
         self.r = 0
 
 class RoundRectDot(Dot):
-    def __init__(self, x, y, r):
+    def __init__(self, x, y, k, r):
         Dot.__init__(self)
         self.centroid.X = x
         self.centroid.Y = y
-        self.left = r
-        self.right = r
-        self.top = r
-        self.bottom = r
-        
-        self.radius = r
-     
+        self.k = k
+        self.r = r
     
-    def draw(self):
-        if self.display:
-            self.display.AddCircle(rc.Geometry.Circle(self.centroid, self.radius), self.display_color, 1)
+    def draw(self, display):
+        display = rc.Display.CustomDisplay(True)
+        # display.AddCircle(rc.Geometry.Circle(self.centroid, self.radius), self.display_color, 1)
+        display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        pts = []
+        pts.append(rc.Geometry.Point3d(self.centroid.X - self.k / 2, self.centroid.Y - self.k / 2, 0))
+        pts.append(rc.Geometry.Point3d(self.centroid.X - self.k / 2, self.centroid.Y + self.k / 2, 0))
+        pts.append(rc.Geometry.Point3d(self.centroid.X + self.k / 2, self.centroid.Y + self.k / 2, 0))
+        pts.append(rc.Geometry.Point3d(self.centroid.X + self.k / 2, self.centroid.Y - self.k / 2, 0))
+        pts.append(rc.Geometry.Point3d(self.centroid.X - self.k / 2, self.centroid.Y - self.k / 2, 0))
+        display.AddPolygon(pts, display_color, display_color, False, True)
+        # display.AddLine(rc.Geometry.Line(), display_color, 1)
+        # display.AddLine(rc.Geometry.Line(), display_color, 1)
+        # display.AddLine(rc.Geometry.Line(), display_color, 1)
+        # display.AddLine(rc.Geometry.Line(), display_color, 1)
+        # display.AddArc(rc.Geometry.Arc(), display_color, 1)
+        

@@ -27,6 +27,10 @@ class FritDialog(forms.Dialog[bool]):
         self.Resizable = False
         self.Closing += self.OnFormClosed
         self.MinimumSize = Size(800, 600)
+
+        self.display = Rhino.Display.CustomDisplay(True)
+        self.display.Clear()
+
         # 菜单
         self.create_menu()
         self.tab = forms.TabControl()
@@ -34,7 +38,8 @@ class FritDialog(forms.Dialog[bool]):
         default_page = DefaultPage.DefaultPage()
         # default_page.create()
         self.tab.Pages.Add(default_page)
-        self.tab.Pages.Add(BandPage.BandPage())
+        page = BandPage.BandPage()
+        self.tab.Pages.Add(page)
 
  
         # 标题
@@ -70,7 +75,7 @@ class FritDialog(forms.Dialog[bool]):
         pass
 
     def AddBandRegionCommand(self, sender, e):
-        page = BandPage.BandPage()
+        page = BandPage.BandPage(self.display)
         self.tab.Pages.Add(page)
         
 
