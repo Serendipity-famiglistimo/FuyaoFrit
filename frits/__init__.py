@@ -10,3 +10,7 @@
 class FritType:
     CIRCLE_DOT=0
     ROUND_RECT=1
+    @staticmethod
+    def get_frit_type_strings():
+        return ['圆点', '圆角矩形']
+    

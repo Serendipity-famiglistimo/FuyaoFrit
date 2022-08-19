@@ -9,7 +9,8 @@
 import imp
 import Eto.Forms as forms
 import Eto.Drawing as drawing
-from model.RowFrits import RowFrits
+from Eto.Drawing import Font
+from model.RowFrits import RowFrits, RowRelationType
 from frits import FritType
 
 class RowConfigPanel(forms.GroupBox):
@@ -20,10 +21,11 @@ class RowConfigPanel(forms.GroupBox):
     
     def setup_view(self):
         self.RemoveAll()
+        self.basic_setting_label = forms.Label(Text='基础设置:', Font = Font('Microsoft YaHei', 12.))
         self.dot_type_label = forms.Label(Text = '花点类型：')
         self.dot_type_combo = forms.ComboBox()
         # self.dot_type_combo.Padding = drawing.Padding(20, 0, 0, 0)
-        self.dot_type_combo.DataStore = ["圆点", "圆角矩形", "其他"]
+        self.dot_type_combo.DataStore = FritType.get_frit_type_strings()
         self.dot_type_combo.SelectedIndex = self.row_config.dot_type
         self.dot_type_combo.SelectedIndexChanged += self.change_dot_type 
         # self.dot_type_combo.ReadOnly = True
@@ -46,41 +48,50 @@ class RowConfigPanel(forms.GroupBox):
         self.position_input = forms.TextBox(Text='{0}'.format(self.row_config.position))
         self.position_input.Size = drawing.Size(60, -1)
 
+        self.relation_setting_label = forms.Label(Text='关系设置:', Font = Font('Microsoft YaHei', 12.))
+        self.row_choice_label = forms.Label(Text='请选择边：')
+        self.row_choice_combo = forms.ComboBox()
+        if self.row_config.row_id == 0:
+            self.row_choice_combo.Enabled = False
+        else:
+            row_choice = ['第{}排'.format(i) for i in range(self.row_config.row_id)]
+            self.row_choice_combo.DataStore = row_choice
+            self.row_choice_combo.SelectedIndex = self.row_config.row_id - 1
+            self.row_choice_combo.SelectedIndexChanged += self.change_row_choice
+        self.row_relation_label = forms.Label(Text='关系：')
+        self.row_relation_combo = forms.ComboBox()
+        self.row_relation_combo.DataStore = RowRelationType.get_relations_strings()
+        self.row_relation_combo.SelectedIndex = 1
+        self.row_relation_combo.SelectedIndexChanged += self.change_row_relation
+
         self.config_panel = forms.Panel()
         self.update_btn = forms.Button(Text='填充花点')
-        self.update_btn.Size = drawing.Size(100, -1)
+        self.update_btn.Size = drawing.Size(100, 30)
         self.layout = forms.DynamicLayout()
-
-        panel_layout = forms.StackLayout()
-        panel_layout.Orientation = forms.Orientation.Horizontal
-        panel_layout.Spacing = 10
+        self.layout.DefaultSpacing = drawing.Size(10, 10)
+       
         # default is circle dot
-        #self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
+        self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
+        self.layout.AddRow(self.basic_setting_label, None)
+        self.layout.EndVertical()
+        self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
         if self.row_config.dot_type == FritType.CIRCLE_DOT:
-            panel_layout.Items.Add(self.dot_type_label)
-            panel_layout.Items.Add(self.dot_type_combo)
-            panel_layout.Items.Add(self.circle_dot_radius_label)
-            panel_layout.Items.Add(self.circle_dot_radius)
-            panel_layout.Items.Add(self.stepping_label)
-            panel_layout.Items.Add(self.stepping_input)
-            panel_layout.Items.Add(self.position_label)
-            panel_layout.Items.Add(self.position_input)
+            self.layout.AddRow(self.dot_type_label, self.dot_type_combo, self.circle_dot_radius_label, self.circle_dot_radius, self.stepping_label,
+                self.stepping_input, self.position_label, self.position_input, None)
             
         elif self.row_config.dot_type == FritType.ROUND_RECT:
-            panel_layout.Items.Add(self.dot_type_label)
-            panel_layout.Items.Add(self.dot_type_combo)
-            panel_layout.Items.Add(self.round_rect_edge_label)
-            panel_layout.Items.Add(self.round_rect_edge)
-            panel_layout.Items.Add(self.round_rect_radius_label)
-            panel_layout.Items.Add(self.round_rect_radius)
-            panel_layout.Items.Add(self.stepping_label)
-            panel_layout.Items.Add(self.stepping_input)
-            panel_layout.Items.Add(self.position_label)
-            panel_layout.Items.Add(self.position_input)
-        self.config_panel.Content = panel_layout
-        self.layout.DefaultSpacing = drawing.Size(10, 10)
-        self.layout.AddSeparateRow(self.config_panel)
-        self.layout.AddSeparateRow(self.update_btn, None)
+            self.layout.AddRow(self.dot_type_label, self.dot_type_combo, self.round_rect_edge_label, self.round_rect_edge, self.round_rect_radius_label,
+                self.round_rect_radius, self.stepping_label, self.stepping_input, self.position_label, self.position_input, None)
+        self.layout.EndVertical()
+        self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
+        self.layout.AddRow(self.relation_setting_label, None)
+        self.layout.EndVertical()
+        self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
+        self.layout.AddRow(self.row_choice_label, self.row_choice_combo, self.row_relation_label, self.row_relation_combo, None)
+        self.layout.EndVertical()
+        self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
+        self.layout.AddRow(self.update_btn, None)
+        self.layout.EndVertical()
         self.Content = self.layout
     
     def change_dot_type(self, sender, e):
@@ -91,4 +102,9 @@ class RowConfigPanel(forms.GroupBox):
         
         self.setup_view()
 
+    def change_row_relation(self, sender, e):
+        pass
+
+    def change_row_choice(self, sender, e):
+        pass
     

@@ -10,6 +10,13 @@ from frits import FritType
 from frits.CircleDot import CircleDotConfig
 from frits.RoundRectDot import RoundRectConfig
 
+class RowRelationType:
+    ALIGN=0
+    CROSS=1
+    @staticmethod
+    def get_relations_strings():
+        return ['对齐', '交错']
+
 class RowFrits:
     def __init__(self):
         self.row_id = 0
@@ -20,4 +27,12 @@ class RowFrits:
 
         self.circle_config = CircleDotConfig()
         self.round_rect_config = RoundRectConfig()
+
+        self.relations = []
+    
+    def get_first_relation(self):
+        if len(self.relations) == 0:
+            return {'row_id': self.row_id - 1, 'type': RowRelationType.CROSS}
+        else:
+            return self.relations[0]
 

@@ -36,20 +36,26 @@ class BandPage(forms.TabPage):
         self.refer_btn.Size = Size(100, 30)
         self.refer_btn.Click += self.PickReferCurve
         self.is_pick_label = forms.Label(Text='当前未选择曲线')
+        self.is_pick_label.TextColor = drawing.Color.FromArgb(255, 0, 0)
 
-        self.fill_label = forms.Label(Text='- 开始填充', Font = Font('Microsoft YaHei', 12.))
-        self.fill_btn = forms.Button(Text='添加新的一行')
+        self.fill_label = forms.Label(Text='- 设置或加载填充规则', Font = Font('Microsoft YaHei', 12.))
+        self.fill_btn = forms.Button(Text='手动添加新行')
         self.fill_btn.Size = Size(100, 30)
         self.fill_btn.Click += self.AddButtonClick
+
+        self.load_btn = forms.Button(Text='加载填充规则')
+        self.load_btn.Size = Size(100, 30)
+        self.load_btn.Click += self.LoadButtonClick
+
         self.layout.DefaultSpacing = drawing.Size(8, 8)
-        
         self.layout.AddSeparateRow(self.pick_label, None)
         self.layout.BeginVertical(padding=drawing.Padding(20, 0, 0, 0))
         self.layout.AddRow(self.refer_btn, None)
+        self.layout.AddRow(self.is_pick_label, None)
         self.layout.EndVertical()
         self.layout.AddSeparateRow(self.fill_label, None)
-        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn, None])
-        self.layout.EndVertical()
+        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn, self.load_btn, None])
+       
    
         self.layout.BeginVertical()
         for i in range(len(self.data)):
@@ -66,6 +72,12 @@ class BandPage(forms.TabPage):
         row_frits.row_id = len(self.data)
         self.data.append(row_frits)
         self.create_interface()
+    
+    def LoadButtonClick(self, sender, e):
+        # 清空现有的填充规则
+        self.data.clear()
+        self.create_interface()
+        pass
     
     def OnGetRhinoObjects(self, sender, e):
         objectId = rs.GetCurveObject("Select curve:")
