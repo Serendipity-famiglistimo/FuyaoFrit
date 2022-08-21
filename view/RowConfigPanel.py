@@ -6,15 +6,17 @@
 # @Email: wangxu.93@hotmail.com
 # @Copyright (c) 2022 Institute of Trustworthy Network and System, Tsinghua University
 '''
-import imp
+import Rhino as rc
 import Eto.Forms as forms
 import Eto.Drawing as drawing
 from Eto.Drawing import Font
-from model.RowFrits import RowFrits, RowRelationType
+from model.RowFrits import RowArrangeType, RowFrits
+
 from frits import FritType
 
 class RowConfigPanel(forms.GroupBox):
-    def __init__(self, display, row_config):
+    def __init__(self, parent, display, row_config):
+        self.parent = parent
         self.model = row_config
         self.Text = '第{}排'.format(row_config.row_id)
         self.setup_view()
@@ -56,21 +58,13 @@ class RowConfigPanel(forms.GroupBox):
         self.position_input.Size = drawing.Size(60, -1)
         self.position_input.TextChanged += self.position_input_changed
 
-        self.relation_setting_label = forms.Label(Text='关系设置:', Font = Font('Microsoft YaHei', 12.))
-        self.row_choice_label = forms.Label(Text='请选择边：')
-        self.row_choice_combo = forms.ComboBox()
-        if self.model.row_id == 0:
-            self.row_choice_combo.Enabled = False
-        else:
-            row_choice = ['第{}排'.format(i) for i in range(self.model.row_id)]
-            self.row_choice_combo.DataStore = row_choice
-            self.row_choice_combo.SelectedIndex = self.model.row_id - 1
-            self.row_choice_combo.SelectedIndexChanged += self.change_row_choice
-        self.row_relation_label = forms.Label(Text='关系：')
-        self.row_relation_combo = forms.ComboBox()
-        self.row_relation_combo.DataStore = RowRelationType.get_relations_strings()
-        self.row_relation_combo.SelectedIndex = 1
-        self.row_relation_combo.SelectedIndexChanged += self.change_row_relation
+        self.arrange_setting_label = forms.Label(Text='排布方式:', Font = Font('Microsoft YaHei', 12.))
+        
+        self.arrage_type_label = forms.Label(Text='类型：')
+        self.arrage_type_combo = forms.ComboBox()
+        self.arrage_type_combo.DataStore = RowArrangeType.get_row_arrange_type()  
+        self.arrage_type_combo.SelectedIndex = self.model.arrange_type
+        self.arrage_type_combo.SelectedIndexChanged += self.change_row_arrange_type
 
         self.config_panel = forms.Panel()
         self.update_btn = forms.Button(Text='填充花点')
@@ -94,10 +88,10 @@ class RowConfigPanel(forms.GroupBox):
                 self.round_rect_radius, self.stepping_label, self.stepping_input, self.position_label, self.position_input, None)
         self.layout.EndVertical()
         self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
-        self.layout.AddRow(self.relation_setting_label, None)
+        self.layout.AddRow(self.arrange_setting_label, None)
         self.layout.EndVertical()
         self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
-        self.layout.AddRow(self.row_choice_label, self.row_choice_combo, self.row_relation_label, self.row_relation_combo, None)
+        self.layout.AddRow(self.arrage_type_label, self.arrage_type_combo, None)
         self.layout.EndVertical()
         self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
         self.layout.AddRow(self.update_btn, None)
@@ -109,32 +103,51 @@ class RowConfigPanel(forms.GroupBox):
             self.model.dot_type = FritType.CIRCLE_DOT
         elif self.dot_type_combo.SelectedIndex == 1:
             self.model.dot_type = FritType.ROUND_RECT
-        
         self.setup_view()
 
-    def change_row_relation(self, sender, e):
-        pass
+    def change_row_arrange_type(self, sender, e):
+        self.model.arrange_type = self.arrage_type_combo.SelectedIndex
 
     def change_row_choice(self, sender, e):
         pass
     
     def circle_dot_radius_changed(self, sender, e):
-        self.model.circle_config.r = float(self.circle_dot_radius.Text)
+        try:
+            self.model.circle_config.r = float(self.circle_dot_radius.Text)
+        except:
+            pass
     
     def round_rect_edge_changed(self, sender, e):
-        self.model.round_rect_config.k = float(self.round_rect_edge.Text)
+        try:
+            self.model.round_rect_config.k = float(self.round_rect_edge.Text)
+        except:
+            pass
     
     def round_rect_radius_changed(self, sender, e):
-        self.model.round_rect_config.r = float(self.round_rect_radius.Text)
+        try:
+            self.model.round_rect_config.r = float(self.round_rect_radius.Text)
+        except:
+            pass
     
     def stepping_input_changed(self, sender, e):
-        self.model.stepping = float(self.stepping_input.Text)
+        try:
+            self.model.stepping = float(self.stepping_input.Text)
+        except:
+            pass
     
     def position_input_changed(self, sender, e):
-        self.model.position = float(self.position_input.Text)
+        try:
+            self.model.position = float(self.position_input.Text)
+        except:
+            pass
 
     def fill_row_frits(self, sender, e):
+        display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        if not self.model.curve:
+            # calculate curve
+            self.model.set_curve(self.parent.model.curves[0])
+        
         self.model.fill_dots()
         for d in self.model.dots:
-            d.draw(self.display)
+            d.draw(self.display, display_color)
     

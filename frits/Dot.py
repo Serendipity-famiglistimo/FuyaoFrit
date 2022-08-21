@@ -10,18 +10,8 @@ import Rhino as rc
 class Dot:
     def __init__(self):
         self.centroid = rc.Geometry.Point3d(0, 0, 0)
-        self.left = 0
-        self.right = 0
-        self.top = 0
-        self.bottom = 0
-        self.display = None 
-        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
-    
-    def get_top(self):
-        return self.top
-    
-    def get_bottom(self):
-        return self.bottom
+        self.theta = 0
+        self.config = None
 
     def draw(self):
         print("Dot: this function should not be executed!")

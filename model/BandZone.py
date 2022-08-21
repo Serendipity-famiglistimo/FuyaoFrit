@@ -12,3 +12,7 @@ class BandZone(Zone):
         Zone.__init__(self)
         self.rows = list()
         self.curves = list()
+        self.relations = {}
+    
+    def add_relation(self):
+        pass

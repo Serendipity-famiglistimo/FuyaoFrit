@@ -14,18 +14,13 @@ class CircleDotConfig:
         self.r = 0
 
 class CircleDot(Dot):
-    def __init__(self, x, y, r):
+    def __init__(self, x, y, config):
         Dot.__init__(self)
         self.centroid.X = x
         self.centroid.Y = y
-        self.left = r
-        self.right = r
-        self.top = r
-        self.bottom = r
-        self.radius = r
+        self.config = config
      
     
-    def draw(self):
-        if self.display:
-            self.display.AddCircle(rc.Geometry.Circle(self.centroid, self.radius), self.display_color, 1)
+    def draw(self, display, display_color):
+        display.AddCircle(rc.Geometry.Circle(self.centroid, self.config.r), display_color, 1)
             

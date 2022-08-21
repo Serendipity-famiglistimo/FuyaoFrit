@@ -16,23 +16,20 @@ class RoundRectConfig:
         self.r = 0
 
 class RoundRectDot(Dot):
-    def __init__(self, x, y, k, r, theta):
+    def __init__(self, x, y, config, theta):
         Dot.__init__(self)
         self.centroid.X = x
         self.centroid.Y = y
-        self.k = k
-        self.r = r
+        self.config = config
         self.theta = theta
     
-    def draw(self, display):
-        # display.AddCircle(rc.Geometry.Circle(self.centroid, self.radius), self.display_color, 1)
-        display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+    def draw(self, display, display_color):
         x = self.centroid.X
         y = self.centroid.Y
-        x_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(x, self.k / 2), ghcomp.Addition(x, self.k / 2))
-        y_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(y, self.k / 2), ghcomp.Addition(y, self.k / 2))
-        rec, _ = ghcomp.Rectangle(ghcomp.XYPlane(), x_domain, y_domain, ghcomp.Division(self.r, 2))
-        rec, _ = ghcomp.Rotate(rec, self.theta, rc.Geometry.Point3d(x, y, 0))
+        x_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(x, self.config.k / 2), ghcomp.Addition(x, self.config.k / 2))
+        y_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(y, self.config.k / 2), ghcomp.Addition(y, self.config.k / 2))
+        rec, _ = ghcomp.Rectangle(ghcomp.XYPlane(), x_domain, y_domain, ghcomp.Division(self.config.r, 2))
+        rec, _ = ghcomp.Rotate(rec, self.theta, self.centroid)
         display.AddCurve(rec, display_color, 1)
 
         

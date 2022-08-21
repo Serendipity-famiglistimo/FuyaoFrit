@@ -16,7 +16,8 @@ from view.RowConfigPanel import RowConfigPanel
 from model.RowFrits import RowFrits
 from model.BandZone import BandZone
 import ghpythonlib.components as ghcomp
-
+import utils
+reload(utils)
 
 class BandPageView(forms.TabPage):
     
@@ -75,7 +76,7 @@ class BandPageView(forms.TabPage):
    
         self.layout.BeginVertical()
         for i in range(len(self.model.rows)):
-            self.layout.AddRow(RowConfigPanel(self.display, self.model.rows[i]))
+            self.layout.AddRow(RowConfigPanel(self, self.display, self.model.rows[i]))
         self.layout.EndVertical()
         self.layout.AddSpace()
         self.panel.Content = self.layout
@@ -84,7 +85,7 @@ class BandPageView(forms.TabPage):
 
     def AddButtonClick(self, sender, e):
         self.row_num += 1
-        row_frits = RowFrits(len(self.model.rows), self.model)
+        row_frits = RowFrits(len(self.model.rows))
        
         self.model.rows.append(row_frits)
         # row_frits.band_model = self.model  # type: ignore
@@ -92,8 +93,17 @@ class BandPageView(forms.TabPage):
     
     def LoadButtonClick(self, sender, e):
         # 清空现有的填充规则
-        self.model.rows.clear()
+        del self.model.rows[:]
+        fd = Rhino.UI.OpenFileDialog()
+        fd.Title = '加载规则文件'
+        fd.Filter = '规则文件 (*.xml)'
+        fd.MultiSelect = False
+        if fd.ShowOpenDialog():
+            file_name = fd.FileName
+            rows = RowFrits.load_band_xml(file_name)
+            self.model.rows = rows
         self.create_interface()
+        
         pass
     
     def OnGetRhinoObjects(self, sender, e):
