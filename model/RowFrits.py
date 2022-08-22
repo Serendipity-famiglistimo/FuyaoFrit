@@ -40,36 +40,129 @@ class RowFrits:
 
     
     def fill_dots(self):
+        print(self.row_id)
         if self.region.type == 'band' and self.region.curves[0]:
-            refer_curve = self.region.curves[0]
-            if self.region.is_flip[0] == True:
-                refer_curve, _ = ghcomp.FlipCurve(refer_curve)
-            curve = ghcomp.OffsetCurve(refer_curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
-            
-            # crv = ghcomp.OffsetCurve(curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
-            crv = refer_curve
-            crv_length = ghcomp.Length(crv)   
-            pts_num = int(crv_length / self.stepping)
-            # offset curve
-            pts = None
-            t = None
-            pts, _, t = ghcomp.DivideCurve(crv, pts_num, False)
-            if self.arrange_type == RowArrangeType.CROSS:
-                new_t = []
-                for i in range(len(t) - 1):
-                    new_t.append((t[i] + t[i + 1]) / 2)
-                t = new_t
-            pts, vec, _ = ghcomp.EvaluateCurve(crv, t)
-            pts, t, _ = ghcomp.CurveClosestPoint(pts, curve)
-            self.dots = list()
-            for i in range(len(pts)):
-                theta = utils.tgt_angle(vec[i])
-                dot = None
-                if self.dot_type == FritType.CIRCLE_DOT:
-                    dot = CircleDot(pts[i].X, pts[i].Y, self.circle_config.r)
-                elif self.dot_type == FritType.ROUND_RECT:
-                    dot = RoundRectDot(pts[i].X, pts[i].Y, self.round_rect_config, theta)
-                self.dots.append(dot)
+            self.fill_general_band()
+        elif self.region.type == 'block' and self.region.curves[0] and self.region.curves[1]:
+            if self.row_id >=0:
+                if self.position > 0:
+                    self.fill_transit_band()
+                else:
+                    self.fill_general_band()
+            else:
+                self.fill_bottom_band()
+
+    def fill_general_band(self):
+        refer_curve = self.region.curves[0]
+        if self.region.is_flip[0] == True:
+            refer_curve, _ = ghcomp.FlipCurve(refer_curve)
+        curve = ghcomp.OffsetCurve(refer_curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
+        
+        # crv = ghcomp.OffsetCurve(curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
+        crv = refer_curve
+        crv_length = ghcomp.Length(crv)   
+        pts_num = int(crv_length / self.stepping)
+        # offset curve
+        pts = None
+        t = None
+        pts, _, t = ghcomp.DivideCurve(crv, pts_num, False)
+        if self.arrange_type == RowArrangeType.CROSS:
+            new_t = []
+            for i in range(len(t) - 1):
+                new_t.append((t[i] + t[i + 1]) / 2)
+            t = new_t
+        pts, vec, _ = ghcomp.EvaluateCurve(crv, t)
+        pts, t, _ = ghcomp.CurveClosestPoint(pts, curve)
+        self.dots = list()
+        for i in range(len(pts)):
+            theta = utils.tgt_angle(vec[i])
+            dot = None
+            if self.dot_type == FritType.CIRCLE_DOT:
+                dot = CircleDot(pts[i].X, pts[i].Y, self.circle_config)
+            elif self.dot_type == FritType.ROUND_RECT:
+                dot = RoundRectDot(pts[i].X, pts[i].Y, self.round_rect_config, theta)
+            self.dots.append(dot)
+
+    def fill_transit_band(self):
+        refer_curve = self.region.curves[0]
+        if self.region.is_flip[0] == True:
+            refer_curve, _ = ghcomp.FlipCurve(refer_curve)
+        
+        inner_curve = self.region.curves[1]
+        if self.region.is_flip[1] == True:
+            inner_curve, _ = ghcomp.FlipCurve(inner_curve)
+
+        curve = ghcomp.OffsetCurve(refer_curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
+        
+        # crv = ghcomp.OffsetCurve(curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
+        crv = refer_curve
+        crv_length = ghcomp.Length(crv)   
+        pts_num = int(crv_length / self.stepping)
+        # offset curve
+        pts = None
+        t = None
+        pts, _, t = ghcomp.DivideCurve(crv, pts_num, False)
+        if self.arrange_type == RowArrangeType.CROSS:
+            new_t = []
+            for i in range(len(t) - 1):
+                new_t.append((t[i] + t[i + 1]) / 2)
+            t = new_t
+        pts, vec, _ = ghcomp.EvaluateCurve(crv, t)
+        inner_pts, _, dis = ghcomp.CurveClosestPoint(pts, inner_curve)
+        max_dis = max(dis)
+        new_pts, t, _ = ghcomp.CurveClosestPoint(pts, curve)
+        self.dots = list()
+        for i in range(len(pts)):
+            theta = utils.tgt_angle(vec[i])
+            dot = None
+            x = (1 - dis[i] / max_dis) * pts[i].X + (dis[i] / max_dis) * new_pts[i].X
+            y = (1 - dis[i] / max_dis) * pts[i].Y + (dis[i] / max_dis) * new_pts[i].Y
+            if self.dot_type == FritType.CIRCLE_DOT:
+                new_config = CircleDotConfig()
+                new_config.r = dis[i] / max_dis * self.circle_config.r
+                dot = CircleDot(x, y, new_config)
+            elif self.dot_type == FritType.ROUND_RECT:
+                k = dis[i] / max_dis * self.round_rect_config.k
+                r = dis[i] / max_dis * self.round_rect_config.r
+                new_config = RoundRectConfig()
+                new_config.k = k
+                new_config.r = r
+                dot = RoundRectDot(x, y, new_config, theta)
+            self.dots.append(dot)
+    
+    def fill_bottom_band(self):
+        refer_curve = self.region.curves[2]
+        if self.region.is_flip[0] == True:
+            refer_curve, _ = ghcomp.FlipCurve(refer_curve)
+        curve = ghcomp.OffsetCurve(refer_curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
+        
+        # crv = ghcomp.OffsetCurve(curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
+        crv = refer_curve
+        crv_length = ghcomp.Length(crv)   
+        pts_num = int(crv_length / self.stepping)
+        # offset curve
+        pts = None
+        t = None
+        pts, _, t = ghcomp.DivideCurve(crv, pts_num, False)
+        if self.arrange_type == RowArrangeType.CROSS:
+            new_t = []
+            for i in range(len(t) - 1):
+                new_t.append((t[i] + t[i + 1]) / 2)
+            t = new_t
+        pts, vec, _ = ghcomp.EvaluateCurve(crv, t)
+        pts, t, _ = ghcomp.CurveClosestPoint(pts, curve)
+        self.dots = list()
+        for i in range(len(pts)):
+            theta = utils.tgt_angle(vec[i])
+            dot = None
+            if self.dot_type == FritType.CIRCLE_DOT:
+                dot = CircleDot(pts[i].X, pts[i].Y, self.circle_config)
+            elif self.dot_type == FritType.ROUND_RECT:
+                dot = RoundRectDot(pts[i].X, pts[i].Y, self.round_rect_config, theta)
+            self.dots.append(dot)
+
+        
+
 
     @staticmethod
     def load_band_xml(file_path, region):
@@ -78,7 +171,7 @@ class RowFrits:
         items = xmldoc.SelectNodes("setting/band/row")
         rows = []
         for item in items:
-            nid = item.GetAttributeNode('id').Value
+            nid = int(item.GetAttributeNode('id').Value)
             row = RowFrits(nid, region)
             dot_type = item.GetAttributeNode('type').Value
             row.dot_type = {'circle': FritType.CIRCLE_DOT, 'roundrect': FritType.ROUND_RECT}[dot_type]
@@ -105,7 +198,7 @@ class RowFrits:
         items = xmldoc.SelectNodes("setting/block/row")
         rows = []
         for item in items:
-            nid = item.GetAttributeNode('id').Value
+            nid = int(item.GetAttributeNode('id').Value)
             row = RowFrits(nid, region)
             dot_type = item.GetAttributeNode('type').Value
             row.dot_type = {'circle': FritType.CIRCLE_DOT, 'roundrect': FritType.ROUND_RECT}[dot_type]

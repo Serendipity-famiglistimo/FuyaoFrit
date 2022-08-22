@@ -31,6 +31,7 @@ class BlockPage(forms.TabPage):
         self.model = BlockZone()
         self.row_panels = list()
         self.create_interface()
+        self.pick_event_btn = None
         
     def create_interface(self):
         
@@ -163,24 +164,23 @@ class BlockPage(forms.TabPage):
         self.create_interface()
     
     def OnGetRhinoObjects(self, sender, e):
-        print(sender)
-        # objectId = rs.GetCurveObject("Select curve:")
-        # if objectId is None: 
-        #     print("Warning: No curve is selected")
-        #     return
-        # print(objectId)
-        # print(self.model.curves)
-        # # python 2.7 clear list
-        # del self.model.curves[:]
-        # crv = objectId[0]
-        # if self.flip_check.Checked:
-        #     crv, _ = ghcomp.FlipCurve(crv)
-        # self.model.curves.append(crv)
-        # print(self.model.curves)
-        # self.create_interface()
+        
+        objectId = rs.GetCurveObject("Select curve:")
+        if objectId is None: 
+            print("Warning: No curve is selected")
+            return
+      
+        crv = objectId[0]
+        if self.pick_event_btn.Tag == 'refer_btn':
+            self.model.curves[0] = crv
+        elif self.pick_event_btn.Tag == 'inner_btn':
+            self.model.curves[1] = crv
+        elif self.pick_event_btn.Tag == 'outer_btn':
+            self.model.curves[2] = crv
+        self.create_interface()
     
     def PickReferCurve(self, sender, e):
-        print(sender.Tag)
+        self.pick_event_btn = sender
         Rhino.UI.EtoExtensions.PushPickButton(self, self.OnGetRhinoObjects)
     
     def clear_dots(self):
