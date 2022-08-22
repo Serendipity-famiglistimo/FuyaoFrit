@@ -15,13 +15,14 @@ from model.RowFrits import RowArrangeType, RowFrits
 from frits import FritType
 
 class RowConfigPanel(forms.GroupBox):
-    def __init__(self, parent, display, row_config):
+    def __init__(self, parent, row_config):
         self.parent = parent
         self.model = row_config
         self.Text = '第{}排'.format(row_config.row_id)
         self.setup_view()
-        self.display = display
-    
+        self.display = rc.Display.CustomDisplay(True)
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+
     def setup_view(self):
         self.RemoveAll()
         self.basic_setting_label = forms.Label(Text='基础设置:', Font = Font('Microsoft YaHei', 12.))
@@ -142,12 +143,11 @@ class RowConfigPanel(forms.GroupBox):
             pass
 
     def fill_row_frits(self, sender, e):
-        display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
-        if not self.model.curve:
-            # calculate curve
-            self.model.set_curve(self.parent.model.curves[0])
-        
+        self.clear_dots()
         self.model.fill_dots()
         for d in self.model.dots:
-            d.draw(self.display, display_color)
+            d.draw(self.display, self.display_color)
+    
+    def clear_dots(self):
+        self.display.Clear()
     

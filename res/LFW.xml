@@ -4,40 +4,84 @@
 <row id='0' type='roundrect' arrange='heading'>
     <k>0.55</k>
     <r>0.1375</r>
-    <stepping>2.3</stepping>
+    <stepping>1.2</stepping>
     <position>2.725</position>
 </row>
 <row id='1' type='roundrect' arrange='cross'>
     <k>0.775</k>
     <r>0.19375</r>
-    <stepping>2.3</stepping>
+    <stepping>1.2</stepping>
     <position>1.65</position>
 </row>
 <row id='2' type='roundrect' arrange='heading'>
     <k>1.0</k>
     <r>0.25</r>
-    <stepping>2.3</stepping>
+    <stepping>1.2</stepping>
     <position>0.5</position>
 </row>
 <row id='3' type='roundrect' arrange='heading'>
     <k>0.9</k>
     <r>0.225</r>
-    <stepping>2.3</stepping>
+    <stepping>1.2</stepping>
     <position>-0.495</position>
 </row>
 <row id='4' type='roundrect' arrange='cross'>
     <k>0.8</k>
     <r>0.2</r>
-    <stepping>2.3</stepping>
+    <stepping>1.2</stepping>
     <position>-1.65</position>
 </row>
 <row id='5' type='roundrect' arrange='heading'>
     <k>0.6</k>
     <r>0.15</r>
-    <stepping>2.3</stepping>
+    <stepping>1.2</stepping>
     <position>-2.7</position>
 </row>
 </band>
+<block>
+<row id ='0' type='circle' arrange='heading'>
+    <r>0.515</r>
+    <stepping>1.2</stepping>
+    <position>3.165</position>
+</row>
+<row id ='1' type='circle' arrange='heading'>
+    <r>0.515</r>
+    <stepping>1.2</stepping>
+    <position>1.725</position>
+</row>
+<row id ='2' type='roundrect' arrange='cross'>
+    <k>1.13</k>
+    <r>0.2</r>
+    <stepping>1.2</stepping>
+    <position>0.595</position>
+</row>
+<row id ='3' type='circle' arrange='cross'>
+    <k>1.15</k>
+    <r>0.2</r>
+    <stepping>1.2</stepping>
+    <position>-0.605</position>
+</row>
+<row id ='4' type='circle' arrange='cross'>
+    <r>0.585</r>
+    <stepping>1.2</stepping>
+    <position>-1.745</position>
+</row>
+<row id ='5' type='circle' arrange='cross'>
+    <r>0.5</r>
+    <stepping>1.2</stepping>
+    <position>-2.815</position>
+</row>
+<row id ='-2' type='circle' arrange='cross'>
+    <r>0.5</r>
+    <stepping>1.2</stepping>
+    <position>0.5</position>
+</row>
+<row id ='-1' type='circle' arrange='cross'>
+    <r>0.5</r>
+    <stepping>1.2</stepping>
+    <position>1.7</position>
+</row>
+</block>
 </setting>
 
 

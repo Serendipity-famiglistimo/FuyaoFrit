@@ -15,7 +15,9 @@ from Eto.Drawing import Size, Font, FontStyle
 import view.RowConfigPanel as RowConfigPanel
 import view.DefaultPage as DefaultPage
 import view.BandPage
+import view.BlockPage
 import model.RowFrits
+reload(view.BlockPage)
 reload(model.RowFrits)
 reload(view.BandPage)
 reload(RowConfigPanel)
@@ -32,8 +34,6 @@ class FritDialog(forms.Dialog[bool]):
         self.Closing += self.OnFormClosed
         self.MinimumSize = Size(800, 600)
 
-        self.display = Rhino.Display.CustomDisplay(True)
-        self.display.Clear()
 
         # 菜单
         self.create_menu()
@@ -43,8 +43,11 @@ class FritDialog(forms.Dialog[bool]):
         default_page = DefaultPage.DefaultPage()
         # default_page.create()
         self.tab.Pages.Add(default_page)
-        page = view.BandPage.BandPageView(self.display)
+        page = view.BandPage.BandPage()
         self.tab.Pages.Add(page)
+        page2 = view.BlockPage.BlockPage()
+        self.tab.Pages.Add(page2)
+        self.regions = [page, page2]
 
  
         # 标题
@@ -86,11 +89,13 @@ class FritDialog(forms.Dialog[bool]):
 
     # Start of the class functions
     def OnFormClosed(self, sender, e):
-        self.display.Clear()
-        pass
+        for region in self.regions:
+            region.clear_dots()
+        # self.display.Clear()
+    
 
     def AddBandRegionCommand(self, sender, e):
-        page = view.BandPage.BandPage(self.display)
+        page = view.BandPage.BandPage()
         self.tab.Pages.Add(page)
 
     def HandleTransitCurve(self, sender, e):

@@ -23,7 +23,7 @@ class RowArrangeType:
         return ['顶头', '交错']
 
 class RowFrits:
-    def __init__(self, row_id):
+    def __init__(self, row_id, region):
         self.row_id = row_id
         self.dot_type = FritType.CIRCLE_DOT
         self.dot_config = CircleDotConfig()
@@ -35,17 +35,19 @@ class RowFrits:
         
         self.arrange_type = RowArrangeType.HEADING
         self.dots = []
-        self.curve = None
-        self.refer_curve = None
+        self.region = region
     
-    def set_curve(self, refer_curve):
-        self.refer_curve = refer_curve
-        self.curve = ghcomp.OffsetCurve(refer_curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
+
     
     def fill_dots(self):
-        if self.curve:
+        if self.region.type == 'band' and self.region.curves[0]:
+            refer_curve = self.region.curves[0]
+            if self.region.is_flip[0] == True:
+                refer_curve, _ = ghcomp.FlipCurve(refer_curve)
+            curve = ghcomp.OffsetCurve(refer_curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
+            
             # crv = ghcomp.OffsetCurve(curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
-            crv = self.refer_curve
+            crv = refer_curve
             crv_length = ghcomp.Length(crv)   
             pts_num = int(crv_length / self.stepping)
             # offset curve
@@ -58,7 +60,7 @@ class RowFrits:
                     new_t.append((t[i] + t[i + 1]) / 2)
                 t = new_t
             pts, vec, _ = ghcomp.EvaluateCurve(crv, t)
-            pts, t, _ = ghcomp.CurveClosestPoint(pts, self.curve)
+            pts, t, _ = ghcomp.CurveClosestPoint(pts, curve)
             self.dots = list()
             for i in range(len(pts)):
                 theta = utils.tgt_angle(vec[i])
@@ -70,14 +72,41 @@ class RowFrits:
                 self.dots.append(dot)
 
     @staticmethod
-    def load_band_xml(file_path):
+    def load_band_xml(file_path, region):
         xmldoc = System.Xml.XmlDocument()
         xmldoc.Load(file_path)
         items = xmldoc.SelectNodes("setting/band/row")
         rows = []
         for item in items:
             nid = item.GetAttributeNode('id').Value
-            row = RowFrits(nid)
+            row = RowFrits(nid, region)
+            dot_type = item.GetAttributeNode('type').Value
+            row.dot_type = {'circle': FritType.CIRCLE_DOT, 'roundrect': FritType.ROUND_RECT}[dot_type]
+            arrange_type = item.GetAttributeNode('arrange').Value
+            row.arrange_type = {'heading': RowArrangeType.HEADING, 'cross': RowArrangeType.CROSS }[arrange_type]
+            val = dict()
+
+            for node in item.ChildNodes:
+                val[node.Name] = float(node.InnerText)
+            row.stepping = val['stepping']
+            row.position = val['position']
+            if row.dot_type == FritType.CIRCLE_DOT:
+                row.circle_config.r = val['r']
+            elif row.dot_type == FritType.ROUND_RECT:
+                row.round_rect_config.k = val['k']
+                row.round_rect_config.r = val['r']
+            rows.append(row)
+        return rows
+
+    @staticmethod
+    def load_block_xml(file_path, region):
+        xmldoc = System.Xml.XmlDocument()
+        xmldoc.Load(file_path)
+        items = xmldoc.SelectNodes("setting/block/row")
+        rows = []
+        for item in items:
+            nid = item.GetAttributeNode('id').Value
+            row = RowFrits(nid, region)
             dot_type = item.GetAttributeNode('type').Value
             row.dot_type = {'circle': FritType.CIRCLE_DOT, 'roundrect': FritType.ROUND_RECT}[dot_type]
             arrange_type = item.GetAttributeNode('arrange').Value
