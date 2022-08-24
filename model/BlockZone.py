@@ -12,9 +12,10 @@ class BlockZone(Zone):
         Zone.__init__(self)
         self.type = 'block'
         self.rows = list()
+        self.holes = list()
         self.curves = [None, None, None]
         self.is_flip = [False, False, False]
-        self.relations = {}
+        
+                    
     
-    def add_relation(self):
-        pass
+   

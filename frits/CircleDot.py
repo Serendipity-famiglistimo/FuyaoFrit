@@ -12,6 +12,12 @@ from frits.Dot import Dot
 class CircleDotConfig:
     def __init__(self):
         self.r = 0
+    
+    def top(self):
+        return self.r
+    
+    def bottom(self):
+        return self.r
 
 class CircleDot(Dot):
     def __init__(self, x, y, config):

@@ -14,6 +14,12 @@ class RoundRectConfig:
     def __init__(self):
         self.k = 0
         self.r = 0
+    
+    def top(self):
+        return self.k / 2
+    
+    def bottom(self):
+        return self.k / 2
 
 class RoundRectDot(Dot):
     def __init__(self, x, y, config, theta):

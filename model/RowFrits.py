@@ -53,7 +53,7 @@ class RowFrits:
                 self.fill_bottom_band()
 
     def fill_general_band(self):
-        refer_curve = self.region.curves[0]
+        refer_curve = self.region.curves[0] 
         if self.region.is_flip[0] == True:
             refer_curve, _ = ghcomp.FlipCurve(refer_curve)
         curve = ghcomp.OffsetCurve(refer_curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
@@ -161,8 +161,43 @@ class RowFrits:
                 dot = RoundRectDot(pts[i].X, pts[i].Y, self.round_rect_config, theta)
             self.dots.append(dot)
 
+    def get_bottom_curve(self):
+        refer_curve = None
+        if self.row_id >= 0:
+            refer_curve = self.region.curves[0]
+            if self.region.is_flip[0] == True:
+                refer_curve, _ = ghcomp.FlipCurve(refer_curve)
+            
+        else:
+            refer_curve = self.region.curves[2]
+            if self.region.is_flip[2] == True:
+                refer_curve, _ = ghcomp.FlipCurve(refer_curve)
+        dis = 0
+        if self.dot_type == FritType.CIRCLE_DOT:
+            dis = self.circle_config.bottom()
+        elif self.dot_type == FritType.ROUND_RECT:
+            dis = self.round_rect_config.bottom()
+        curve = ghcomp.OffsetCurve(refer_curve, plane = ghcomp.XYPlane(), distance=self.position + dis, corners=1)
+        return curve
         
-
+    def get_top_curve(self):
+        refer_curve = None
+        if self.row_id >= 0:
+            refer_curve = self.region.curves[0]
+            if self.region.is_flip[0] == True:
+                refer_curve, _ = ghcomp.FlipCurve(refer_curve)
+            
+        else:
+            refer_curve = self.region.curves[2]
+            if self.region.is_flip[2] == True:
+                refer_curve, _ = ghcomp.FlipCurve(refer_curve)
+        dis = 0
+        if self.dot_type == FritType.CIRCLE_DOT:
+            dis = self.circle_config.top()
+        elif self.dot_type == FritType.ROUND_RECT:
+            dis = self.round_rect_config.top()
+        curve = ghcomp.OffsetCurve(refer_curve, plane = ghcomp.XYPlane(), distance=self.position - dis, corners=1)
+        return curve
 
     @staticmethod
     def load_band_xml(file_path, region):

@@ -6,9 +6,11 @@
 # @Email: wangxu.93@hotmail.com
 # @Copyright (c) 2022 Institute of Trustworthy Network and System, Tsinghua University
 '''
+import imp
 import Rhino
 import Eto.Forms as forms
 import Eto.Drawing as drawing
+from model.HoleFrits import HoleFrits
 import rhinoscriptsyntax as rs
 import ghpythonlib.components as ghcomp
 from Eto.Drawing import Size, Font, FontStyle
@@ -16,7 +18,9 @@ from model.BlockZone import BlockZone
 import model.BlockZone
 reload(model.BlockZone)
 from model.RowFrits import RowFrits
+from model.HoleFrits import HoleFrits
 from RowConfigPanel import RowConfigPanel
+from HoleConfigPanel import HoleConfigPanel
 
 class BlockPage(forms.TabPage):
     
@@ -30,6 +34,7 @@ class BlockPage(forms.TabPage):
         self.panel.Padding = drawing.Padding(10)
         self.model = BlockZone()
         self.row_panels = list()
+        self.hole_panels = list()
         self.create_interface()
         self.pick_event_btn = None
         
@@ -127,8 +132,27 @@ class BlockPage(forms.TabPage):
             rpanel = RowConfigPanel(self, self.model.rows[i])
             self.layout.AddRow(rpanel)
             self.row_panels.append(rpanel)
-
         self.layout.EndVertical()
+
+        del self.hole_panels[:]
+        self.layout.BeginVertical()
+        for i in range(len(self.model.holes)):
+            rpanel = HoleConfigPanel(self, self.model.holes[i])
+            self.layout.AddRow(rpanel)
+            self.hole_panels.append(rpanel)
+        self.layout.EndVertical()
+
+        # self.block_fill_label = forms.Label(Text='- 填充块状区域', Font = Font('Microsoft YaHei', 12.))
+        # self.block_fill_btn = forms.Button(Text='填充块状部分')
+        # self.block_fill_btn.Size = Size(100, 30)
+        # self.block_fill_btn.Click += self.BlockFillBtnClick
+
+        # self.layout.BeginVertical()
+        # self.layout.AddRow(self.block_fill_label, None)
+        # self.layout.AddRow(self.block_fill_btn, None)
+        # self.layout.EndVertical()
+
+
         self.layout.AddSpace()
         self.panel.Content = self.layout
         self.Content = self.panel
@@ -160,11 +184,12 @@ class BlockPage(forms.TabPage):
         if fd.ShowOpenDialog():
             file_name = fd.FileName
             rows = RowFrits.load_block_xml(file_name, self.model)
+            holes = HoleFrits.load_block_xml(file_name, self.model)
+            self.model.holes = holes
             self.model.rows = rows
         self.create_interface()
     
     def OnGetRhinoObjects(self, sender, e):
-        
         objectId = rs.GetCurveObject("Select curve:")
         if objectId is None: 
             print("Warning: No curve is selected")
@@ -183,6 +208,10 @@ class BlockPage(forms.TabPage):
         self.pick_event_btn = sender
         Rhino.UI.EtoExtensions.PushPickButton(self, self.OnGetRhinoObjects)
     
+
+
     def clear_dots(self):
         for r in self.row_panels:
+            r.clear_dots()
+        for r in self.hole_panels:
             r.clear_dots()

@@ -17,6 +17,10 @@ import view.DefaultPage as DefaultPage
 import view.BandPage
 import view.BlockPage
 import model.RowFrits
+import model.HoleFrits
+import view.HoleConfigPanel
+reload(model.HoleFrits)
+reload(view.HoleConfigPanel)
 reload(view.BlockPage)
 reload(model.RowFrits)
 reload(view.BandPage)

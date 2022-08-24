@@ -32,6 +32,12 @@ class TransitCurveDialog(forms.Dialog[bool]):
 
         self.right_label = forms.Label(Text='右侧偏移距离：')
         self.right_text = forms.TextBox(Text='0.0')
+
+        self.layout = forms.DynamicLayout()
+
+        self.layout.DefaultSpacing = drawing.Size(8, 8)
+        self.layout.BeginVertical(padding=drawing.Padding(20, 0, 0, 0))
+        self.layout.AddRow(self.refer_btn, None)
         
     
     def OnGetRhinoObjects(self, sender, e):

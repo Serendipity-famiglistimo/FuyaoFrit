@@ -81,6 +81,11 @@
     <stepping>2.3</stepping>
     <position>1.7</position>
 </row>
+<hole id ='0' type='circle' arrange='cross'>
+    <r>0.5</r>
+    <stepping>2.3</stepping>
+    <vspace>1.7</vspace>
+</hole>
 </block>
 </setting>
 
