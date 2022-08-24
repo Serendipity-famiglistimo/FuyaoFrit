@@ -132,7 +132,7 @@ class RowFrits:
     
     def fill_bottom_band(self):
         refer_curve = self.region.curves[2]
-        if self.region.is_flip[0] == True:
+        if self.region.is_flip[2] == True:
             refer_curve, _ = ghcomp.FlipCurve(refer_curve)
         curve = ghcomp.OffsetCurve(refer_curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
         
