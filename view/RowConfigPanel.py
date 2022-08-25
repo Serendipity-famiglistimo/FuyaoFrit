@@ -67,6 +67,13 @@ class RowConfigPanel(forms.GroupBox):
         self.arrage_type_combo.SelectedIndex = self.model.arrange_type
         self.arrage_type_combo.SelectedIndexChanged += self.change_row_arrange_type
 
+        self.transit_check = forms.CheckBox(Text='是否过渡半径')
+        self.transit_check.Checked = self.model.is_transit
+        self.transit_check.CheckedChanged += self.transit_check_changed
+        self.transit_input = forms.TextBox(Text='0')
+        self.transit_input.Size = drawing.Size(60, -1)
+        self.transit_input.TextChanged += self.transit_input_changed
+
         self.config_panel = forms.Panel()
         self.update_btn = forms.Button(Text='填充花点')
         self.update_btn.Size = drawing.Size(100, 30)
@@ -139,6 +146,15 @@ class RowConfigPanel(forms.GroupBox):
     def position_input_changed(self, sender, e):
         try:
             self.model.position = float(self.position_input.Text)
+        except:
+            pass
+    
+    def transit_check_changed(self, sender, e):
+        self.model.is_transit = self.transit_check.Checked
+    
+    def transit_input_changed(self, sender, e):
+        try:
+            self.model.transit_radius = float(self.transit_input.Text)
         except:
             pass
 

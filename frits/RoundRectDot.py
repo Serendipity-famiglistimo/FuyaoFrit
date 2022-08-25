@@ -37,5 +37,3 @@ class RoundRectDot(Dot):
         rec, _ = ghcomp.Rectangle(ghcomp.XYPlane(), x_domain, y_domain, ghcomp.Division(self.config.r, 2))
         rec, _ = ghcomp.Rotate(rec, self.theta, self.centroid)
         display.AddCurve(rec, display_color, 1)
-
-        

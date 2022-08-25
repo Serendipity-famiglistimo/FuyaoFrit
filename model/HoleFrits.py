@@ -43,6 +43,7 @@ class HoleFrits:
         self.border_curve = None
     
     def fill_dots(self):
+        del self.dots[:]
         print(self.hole_id)
         row_num = len(self.region.rows)
         top_curve = None

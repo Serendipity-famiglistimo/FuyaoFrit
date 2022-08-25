@@ -124,6 +124,7 @@ class FritDialog(forms.Dialog[bool]):
             new_pts.append(Rhino.Geometry.Point3d(x, y, 0))
         # ply_line = Rhino.Geometry.Polyline(new_pts)
         rs.AddInterpCurve(new_pts)
+        print('finish')
 
 
     def TransitCurveCommand(self, sender, e):

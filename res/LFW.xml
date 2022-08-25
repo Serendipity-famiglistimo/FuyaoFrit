@@ -41,11 +41,15 @@
 <block>
 <row id ='0' type='circle' arrange='heading'>
     <r>0.515</r>
+    <transit>0.275</transit>
+    <transitposition>2.725</transitposition>
     <stepping>2.3</stepping>
     <position>3.165</position>
 </row>
 <row id ='1' type='circle' arrange='cross'>
-    <r>0.515</r>
+    <r>0.555</r>
+    <transit>0.3875</transit>
+    <transitposition>1.65</transitposition>
     <stepping>2.3</stepping>
     <position>1.725</position>
 </row>

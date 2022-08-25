@@ -32,23 +32,34 @@ class RowFrits:
 
         self.circle_config = CircleDotConfig()
         self.round_rect_config = RoundRectConfig()
+
+        self.is_transit = False
+        self.transit_radius = 0
+        self.transit_position = 0
         
         self.arrange_type = RowArrangeType.HEADING
         self.dots = []
         self.region = region
-    
-
-    
+     
     def fill_dots(self):
+        del self.dots[:]
         print(self.row_id)
         if self.region.type == 'band' and self.region.curves[0]:
-            self.fill_general_band()
+            if self.is_transit:
+                self.fill_transit_band()
+                print('fill transit band')
+            else:
+                self.fill_general_band()
+                print('fill general band')
         elif self.region.type == 'block' and self.region.curves[0] and self.region.curves[1]:
-            if self.row_id >=0:
-                if self.position > 0:
+            if self.row_id >= 0:
+                if self.is_transit:
+                    
                     self.fill_transit_band()
+                    print('fill transit band')
                 else:
                     self.fill_general_band()
+                    print('fill general band')
             else:
                 self.fill_bottom_band()
 
@@ -110,20 +121,35 @@ class RowFrits:
         pts, vec, _ = ghcomp.EvaluateCurve(crv, t)
         inner_pts, _, dis = ghcomp.CurveClosestPoint(pts, inner_curve)
         max_dis = max(dis)
+        min_dis = min(dis)
         new_pts, t, _ = ghcomp.CurveClosestPoint(pts, curve)
         self.dots = list()
         for i in range(len(pts)):
             theta = utils.tgt_angle(vec[i])
             dot = None
-            x = (1 - dis[i] / max_dis) * pts[i].X + (dis[i] / max_dis) * new_pts[i].X
-            y = (1 - dis[i] / max_dis) * pts[i].Y + (dis[i] / max_dis) * new_pts[i].Y
+            tp = dis[i]
+            rp = max_dis
+            if self.transit_position != 0:
+                tp = (dis[i] - min_dis) / (max_dis - min_dis) * (self.position - self.transit_position) + self.transit_position
+                # tr = 0
+                # if self.dot_type == FritType.CIRCLE_DOT:
+                #     tr = (dis[i] - min_dis) / (max_dis - min_dis) * (self.circle_config.r - self.transit_radius) + self.transit_radius
+                # elif self.dot_type == FritType.ROUND_RECT:
+                #     tr = (dis[i] - min_dis) / (max_dis - min_dis) * (self.round_rect_config.k - self.transit_radius) + self.transit_radius
+                tp = tp
+                rp = self.position
+            else:
+                tp = 1.0
+                rp = 1.0
+            x = (1 - tp / rp) * pts[i].X + (tp / rp) * new_pts[i].X
+            y = (1 - tp / rp) * pts[i].Y + (tp / rp) * new_pts[i].Y
             if self.dot_type == FritType.CIRCLE_DOT:
                 new_config = CircleDotConfig()
-                new_config.r = dis[i] / max_dis * self.circle_config.r
+                new_config.r = (dis[i] - min_dis) / (max_dis - min_dis) * (self.circle_config.r - self.transit_radius) + self.transit_radius
                 dot = CircleDot(x, y, new_config)
             elif self.dot_type == FritType.ROUND_RECT:
-                k = dis[i] / max_dis * self.round_rect_config.k
-                r = dis[i] / max_dis * self.round_rect_config.r
+                k = (dis[i] - min_dis) / (max_dis - min_dis) * (self.round_rect_config.k - self.transit_radius) + self.transit_radius
+                r = k / self.round_rect_config.k * self.round_rect_config.r # dis[i] / max_dis * self.round_rect_config.r
                 new_config = RoundRectConfig()
                 new_config.k = k
                 new_config.r = r
@@ -213,7 +239,6 @@ class RowFrits:
             arrange_type = item.GetAttributeNode('arrange').Value
             row.arrange_type = {'heading': RowArrangeType.HEADING, 'cross': RowArrangeType.CROSS }[arrange_type]
             val = dict()
-
             for node in item.ChildNodes:
                 val[node.Name] = float(node.InnerText)
             row.stepping = val['stepping']
@@ -223,6 +248,11 @@ class RowFrits:
             elif row.dot_type == FritType.ROUND_RECT:
                 row.round_rect_config.k = val['k']
                 row.round_rect_config.r = val['r']
+            if 'transit' in val.keys():
+                row.is_transit = True
+                row.transit_radius = val['transit']
+                if 'transitposition' in val.keys():
+                    row.transit_position = val['transitposition']
             rows.append(row)
         return rows
 
@@ -250,5 +280,10 @@ class RowFrits:
             elif row.dot_type == FritType.ROUND_RECT:
                 row.round_rect_config.k = val['k']
                 row.round_rect_config.r = val['r']
+            if 'transit' in val.keys():
+                row.is_transit = True
+                row.transit_radius = val['transit']
+                if 'transitposition' in val.keys():
+                    row.transit_position = val['transitposition']
             rows.append(row)
         return rows

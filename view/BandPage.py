@@ -34,6 +34,7 @@ class BandPage(forms.TabPage):
         self.panel.Padding = drawing.Padding(10)
         self.model = BandZone()
         self.row_panels = list()
+        self.pick_event_btn = None
         self.create_interface()
         
     def create_interface(self):
@@ -44,6 +45,7 @@ class BandPage(forms.TabPage):
         self.pick_label = forms.Label(Text='- 拾取几何轮廓', Font = Font('Microsoft YaHei', 12.))
         self.refer_btn = forms.Button(Text='选取参考轮廓线')
         self.refer_btn.Size = Size(100, 30)
+        self.refer_btn.Tag = 'refer_btn'
         self.refer_btn.Click += self.PickReferCurve
         # checkbox
         self.flip_check = forms.CheckBox()
@@ -57,6 +59,24 @@ class BandPage(forms.TabPage):
         else:
             self.is_pick_label.Text = '选择了曲线{0}.'.format(self.model.curves[0])
             self.is_pick_label.TextColor = drawing.Color.FromArgb(44,162,95)
+
+        self.inner_btn = forms.Button(Text='选取参考线')
+        self.inner_btn.Size = Size(100, 30)
+        self.inner_btn.Click += self.PickReferCurve
+        self.inner_btn.Tag = 'inner_btn'
+
+        # checkbox
+        self.flip_check2 = forms.CheckBox()
+        self.flip_check2.Tag = 'is_inner_flip'
+        self.flip_check2.CheckedChanged += self.FlipCheckClick
+        self.flip_check2.Text = '是否反转该曲线'
+        self.is_pick_label2 = forms.Label()
+        if self.model.curves[1] is None:
+            self.is_pick_label2.Text = '未选择曲线'
+            self.is_pick_label2.TextColor = drawing.Color.FromArgb(255, 0, 0)
+        else:
+            self.is_pick_label2.Text = '选择了曲线{0}.'.format(self.model.curves[1])
+            self.is_pick_label2.TextColor = drawing.Color.FromArgb(44,162,95)
 
         self.fill_label = forms.Label(Text='- 设置或加载填充规则', Font = Font('Microsoft YaHei', 12.))
         self.fill_btn = forms.Button(Text='手动添加新行')
@@ -73,6 +93,11 @@ class BandPage(forms.TabPage):
         self.layout.AddRow(self.refer_btn, None)
         self.layout.AddRow(self.flip_check, None)
         self.layout.AddRow(self.is_pick_label, None)
+
+        self.layout.AddRow(self.inner_btn, None)
+        self.layout.AddRow(self.flip_check2, None)
+        self.layout.AddRow(self.is_pick_label2, None)
+
         self.layout.EndVertical()
         self.layout.AddSeparateRow(self.fill_label, None)
         self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn, self.load_btn, None])
@@ -100,6 +125,9 @@ class BandPage(forms.TabPage):
     def FlipCheckClick(self, sender, e):
         if sender.Tag == 'is_refer_flip':
             self.model.is_flip[0] = self.flip_check.Checked
+        elif sender.Tag == 'is_inner_flip':
+            self.model.is_flip[1] = self.flip_check2.Checked
+        
     
     def LoadButtonClick(self, sender, e):
         # 清空现有的填充规则
@@ -121,17 +149,20 @@ class BandPage(forms.TabPage):
         if objectId is None: 
             print("Warning: No curve is selected")
             return
-        print(objectId)
-        print(self.model.curves)
-        # python 2.7 clear list
-        self.model.curves[0] = None
+      
         crv = objectId[0]
-        self.model.curves[0] = crv
-        print(self.model.curves)
+        if self.pick_event_btn.Tag == 'refer_btn':
+            self.model.curves[0] = crv
+        elif self.pick_event_btn.Tag == 'inner_btn':
+            self.model.curves[1] = crv
+        elif self.pick_event_btn.Tag == 'outer_btn':
+            self.model.curves[2] = crv
         self.create_interface()
     
     def PickReferCurve(self, sender, e):
+        self.pick_event_btn = sender
         Rhino.UI.EtoExtensions.PushPickButton(self, self.OnGetRhinoObjects)
+    
     
     def clear_dots(self):
         for r in self.row_panels:
