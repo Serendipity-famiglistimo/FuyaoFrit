@@ -11,6 +11,7 @@ from frits.Dot import Dot
 import rhinoscriptsyntax as rs
 import ghpythonlib.components as ghcomp
 import Rhino.Geometry as rg
+import scriptcontext
 
 class ArcDotConfig:
     def __init__(self):
@@ -84,8 +85,8 @@ class ArcDot(Dot):
         crv, _ = ghcomp.Pufferfish.CloseCurve(crv, 0, 0.5, 0)
         rotate_angle = ghcomp.Addition(self.theta, ghcomp.Pi())
         crv, _ = ghcomp.Rotate(crv, rotate_angle, self.centroid)
-        pts, _, _ = ghcomp.ControlPoints(crv)
-        
-        return rs.AddCurve(pts)
+        # pts, _, _ = ghcomp.ControlPoints(crv)
+        rc = scriptcontext.doc.Objects.AddCurve(crv)
+        return rc
         # return rs.AddCircle(self.centroid, self.config.r)
           

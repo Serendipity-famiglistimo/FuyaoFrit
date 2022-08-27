@@ -46,7 +46,6 @@ class RoundRectDot(Dot):
         y_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(y, self.config.k / 2), ghcomp.Addition(y, self.config.k / 2))
         rec, _ = ghcomp.Rectangle(rs.WorldXYPlane(), x_domain, y_domain, ghcomp.Division(self.config.r, 2))
         rec, _ = ghcomp.Rotate(rec, self.theta, self.centroid)
-        pts, _, _ = ghcomp.ControlPoints(rec)
-        
-        return rs.AddCurve(pts)
+        rc = scriptcontext.doc.Objects.AddCurve(rec)
+        return rc
         
