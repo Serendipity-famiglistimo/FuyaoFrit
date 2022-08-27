@@ -602,7 +602,7 @@ class FuyaoFrit:
         return rec
         
     def tgt_angle(self, tgt):
-        angle, _ = ghcomp.Angle(tgt, ghcomp.UnitX())
+        angle, _ = ghcomp.Angle(tgt, ghcomp.UnitX(1))
         _, y, _ = ghcomp.Deconstruct(tgt)
         larger_pattern, _ = ghcomp.LargerThan(y,0)
         factor = ghcomp.Subtraction(ghcomp.Multiplication(larger_pattern,2),1)
@@ -682,7 +682,7 @@ class FuyaoFrit:
         
         if len(self.half_pts)!=0:
             half_crv, _ = self.half_circle(self.half_pts, self.half_dirs, self.half_rs, self.half_sr)
-            #half_crv0, _ = self.half_circle(self.half_pts, ghcomp.UnitX(), self.half_rs, self.half_sr)
+            #half_crv0, _ = self.half_circle(self.half_pts, ghcomp.UnitX(1), self.half_rs, self.half_sr)
             for i in range(len(half_crv)):
                 self.display.AddCurve(half_crv[i], self.display_color, 1)
                 #self.display.AddCurve(half_crv0[i], self.display_color, 1)
