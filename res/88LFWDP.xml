@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<setting>
+<band>
+<row id='0' type='arcdot' arrange='heading'>
+    <lr>0.775</lr>
+    <sr>0.775</sr>
+    <angle>120</angle>
+    <stepping>2.7</stepping>
+    <position>0</position>
+</row>
+<row id='1' type='circle' arrange='cross'>
+    <r>0.65</r>
+    <stepping>2.7</stepping>
+    <position>1.0</position>
+</row>
+<row id='2' type='circle' arrange='heading'>
+    <r>0.5</r>
+    <stepping>2.7</stepping>
+    <position>1.7</position>
+</row>
+</band>
+</setting>
+
+
+
+
+

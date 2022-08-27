@@ -18,6 +18,8 @@ import view.BandPage
 import view.BlockPage
 import model.RowFrits
 import model.HoleFrits
+import frits.ArcDot
+reload(frits.ArcDot)
 import view.HoleConfigPanel
 reload(model.HoleFrits)
 reload(view.HoleConfigPanel)

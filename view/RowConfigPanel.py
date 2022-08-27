@@ -40,6 +40,22 @@ class RowConfigPanel(forms.GroupBox):
         self.circle_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.r))
         self.circle_dot_radius.Size = drawing.Size(60, -1)
         self.circle_dot_radius.TextChanged += self.circle_dot_radius_changed
+
+        self.arc_dot_large_radius_label = forms.Label(Text='大弧半径：')
+        self.arc_dot_large_radius = forms.TextBox(Text='{0}'.format(self.model.arc_config.lr))
+        self.arc_dot_large_radius.Size = drawing.Size(60, -1)
+        self.arc_dot_large_radius.TextChanged += self.arc_dot_large_radius_changed
+
+        self.arc_dot_small_radius_label = forms.Label(Text='小弧半径：')
+        self.arc_dot_small_radius = forms.TextBox(Text='{0}'.format(self.model.arc_config.sr))
+        self.arc_dot_small_radius.Size = drawing.Size(60, -1)
+        self.arc_dot_small_radius.TextChanged += self.arc_dot_small_radius_changed
+
+        self.arc_dot_angle_label = forms.Label(Text='弧度：')
+        self.arc_dot_angle = forms.TextBox(Text='{0}'.format(self.model.arc_config.angle))
+        self.arc_dot_angle.Size = drawing.Size(60, -1)
+        self.arc_dot_angle.TextChanged += self.arc_dot_angle_changed
+
         
         self.round_rect_edge_label = forms.Label(Text='圆角矩形边长：')
         self.round_rect_edge = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.k))
@@ -102,6 +118,10 @@ class RowConfigPanel(forms.GroupBox):
         elif self.model.dot_type == FritType.ROUND_RECT:
             self.layout.AddRow(self.dot_type_label, self.dot_type_combo, self.round_rect_edge_label, self.round_rect_edge, self.round_rect_radius_label,
                 self.round_rect_radius, self.stepping_label, self.stepping_input, self.position_label, self.position_input, None)
+        elif self.model.dot_type == FritType.ARC_CIRCLE:
+            self.layout.AddRow(self.dot_type_label, self.dot_type_combo, self.arc_dot_large_radius_label, self.arc_dot_large_radius,
+                self.arc_dot_small_radius_label, self.arc_dot_small_radius, self.arc_dot_angle_label, self.arc_dot_angle)
+
         self.layout.EndVertical()
         self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
         self.layout.AddRow(self.arrange_setting_label, None)
@@ -130,6 +150,24 @@ class RowConfigPanel(forms.GroupBox):
     def circle_dot_radius_changed(self, sender, e):
         try:
             self.model.circle_config.r = float(self.circle_dot_radius.Text)
+        except:
+            pass
+    
+    def arc_dot_large_radius_changed(self, sender, e):
+        try:
+            self.model.arc_config.lr = float(self.arc_dot_large_radius.Text)
+        except:
+            pass
+    
+    def arc_dot_small_radius_changed(self, sender, e):
+        try:
+            self.model.arc_config.sr = float(self.arc_dot_small_radius.Text)
+        except:
+            pass
+    
+    def arc_dot_angle_changed(self, sender, e):
+        try:
+            self.model.arc_config.angle = float(self.arc_dot_angle.Text)
         except:
             pass
     
