@@ -27,7 +27,7 @@ class ArcDotConfig:
 
 class ArcDot(Dot):
     def __init__(self, x, y, config, theta):
-        Dot.__init__(self, y, y, config, theta)
+        Dot.__init__(self, x, y, config, theta)
     
     def draw(self, display, display_color):
         # draw the large circle

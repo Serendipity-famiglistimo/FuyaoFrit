@@ -23,7 +23,7 @@ class CircleDotConfig:
 
 class CircleDot(Dot):
     def __init__(self, x, y, config, theta=0):
-        Dot.__init__(self, y, y, config, theta)
+        Dot.__init__(self, x, y, config, theta)
     
     def draw(self, display, display_color):
         self.curve = rc.Geometry.Circle(self.centroid, self.config.r)
