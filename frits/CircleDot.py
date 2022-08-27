@@ -9,6 +9,7 @@
 import Rhino as rc
 from frits.Dot import Dot
 import rhinoscriptsyntax as rs
+import scriptcontext
 
 class CircleDotConfig:
     def __init__(self):
@@ -21,16 +22,16 @@ class CircleDotConfig:
         return self.r
 
 class CircleDot(Dot):
-    def __init__(self, x, y, config):
-        Dot.__init__(self)
-        self.centroid.X = x
-        self.centroid.Y = y
-        self.config = config
-     
+    def __init__(self, x, y, config, theta=0):
+        Dot.__init__(self, y, y, config, theta)
     
     def draw(self, display, display_color):
-        display.AddCircle(rc.Geometry.Circle(self.centroid, self.config.r), display_color, 1)
+        self.curve = rc.Geometry.Circle(self.centroid, self.config.r)
+        display.AddCircle(self.curve, display_color, 1)
     
     def bake(self):
-        return rs.AddCircle(self.centroid, self.config.r)
+        if self.curve:
+            rc = scriptcontext.doc.Objects.AddCircle(self.curve)
+            return rc
+        return None
             

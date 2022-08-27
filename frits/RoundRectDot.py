@@ -10,6 +10,7 @@ import Rhino as rc
 from frits.Dot import Dot
 import ghpythonlib.components as ghcomp
 import rhinoscriptsyntax as rs
+import scriptcontext
 
 class RoundRectConfig:
     def __init__(self):
@@ -24,11 +25,7 @@ class RoundRectConfig:
 
 class RoundRectDot(Dot):
     def __init__(self, x, y, config, theta):
-        Dot.__init__(self)
-        self.centroid.X = x
-        self.centroid.Y = y
-        self.config = config
-        self.theta = theta
+        Dot.__init__(self, y, y, config, theta)
     
     def draw(self, display, display_color):
         x = self.centroid.X
@@ -37,15 +34,12 @@ class RoundRectDot(Dot):
         y_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(y, self.config.k / 2), ghcomp.Addition(y, self.config.k / 2))
         rec, _ = ghcomp.Rectangle(rs.WorldXYPlane(), x_domain, y_domain, ghcomp.Division(self.config.r, 2))
         rec, _ = ghcomp.Rotate(rec, self.theta, self.centroid)
+        self.curve = rec
         display.AddCurve(rec, display_color, 1)
     
     def bake(self):
-        x = self.centroid.X
-        y = self.centroid.Y
-        x_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(x, self.config.k / 2), ghcomp.Addition(x, self.config.k / 2))
-        y_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(y, self.config.k / 2), ghcomp.Addition(y, self.config.k / 2))
-        rec, _ = ghcomp.Rectangle(rs.WorldXYPlane(), x_domain, y_domain, ghcomp.Division(self.config.r, 2))
-        rec, _ = ghcomp.Rotate(rec, self.theta, self.centroid)
-        rc = scriptcontext.doc.Objects.AddCurve(rec)
-        return rc
+        if self.curve:
+            rc = scriptcontext.doc.Objects.AddCurve(self.curve)
+            return rc
+        return None
         

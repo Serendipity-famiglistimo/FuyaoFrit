@@ -7,11 +7,13 @@
 # @Copyright (c) 2022 Institute of Trustworthy Network and System, Tsinghua University
 '''
 import Rhino as rc
+
 class Dot:
-    def __init__(self):
-        self.centroid = rc.Geometry.Point3d(0, 0, 0)
-        self.theta = 0
-        self.config = None
+    def __init__(self, x, y, config, theta):
+        self.centroid = rc.Geometry.Point3d(x, y, 0)
+        self.theta = theta
+        self.config = config
+        self.curve = None
 
     def draw(self):
         print("Dot: this function should not be executed!")

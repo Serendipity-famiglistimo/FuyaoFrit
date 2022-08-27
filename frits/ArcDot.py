@@ -27,11 +27,7 @@ class ArcDotConfig:
 
 class ArcDot(Dot):
     def __init__(self, x, y, config, theta):
-        Dot.__init__(self)
-        self.centroid.X = x
-        self.centroid.Y = y
-        self.config = config
-        self.theta = theta
+        Dot.__init__(self, y, y, config, theta)
     
     def draw(self, display, display_color):
         # draw the large circle
