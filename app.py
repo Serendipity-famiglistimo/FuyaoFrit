@@ -124,8 +124,8 @@ class FritDialog(forms.Dialog[bool]):
             print("Warning: No curve is selected")
             return
         crv = objectId[0]
-        l = rs.GetReal("Set left offset:")
-        r = rs.GetReal("Set right offset:")
+        l = rs.GetReal("Set offset1:")
+        r = rs.GetReal("Set offset2:")
         left_curve = ghcomp.OffsetCurve(crv, distance=l, corners=1)
         right_curve = ghcomp.OffsetCurve(crv, distance=r, corners=1)
         left_pts, _, _ = ghcomp.DivideCurve(left_curve, 100, False)
@@ -141,7 +141,6 @@ class FritDialog(forms.Dialog[bool]):
         # ply_line = Rhino.Geometry.Polyline(new_pts)
         rs.AddInterpCurve(new_pts)
         print('finish')
-
 
     def TransitCurveCommand(self, sender, e):
         Rhino.UI.EtoExtensions.PushPickButton(self, self.HandleTransitCurve)
