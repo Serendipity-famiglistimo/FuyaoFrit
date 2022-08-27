@@ -18,8 +18,6 @@ import view.BandPage
 import view.BlockPage
 import model.RowFrits
 import model.HoleFrits
-import frits.ArcDot
-reload(frits.ArcDot)
 import view.HoleConfigPanel
 reload(model.HoleFrits)
 reload(view.HoleConfigPanel)
@@ -37,7 +35,9 @@ from System.Drawing import Color
 
 class FritDialog(forms.Dialog[bool]):
     def __init__(self):
+        current_path1 = os.getcwd()
         self.Title = '福耀印刷花点排布工具'
+        self.Icon = drawing.Icon(current_path1+"\\ico\\FY.ico")
         self.Padding = drawing.Padding(10)
         self.Resizable = False
         self.Closing += self.OnFormClosed
@@ -83,9 +83,14 @@ class FritDialog(forms.Dialog[bool]):
         file_menu.Items.Add(open_menu, 0)
         
         add_region_menu = forms.Command(self.AddBandRegionCommand)
-        add_region_menu.MenuText = "添加区域"
-        add_region_menu.Image = drawing.Bitmap(current_path + '\\ico\\add-region.png')
-        edit_menu.Items.Add(add_region_menu)
+        add_region_menu.MenuText = "添加带状区域"
+        add_region_menu.Image = drawing.Bitmap(current_path + '\\ico\\line.png')
+        edit_menu.Items.Add(add_region_menu,0)
+        
+        add_region_menu1 = forms.Command(self.AddBlockRegionCommand)
+        add_region_menu1.MenuText = "添加块状区域"
+        add_region_menu1.Image = drawing.Bitmap(current_path + '\\ico\\rect.png')
+        edit_menu.Items.Add(add_region_menu1,1)
     
     def create_toolbar(self):
         current_path = os.getcwd()
@@ -94,7 +99,7 @@ class FritDialog(forms.Dialog[bool]):
         
         transit_curve = forms.Command(self.TransitCurveCommand)
         transit_curve.MenuText = '过渡曲线'
-        transit_curve.Image = drawing.Bitmap(current_path + '\\ico\\transit_curve.png')
+        transit_curve.Image = drawing.Bitmap(current_path + '\\ico\\transit1.png')
         self.ToolBar.Items.Add(transit_curve)
 
         bake_dots = forms.Command(self.BakeDotsCommand)
@@ -118,14 +123,19 @@ class FritDialog(forms.Dialog[bool]):
         self.regions.append(page)
         self.tab.Pages.Add(page)
 
+    def AddBlockRegionCommand(self, sender, e):
+        page = view.BlockPage.BlockPage(len(self.regions))
+        self.regions.append(page)
+        self.tab.Pages.Add(page)
+
     def HandleTransitCurve(self, sender, e):
         objectId = rs.GetCurveObject("Select curve:")
         if objectId is None: 
             print("Warning: No curve is selected")
             return
         crv = objectId[0]
-        l = rs.GetReal("Set offset1:")
-        r = rs.GetReal("Set offset2:")
+        l = rs.GetReal("Set left offset:")
+        r = rs.GetReal("Set right offset:")
         left_curve = ghcomp.OffsetCurve(crv, distance=l, corners=1)
         right_curve = ghcomp.OffsetCurve(crv, distance=r, corners=1)
         left_pts, _, _ = ghcomp.DivideCurve(left_curve, 100, False)
@@ -141,6 +151,7 @@ class FritDialog(forms.Dialog[bool]):
         # ply_line = Rhino.Geometry.Polyline(new_pts)
         rs.AddInterpCurve(new_pts)
         print('finish')
+
 
     def TransitCurveCommand(self, sender, e):
         Rhino.UI.EtoExtensions.PushPickButton(self, self.HandleTransitCurve)
