@@ -8,6 +8,7 @@
 '''
 import Rhino as rc
 from frits.Dot import Dot
+import rhinoscriptsyntax as rs
 
 class CircleDotConfig:
     def __init__(self):
@@ -29,4 +30,7 @@ class CircleDot(Dot):
     
     def draw(self, display, display_color):
         display.AddCircle(rc.Geometry.Circle(self.centroid, self.config.r), display_color, 1)
+    
+    def bake(self):
+        return rs.AddCircle(self.centroid, self.config.r)
             

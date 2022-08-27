@@ -28,7 +28,8 @@ class BlockPage(forms.TabPage):
     def __new__(cls, *args):
         return forms.TabPage.__new__(cls)    
 
-    def __init__(self):
+    def __init__(self, page_id):
+        self.page_id = page_id
         self.Text = '块状区域'
         self.panel = forms.Scrollable()
         self.panel.Padding = drawing.Padding(10)
@@ -215,3 +216,10 @@ class BlockPage(forms.TabPage):
             r.clear_dots()
         for r in self.hole_panels:
             r.clear_dots()
+        
+    def bake(self):
+        for r in self.row_panels:
+            r.bake()
+        
+        for r in self.hole_panels:
+            r.bake()

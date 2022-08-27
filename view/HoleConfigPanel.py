@@ -146,9 +146,13 @@ class HoleConfigPanel(forms.GroupBox):
     def fill_row_frits(self, sender, e):
         self.clear_dots()
         self.model.fill_dots()
-        self.display.AddCurve(self.model.border_curve)
+        # self.display.AddCurve(self.model.border_curve)
         for d in self.model.dots:
             d.draw(self.display, self.display_color)
     
     def clear_dots(self):
         self.display.Clear()
+    
+    def bake(self):
+        for d in self.model.dots:
+            d.bake()

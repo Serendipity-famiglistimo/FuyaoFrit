@@ -27,7 +27,8 @@ class BandPage(forms.TabPage):
     def __new__(cls, *args):
         return forms.TabPage.__new__(cls)    
 
-    def __init__(self):
+    def __init__(self, page_id):
+        self.page_id = page_id
         self.Text = '带状区域'
         self.row_num = 1
         self.panel = forms.Scrollable()
@@ -168,3 +169,6 @@ class BandPage(forms.TabPage):
         for r in self.row_panels:
             r.clear_dots()
 
+    def bake(self):
+        for r in self.row_panels:
+            r.bake()

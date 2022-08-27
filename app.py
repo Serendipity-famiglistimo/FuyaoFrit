@@ -29,6 +29,9 @@ reload(DefaultPage)
 import os
 import clr
 # from RowControl import RowControl
+from System.Drawing import Color
+
+
 
 class FritDialog(forms.Dialog[bool]):
     def __init__(self):
@@ -47,9 +50,9 @@ class FritDialog(forms.Dialog[bool]):
         default_page = DefaultPage.DefaultPage()
         # default_page.create()
         self.tab.Pages.Add(default_page)
-        page = view.BandPage.BandPage()
+        page = view.BandPage.BandPage(0)
         self.tab.Pages.Add(page)
-        page2 = view.BlockPage.BlockPage()
+        page2 = view.BlockPage.BlockPage(1)
         self.tab.Pages.Add(page2)
         self.regions = [page, page2]
 
@@ -86,10 +89,20 @@ class FritDialog(forms.Dialog[bool]):
         current_path = os.getcwd()
         self.ToolBar = forms.ToolBar()
         # cmdButton = new Command { MenuText = "Click Me!", ToolBarText = "Click Me!" };
+        
         transit_curve = forms.Command(self.TransitCurveCommand)
         transit_curve.MenuText = '过渡曲线'
         transit_curve.Image = drawing.Bitmap(current_path + '\\ico\\transit_curve.png')
         self.ToolBar.Items.Add(transit_curve)
+
+        bake_dots = forms.Command(self.BakeDotsCommand)
+        bake_dots.MenuText = '导出花点'
+        bake_dots.Image = drawing.Bitmap(current_path + '\\ico\\bake.png')
+        self.ToolBar.Items.Add(bake_dots)
+
+        # self.ToolBar.Items.Add(bake_dots)
+
+
 
     # Start of the class functions
     def OnFormClosed(self, sender, e):
@@ -99,7 +112,8 @@ class FritDialog(forms.Dialog[bool]):
     
 
     def AddBandRegionCommand(self, sender, e):
-        page = view.BandPage.BandPage()
+        page = view.BandPage.BandPage(len(self.regions))
+        self.regions.append(page)
         self.tab.Pages.Add(page)
 
     def HandleTransitCurve(self, sender, e):
@@ -129,6 +143,19 @@ class FritDialog(forms.Dialog[bool]):
 
     def TransitCurveCommand(self, sender, e):
         Rhino.UI.EtoExtensions.PushPickButton(self, self.HandleTransitCurve)
+    
+    def BakeDotsCommand(self, sender, e):
+        main_layer = 'fuyao_frits'
+        if rs.IsLayer(main_layer):
+            # delete all sublayers
+            layers = rs.LayerChildren(main_layer)
+            for layer in layers:
+                rs.PurgeLayer(layer)
+            rs.DeleteLayer(main_layer)
+        rs.AddLayer('fuyao_frits')
+        for page in self.regions:
+            page.bake()
+            page.clear_dots()
         
 
 if __name__ == "__main__":

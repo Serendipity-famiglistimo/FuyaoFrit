@@ -9,6 +9,7 @@
 import Rhino as rc
 from frits.Dot import Dot
 import ghpythonlib.components as ghcomp
+import rhinoscriptsyntax as rs
 
 class RoundRectConfig:
     def __init__(self):
@@ -34,6 +35,18 @@ class RoundRectDot(Dot):
         y = self.centroid.Y
         x_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(x, self.config.k / 2), ghcomp.Addition(x, self.config.k / 2))
         y_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(y, self.config.k / 2), ghcomp.Addition(y, self.config.k / 2))
-        rec, _ = ghcomp.Rectangle(ghcomp.XYPlane(), x_domain, y_domain, ghcomp.Division(self.config.r, 2))
+        rec, _ = ghcomp.Rectangle(rs.WorldXYPlane(), x_domain, y_domain, ghcomp.Division(self.config.r, 2))
         rec, _ = ghcomp.Rotate(rec, self.theta, self.centroid)
         display.AddCurve(rec, display_color, 1)
+    
+    def bake(self):
+        x = self.centroid.X
+        y = self.centroid.Y
+        x_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(x, self.config.k / 2), ghcomp.Addition(x, self.config.k / 2))
+        y_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(y, self.config.k / 2), ghcomp.Addition(y, self.config.k / 2))
+        rec, _ = ghcomp.Rectangle(rs.WorldXYPlane(), x_domain, y_domain, ghcomp.Division(self.config.r, 2))
+        rec, _ = ghcomp.Rotate(rec, self.theta, self.centroid)
+        pts, _, _ = ghcomp.ControlPoints(rec)
+        
+        return rs.AddCurve(pts)
+        

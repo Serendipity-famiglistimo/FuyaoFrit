@@ -7,10 +7,12 @@
 # @Copyright (c) 2022 Institute of Trustworthy Network and System, Tsinghua University
 '''
 import Rhino as rc
+import rhinoscriptsyntax as rs
 import Eto.Forms as forms
 import Eto.Drawing as drawing
 from Eto.Drawing import Font
 from model.RowFrits import RowArrangeType, RowFrits
+import utils
 
 from frits import FritType
 
@@ -70,9 +72,15 @@ class RowConfigPanel(forms.GroupBox):
         self.transit_check = forms.CheckBox(Text='是否过渡半径')
         self.transit_check.Checked = self.model.is_transit
         self.transit_check.CheckedChanged += self.transit_check_changed
-        self.transit_input = forms.TextBox(Text='0')
+        self.transit_label = forms.Label(Text='过渡初始半径：')
+        self.transit_input = forms.TextBox(Text='{0}'.format(self.model.transit_radius))
         self.transit_input.Size = drawing.Size(60, -1)
         self.transit_input.TextChanged += self.transit_input_changed
+
+        self.transit_label2 = forms.Label(Text='过渡初始位置：')
+        self.transit_position_input = forms.TextBox(Text='{0}'.format(self.model.transit_position))
+        self.transit_position_input.Size = drawing.Size(60, -1)
+        self.transit_position_input.TextChanged += self.transit_position_input_changed
 
         self.config_panel = forms.Panel()
         self.update_btn = forms.Button(Text='填充花点')
@@ -99,7 +107,7 @@ class RowConfigPanel(forms.GroupBox):
         self.layout.AddRow(self.arrange_setting_label, None)
         self.layout.EndVertical()
         self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
-        self.layout.AddRow(self.arrage_type_label, self.arrage_type_combo, None)
+        self.layout.AddRow(self.arrage_type_label, self.arrage_type_combo, self.transit_check, self.transit_label, self.transit_input, self.transit_label2, self.transit_position_input, None)
         self.layout.EndVertical()
         self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
         self.layout.AddRow(self.update_btn, None)
@@ -157,6 +165,12 @@ class RowConfigPanel(forms.GroupBox):
             self.model.transit_radius = float(self.transit_input.Text)
         except:
             pass
+    
+    def transit_position_input_changed(self, sender, e):
+        try:
+            self.model.transit_position = float(self.transit_position_input.Text)
+        except:
+            pass
 
     def fill_row_frits(self, sender, e):
         self.clear_dots()
@@ -166,4 +180,11 @@ class RowConfigPanel(forms.GroupBox):
     
     def clear_dots(self):
         self.display.Clear()
+    
+    def bake(self):
+        layer_name = 'page_{0}_row_{1}'.format(self.parent.page_id, self.model.row_id)
+        rs.AddLayer(layer_name, utils.get_color(self.model.row_id), parent='fuyao_frits')
+        for d in self.model.dots:
+            obj = d.bake()
+            rs.ObjectLayer(obj, layer_name)
     

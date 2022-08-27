@@ -10,7 +10,10 @@ from frits import FritType
 from frits.CircleDot import CircleDot, CircleDotConfig
 from frits.RoundRectDot import RoundRectConfig, RoundRectDot
 import ghpythonlib.components as ghcomp
+import rhinoscriptsyntax as rs
 import utils
+import scriptcontext
+import System.Guid
 import clr
 clr.AddReference("System.Xml")
 import System.Xml
@@ -67,7 +70,7 @@ class RowFrits:
         refer_curve = self.region.curves[0] 
         if self.region.is_flip[0] == True:
             refer_curve, _ = ghcomp.FlipCurve(refer_curve)
-        curve = ghcomp.OffsetCurve(refer_curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
+        curve = ghcomp.OffsetCurve(refer_curve, plane = rs.WorldXYPlane(), distance=self.position, corners=1)
         
         # crv = ghcomp.OffsetCurve(curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
         crv = refer_curve
@@ -103,7 +106,7 @@ class RowFrits:
         if self.region.is_flip[1] == True:
             inner_curve, _ = ghcomp.FlipCurve(inner_curve)
 
-        curve = ghcomp.OffsetCurve(refer_curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
+        curve = ghcomp.OffsetCurve(refer_curve, plane = rs.WorldXYPlane(), distance=self.position, corners=1)
         
         # crv = ghcomp.OffsetCurve(curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
         crv = refer_curve
@@ -160,7 +163,7 @@ class RowFrits:
         refer_curve = self.region.curves[2]
         if self.region.is_flip[2] == True:
             refer_curve, _ = ghcomp.FlipCurve(refer_curve)
-        curve = ghcomp.OffsetCurve(refer_curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
+        curve = ghcomp.OffsetCurve(refer_curve, plane = rs.WorldXYPlane(), distance=self.position, corners=1)
         
         # crv = ghcomp.OffsetCurve(curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
         crv = refer_curve
@@ -203,7 +206,7 @@ class RowFrits:
             dis = self.circle_config.bottom()
         elif self.dot_type == FritType.ROUND_RECT:
             dis = self.round_rect_config.bottom()
-        curve = ghcomp.OffsetCurve(refer_curve, plane = ghcomp.XYPlane(), distance=self.position + dis, corners=1)
+        curve = ghcomp.OffsetCurve(refer_curve, plane = rs.WorldXYPlane(), distance=self.position + dis, corners=1)
         return curve
         
     def get_top_curve(self):
@@ -222,8 +225,9 @@ class RowFrits:
             dis = self.circle_config.top()
         elif self.dot_type == FritType.ROUND_RECT:
             dis = self.round_rect_config.top()
-        curve = ghcomp.OffsetCurve(refer_curve, plane = ghcomp.XYPlane(), distance=self.position - dis, corners=1)
+        curve = ghcomp.OffsetCurve(refer_curve, plane = rs.WorldXYPlane(), distance=self.position - dis, corners=1)
         return curve
+        
 
     @staticmethod
     def load_band_xml(file_path, region):

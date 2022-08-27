@@ -9,7 +9,7 @@
 from frits import FritType
 
 import ghpythonlib.components as ghcomp
-
+from System.Drawing import Color
 
 
 
@@ -30,5 +30,9 @@ def tgt_angle(tgt):
     rotate_angle = ghcomp.Multiplication(angle, factor)
     
     return rotate_angle
+
+def get_color(id):
+    colors = [Color.AntiqueWhite, Color.Aqua, Color.BlueViolet, Color.Chartreuse, Color.Coral, Color.DarkTurquoise,  Color.DeepPink, Color.Gold, Color.LawnGreen, Color.Turquoise]
+    return colors[id % len(colors)]
 
     

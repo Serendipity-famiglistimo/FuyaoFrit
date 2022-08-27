@@ -46,6 +46,9 @@ class HoleFrits:
         self.bottom_curve = None
         self.border_curve = None
     
+    def bake(self):
+        pass
+    
     def fill_dots(self):
         print(self.hole_id)
         row_num = len(self.region.rows)
