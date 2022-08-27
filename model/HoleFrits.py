@@ -50,17 +50,39 @@ class HoleFrits:
         pass
     
     def fill_dots(self):
+        #outer_anchor = []
         print(self.hole_id)
         row_num = len(self.region.rows)
         top_curve = None
         bottom_curve = None
+        top_anchor = []
+        bottom_anchor = []
         for i in range(row_num):
             if self.region.rows[i].row_id < 0:
                 bottom_curve = self.region.rows[i - 1].get_top_curve()
+                bottom_dots = self.region.rows[i - 1].dots
+                for j in range(len(bottom_dots)):
+                    bottom_anchor.append(bottom_dots[j].centroid)
+                #outer_anchor += bottom_anchor
+                #print(len(bottom_anchor))
                 break
+        
         top_curve = self.region.rows[-1].get_bottom_curve()
+        top_dots = self.region.rows[-1].dots
+        for j in range(len(top_dots)):
+            top_anchor.append(top_dots[j].centroid)
+            
+        #top_anchor = ghcomp.ReverseList(top_anchor)
+        #outer_anchor += top_anchor
+        
+        #print("*****get anchor*****")
+        #print(len(top_anchor))
+        #print(len(outer_anchor))
+        #stepping = self.region.rows[-1].stepping
+        
         self.border_curve = self.construct_border(top_curve, bottom_curve)
-        self.block_fill(self.border_curve, self.stepping, self.vspace, self.arrange_type)
+        
+        self.block_fill(self.border_curve, top_anchor, bottom_anchor, self.stepping, self.vspace, self.arrange_type)
 
     def trim_curve(self, crv, t1, t2):
         _, crv_domain = ghcomp.CurveDomain(crv)
@@ -103,7 +125,7 @@ class HoleFrits:
         
         return blockborder
 
-    def block_fill(self, Crv, horizontal, vertical, aligned):
+    def block_fill(self, Crv, top_outer_anchor, bottom_outer_anchor, horizontal, vertical, aligned):
         # self.display.AddCurve(blockborder)
         Pt = []
 
@@ -142,7 +164,7 @@ class HoleFrits:
                     Pt.append(pt)
         
         #iterate force conduct algo
-        pts = self.force_conduct(Pt, Crv, horizontal, vertical, aligned)
+        pts = self.force_conduct(Pt, Crv, top_outer_anchor, bottom_outer_anchor, horizontal, vertical, aligned)
         #pts = Pt
 
         for i in range(len(pts)):
@@ -154,11 +176,14 @@ class HoleFrits:
                 dot = RoundRectDot(pts[i].X, pts[i].Y, self.round_rect_config, theta)
             self.dots.append(dot)
     
-    def force_conduct(self, inner_pts, outer_border, horizontal, vertical, aligned):
+    def force_conduct(self, inner_pts, outer_border, top_outer_anchor, bottom_outer_anchor, horizontal, vertical, aligned):
         #To do: get outer_anchor and hspace from border rows
+        
+        outer_anchor = ghcomp.Merge(top_outer_anchor, bottom_outer_anchor)
         hspace = (horizontal+vertical)/2
-        outer_anchor_num = int(ghcomp.Length(outer_border)/hspace)
-        outer_anchor, _, _ = ghcomp.DivideCurve(outer_border, outer_anchor_num, False)
+        
+        #outer_anchor_num = int(ghcomp.Length(outer_border)/hspace)
+        #outer_anchor, _, _ = ghcomp.DivideCurve(outer_border, outer_anchor_num, False)
         
         offset = horizontal
         if aligned == True:
@@ -182,7 +207,15 @@ class HoleFrits:
         anchor_pts = ghcomp.Merge(outer_anchor, inner_anchor)
         all_pts = ghcomp.Merge(anchor_pts, iter_pts)
         
-        outer_anchor_border = ghcomp.PolyLine(outer_anchor, True)
+        top_crv = ghcomp.PolyLine(top_outer_anchor, False)
+        bottom_crv = ghcomp.PolyLine(bottom_outer_anchor, False)
+        print("*******construct anchor crv*******")
+        print(len(top_outer_anchor))
+        print(len(bottom_outer_anchor))
+        print(top_crv)
+        print(bottom_crv)
+        
+        outer_anchor_border = self.construct_border(top_crv, bottom_crv)
         
         outer_mesh, inner_mesh, ring_mesh = self.construct_ring_mesh(outer_anchor_border, inner_border, all_pts)
         _, mesh_edges, _ = ghcomp.MeshEdges(ring_mesh)
@@ -215,7 +248,14 @@ class HoleFrits:
             threshold = vertical
         if offset < threshold:
             threshold = offset
+        threshold = (offset + threshold)/2
         
+        link = horizontal
+        if vertical > link:
+            link = vertical
+        if offset > link:
+            link = offset
+
         goal_anchor = ghcomp.Kangaroo2Component.Anchor(point = anchor_pts, strength = 10000)
         goal_zfix = ghcomp.Kangaroo2Component.AnchorXYZ(point = all_pts, x = False, y = False, z = True, strength = 1000)
         goal_cpcin = ghcomp.Kangaroo2Component.CurvePointCollide(points = iter_pts, curve = outer_border, plane = ghcomp.XYPlane(), interior = True, strength = 1)
@@ -223,7 +263,7 @@ class HoleFrits:
         goal_cpcin = [goal_cpcin]
         goal_cpcout = [goal_cpcout]
         goal_inner_length = ghcomp.Kangaroo2Component.LengthLine(line = inner_line, strength = 0.1)
-        goal_inner_threshold = ghcomp.Kangaroo2Component.ClampLength(line = inner_line, lowerlimit=threshold, strength = 1)
+        goal_inner_threshold = ghcomp.Kangaroo2Component.ClampLength(line = inner_line, lowerlimit = threshold, upperlimit = link, strength = 1)
         goal_border_length = ghcomp.Kangaroo2Component.LengthLine(line = border_line, length = threshold, strength = 0.2)
         
         #goal_1 = ghcomp.Entwine(goal_anchor, goal_zfix)
@@ -253,8 +293,7 @@ class HoleFrits:
         pts += fix_pts
         
         return pts
-        
-        
+    
     def construct_ring_mesh(self, outer_border, inner_border, pts):
         outer_srf = ghcomp.BoundarySurfaces(outer_border)
         outer_mesh = rg.Mesh.CreateFromBrep(outer_srf)
