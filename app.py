@@ -99,7 +99,7 @@ class FritDialog(forms.Dialog[bool]):
         
         transit_curve = forms.Command(self.TransitCurveCommand)
         transit_curve.MenuText = '过渡曲线'
-        transit_curve.Image = drawing.Bitmap(current_path + '\\ico\\transit1.png')
+        transit_curve.Image = drawing.Bitmap(current_path + '\\ico\\cross.png')
         self.ToolBar.Items.Add(transit_curve)
 
         bake_dots = forms.Command(self.BakeDotsCommand)
