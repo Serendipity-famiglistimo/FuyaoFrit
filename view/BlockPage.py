@@ -8,6 +8,7 @@
 '''
 import imp
 import Rhino
+import Rhino as rc
 import Eto.Forms as forms
 import Eto.Drawing as drawing
 from model.HoleFrits import HoleFrits
@@ -108,6 +109,10 @@ class BlockPage(forms.TabPage):
         self.load_btn.Size = Size(100, 30)
         self.load_btn.Click += self.LoadButtonClick
 
+        self.insert_btn = forms.Button(Text='一键填充')
+        self.insert_btn.Size = Size(100, 30)
+        self.insert_btn.Click += self.InsertButtonClick
+
         self.layout.DefaultSpacing = drawing.Size(8, 8)
         self.layout.AddSeparateRow(self.pick_label, None)
         self.layout.BeginVertical(padding=drawing.Padding(20, 0, 0, 0))
@@ -122,7 +127,8 @@ class BlockPage(forms.TabPage):
         self.layout.AddRow(self.outer_btn, None)
         self.layout.AddRow(self.flip_check3, None)
         self.layout.AddRow(self.is_pick_label3, None)
-
+        
+        self.layout.AddRow(self.insert_btn, None)
         self.layout.EndVertical()
         self.layout.AddSeparateRow(self.fill_label, None)
         self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn, self.load_btn, None])
@@ -166,6 +172,15 @@ class BlockPage(forms.TabPage):
         self.model.rows.append(row_frits)
         # row_frits.band_model = self.model  # type: ignore
         self.create_interface()
+    
+    def InsertButtonClick(self, sender, e):
+        self.clear_dots()
+        self.model.fill_dots()
+        self.display = rc.Display.CustomDisplay(True)
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        for d in self.model.dots:
+            d.draw(self.display, self.display_color)
+        
     
     def FlipCheckClick(self, sender, e):
         if sender.Tag == 'is_refer_flip':

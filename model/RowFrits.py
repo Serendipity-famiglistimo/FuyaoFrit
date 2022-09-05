@@ -8,6 +8,7 @@
 '''
 from frits import FritType
 from frits.CircleDot import CircleDot, CircleDotConfig
+from frits.Dot import Dot
 from frits.RoundRectDot import RoundRectConfig, RoundRectDot
 from frits.ArcDot import ArcDot, ArcDotConfig
 import ghpythonlib.components as ghcomp
@@ -100,6 +101,22 @@ class RowFrits:
             elif self.dot_type == FritType.ARC_CIRCLE:
                 dot = ArcDot(pts[i].X, pts[i].Y, self.arc_config, theta)
             self.dots.append(dot)
+    
+    def shift_y_dots(self, shift_y):
+        new_dots = []
+        for dot in self.dots:
+            dot2 = Dot(dot.centroid.X, dot.centroid.Y + shift_y, None, dot.theta)
+            new_dots.append(dot2)
+        return new_dots
+    
+    def shift_y_mid_dots(self, shift_y):
+        new_dots = []
+        for i in range(len(self.dots) - 1):
+            dot = self.dots[i]
+            dot1 = self.dots[i + 1]
+            dot2 = Dot((dot.centroid.X + dot1.centroid.X) / 2.0, (dot.centroid.Y + dot1.centroid.Y) / 2.0 + shift_y, None, dot.theta)
+            new_dots.append(dot2)
+        return new_dots
 
     def fill_transit_band(self):
         refer_curve = self.region.curves[0]

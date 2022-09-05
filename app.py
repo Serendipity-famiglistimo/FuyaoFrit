@@ -19,6 +19,8 @@ import view.BlockPage
 import model.RowFrits
 import model.HoleFrits
 import view.HoleConfigPanel
+import model.BlockZone
+reload(model.BlockZone)
 reload(model.HoleFrits)
 reload(view.HoleConfigPanel)
 reload(view.BlockPage)

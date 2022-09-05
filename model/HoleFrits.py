@@ -283,7 +283,7 @@ class HoleFrits:
         goal_obj.AddRange(goal_inner_threshold, gh.Kernel.Data.GH_Path(0,5))
         goal_obj.AddRange(goal_border_length, gh.Kernel.Data.GH_Path(0,6))
         
-        subiter = 1000
+        subiter = 1
         _, pts, _ = ghcomp.Kangaroo2Component.StepSolver(goal_obj, 0.01, True, 0.99, subiter, True)
         
         filter, _ = ghcomp.PointInCurve(pts, outer_border)

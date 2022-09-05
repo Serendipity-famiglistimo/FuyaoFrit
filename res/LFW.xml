@@ -75,12 +75,12 @@
     <stepping>2.3</stepping>
     <position>-2.815</position>
 </row>
-<row id ='-2' type='circle' arrange='cross'>
+<row id ='-1' type='circle' arrange='heading'>
     <r>0.5</r>
     <stepping>2.3</stepping>
     <position>0.5</position>
 </row>
-<row id ='-1' type='circle' arrange='cross'>
+<row id ='-2' type='circle' arrange='cross'>
     <r>0.5</r>
     <stepping>2.3</stepping>
     <position>1.7</position>
@@ -88,7 +88,7 @@
 <hole id ='0' type='circle' arrange='cross'>
     <r>0.5</r>
     <stepping>2.3</stepping>
-    <vspace>1.7</vspace>
+    <vspace>1.2</vspace>
 </hole>
 </block>
 </setting>
