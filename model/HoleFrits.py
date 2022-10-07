@@ -17,6 +17,7 @@ import Rhino as rc
 import Grasshopper as gh
 import scriptcontext
 import clr
+import copy
 
 clr.AddReference("System.Xml")
 import System.Xml
@@ -80,7 +81,7 @@ class HoleFrits:
         #print(len(outer_anchor))
         #stepping = self.region.rows[-1].stepping
         
-        self.border_curve = self.construct_border(top_curve, bottom_curve)
+        _, _, self.border_curve = self.construct_border(top_curve, bottom_curve)
         
         self.block_fill(self.border_curve, top_anchor, bottom_anchor, self.stepping, self.vspace, self.arrange_type)
 
@@ -123,7 +124,7 @@ class HoleFrits:
         blockborder = ghcomp.JoinCurves(edgelist)
         #self.display.AddCurve(blockborder)
         
-        return blockborder
+        return top_subcrv, bottom_subcrv, blockborder
 
     def block_fill(self, Crv, top_outer_anchor, bottom_outer_anchor, horizontal, vertical, aligned):
         # self.display.AddCurve(blockborder)
@@ -177,7 +178,9 @@ class HoleFrits:
             self.dots.append(dot)
     
     def force_conduct(self, inner_pts, outer_border, top_outer_anchor, bottom_outer_anchor, horizontal, vertical, aligned):
-        #To do: get outer_anchor and hspace from border rows
+        #To do: send aligned parameters in !!!
+        
+        aligned = False
         
         outer_anchor = ghcomp.Merge(top_outer_anchor, bottom_outer_anchor)
         hspace = (horizontal+vertical)/2
@@ -188,15 +191,54 @@ class HoleFrits:
         offset = horizontal
         if aligned == True:
             offset = math.sqrt(horizontal*horizontal + vertical*vertical)
+        
         else:
             offset = math.sqrt(0.25*horizontal*horizontal + vertical*vertical)
+            vertical = 2 * vertical
         
-        inner_aux_border = ghcomp.OffsetCurve(outer_border, 3*offset, plane=ghcomp.XYPlane(), corners = 1)
-        aux_num = int(2 * ghcomp.Length(inner_aux_border) / hspace)
+        
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        self.display.AddCurve(outer_border, self.display_color, 1)
+        #scriptcontext.doc.Views.Redraw()
+        
+        inner_aux_border = ghcomp.OffsetCurve(outer_border, 5*offset, plane=ghcomp.XYPlane(), corners = 1)
+        verbose_aux_border = ghcomp.OffsetCurve(outer_border, 6*offset, plane=ghcomp.XYPlane(), corners = 1)
+        
+        aux_num = int(3 * ghcomp.Length(inner_aux_border) / hspace)
         aux_pts, _, _ = ghcomp.DivideCurve(inner_aux_border, aux_num, False)
         verbose_pts, _, _ = ghcomp.ClosestPoint(aux_pts, inner_pts)
-        inner_anchor, _ = ghcomp.DeleteConsecutive(verbose_pts, False)
+        verbose_pts, _ = ghcomp.DeleteConsecutive(verbose_pts, True)
+        print("****check original verbose****")
+        print(len(verbose_pts))
+        
+        flag = True
+        inner_anchor = []
+        while flag == True:
+            temp = copy.deepcopy(verbose_pts)
+            inner_anchor1, inner_anchor2, flag = utils.remove_verbose(temp)
+            #print("****check verbose****")
+            #print(len(verbose_pts))
+            #print(len(inner_anchor1))
+            #print(len(inner_anchor2))
+            inner_anchor = inner_anchor1
+            verbose_pts = inner_anchor1
+            if len(inner_anchor2) > len(inner_anchor1):
+                inner_anchor = inner_anchor2
+                verbose_pts = inner_anchor2
+        
+        """
+        odd_even = ghcomp.Merge(True, False)
+        odd_pts, even_pts = ghcomp.Dispatch(inner_anchor, odd_even)
+        odd_pts, _ = ghcomp.DeleteConsecutive(odd_pts, False)
+        even_pts, _ = ghcomp.DeleteConsecutive(even_pts, False)
+        inner_anchor = ghcomp.Merge(odd_pts, even_pts)
+        """
+        
         inner_border = ghcomp.PolyLine(inner_anchor, True)
+        self.display.AddCurve(inner_border, self.display_color, 1)
+        scriptcontext.doc.Views.Redraw()
         
         relationship, _ = ghcomp.PointInCurve(inner_pts, inner_border)
         outside_pattern, _ = ghcomp.Equality(relationship, 0)
@@ -204,18 +246,23 @@ class HoleFrits:
         inside_pattern, _ = ghcomp.Equality(relationship, 2)
         fix_pts, _ = ghcomp.Dispatch(inner_pts, inside_pattern)
         
+        verbose_iter_pts = copy.deepcopy(iter_pts)
+        relationship, _ = ghcomp.PointInCurve(iter_pts, verbose_aux_border)
+        aux_pattern, _ = ghcomp.Equality(relationship, 2)
+        bug_pts, iter_pts = ghcomp.Dispatch(iter_pts, aux_pattern)
+        if bug_pts:
+            if len(iter_pts) == len(verbose_iter_pts) - 1:
+                fix_pts.append(ghcomp.ConstructPoint(bug_pts[0],bug_pts[1],bug_pts[2]))
+            else:
+                fix_pts += bug_pts
+        
         anchor_pts = ghcomp.Merge(outer_anchor, inner_anchor)
         all_pts = ghcomp.Merge(anchor_pts, iter_pts)
         
         top_crv = ghcomp.PolyLine(top_outer_anchor, False)
         bottom_crv = ghcomp.PolyLine(bottom_outer_anchor, False)
-        print("*******construct anchor crv*******")
-        print(len(top_outer_anchor))
-        print(len(bottom_outer_anchor))
-        print(top_crv)
-        print(bottom_crv)
         
-        outer_anchor_border = self.construct_border(top_crv, bottom_crv)
+        _, _, outer_anchor_border = self.construct_border(top_crv, bottom_crv)
         
         outer_mesh, inner_mesh, ring_mesh = self.construct_ring_mesh(outer_anchor_border, inner_border, all_pts)
         _, mesh_edges, _ = ghcomp.MeshEdges(ring_mesh)
@@ -229,42 +276,40 @@ class HoleFrits:
         oncrv_pattern, _ = ghcomp.Equality(oncrv1, oncrv2)
         inner_line, border_line = ghcomp.Dispatch(mesh_edges, oncrv_pattern)
         
-        print("***********get border line**********")
-        
-        """
-        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
-        self.display = rc.Display.CustomDisplay(True)
-        self.display.Clear()
-        
-        for i in range(len(border_line)):
-            crv = rg.NurbsCurve.CreateFromLine(border_line[i])
-            self.display.AddCurve(crv, self.display_color, 1)
-        
-        scriptcontext.doc.Views.Redraw()
-        """
+        #for i in range(len(inner_line)):
+        #    crv = rg.NurbsCurve.CreateFromLine(inner_line[i])
+        #    self.display.AddCurve(crv, self.display_color, 1)
+        #iter_pts += anchor_pts
         
         threshold = horizontal
         if vertical < threshold:
             threshold = vertical
         if offset < threshold:
             threshold = offset
-        threshold = (offset + threshold)/2
+        #threshold = (offset + threshold)/2
         
         link = horizontal
-        if vertical > link:
+        if vertical < link:
             link = vertical
         if offset > link:
             link = offset
-
+        
+        print("length parameter threshold offset link:")
+        print(threshold)
+        print(offset)
+        print(link)
+        
+        
         goal_anchor = ghcomp.Kangaroo2Component.Anchor(point = anchor_pts, strength = 10000)
         goal_zfix = ghcomp.Kangaroo2Component.AnchorXYZ(point = all_pts, x = False, y = False, z = True, strength = 1000)
         goal_cpcin = ghcomp.Kangaroo2Component.CurvePointCollide(points = iter_pts, curve = outer_border, plane = ghcomp.XYPlane(), interior = True, strength = 1)
         goal_cpcout = ghcomp.Kangaroo2Component.CurvePointCollide(points = iter_pts, curve = inner_border, plane = ghcomp.XYPlane(), interior = False, strength = 1)
         goal_cpcin = [goal_cpcin]
         goal_cpcout = [goal_cpcout]
-        goal_inner_length = ghcomp.Kangaroo2Component.LengthLine(line = inner_line, strength = 0.1)
+        goal_inner_length = ghcomp.Kangaroo2Component.LengthLine(line = inner_line, strength = 0.15)
         goal_inner_threshold = ghcomp.Kangaroo2Component.ClampLength(line = inner_line, lowerlimit = threshold, upperlimit = link, strength = 1)
-        goal_border_length = ghcomp.Kangaroo2Component.LengthLine(line = border_line, length = threshold, strength = 0.2)
+        goal_border_length = ghcomp.Kangaroo2Component.LengthLine(line = border_line, length = offset, strength = 0.2)
+        #goal_border_length = ghcomp.Kangaroo2Component.ClampLength(line = border_line, lowerlimit = threshold, upperlimit = offset, strength = 2)
         
         #goal_1 = ghcomp.Entwine(goal_anchor, goal_zfix)
         #goal_2 = ghcomp.Entwine(goal_cpcin, goal_cpcout)
@@ -283,7 +328,7 @@ class HoleFrits:
         goal_obj.AddRange(goal_inner_threshold, gh.Kernel.Data.GH_Path(0,5))
         goal_obj.AddRange(goal_border_length, gh.Kernel.Data.GH_Path(0,6))
         
-        subiter = 1
+        subiter = 1000
         _, pts, _ = ghcomp.Kangaroo2Component.StepSolver(goal_obj, 0.01, True, 0.99, subiter, True)
         
         filter, _ = ghcomp.PointInCurve(pts, outer_border)
@@ -291,6 +336,7 @@ class HoleFrits:
         pts, _ = ghcomp.Dispatch(pts, filter)
         
         pts += fix_pts
+        
         
         return pts
     
@@ -319,6 +365,90 @@ class HoleFrits:
         ring_mesh = ghcomp.CullFaces(raw_mesh, cull_pattern)
         
         return outer_mesh, inner_mesh, ring_mesh
+
+    def generate_grid_array(self, top_border, bottom_border, horizontal, vertical, block_aligned, band_aligned):
+        top_border, bottom_border, border = self.construct_border(top_border, bottom_border)
+        box, _ = ghcomp.BoundingBox(border, ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)))
+        center_pt, d_vec, _, _, _ = ghcomp.BoxProperties(box)
+        diag_length = ghcomp.VectorLength(d_vec)
+        
+        centerx, centery, centerz = ghcomp.Deconstruct(center_pt)
+        x,y,z = ghcomp.DeconstructVector(d_vec)
+        
+        left_up = ghcomp.ConstructPoint(centerx - x/2, centery + y/2, z)
+        left_down = ghcomp.ConstructPoint(centerx - x/2, centery - y/2, z)
+        right_up = ghcomp.ConstructPoint(centerx + x/2, centery + y/2, z)
+        right_down = ghcomp.ConstructPoint(centerx + x/2, centery - y/2, z)
+        
+        diag_direc = ghcomp.Subtraction(right_up, left_down)
+        diag_line = ghcomp.LineSDL(right_down, diag_direc, diag_length)
+        _, diag_pt = ghcomp.EndPoints(diag_line)
+        extend_line = ghcomp.Line(left_up, diag_pt)
+        
+        grid_num = int(math.ceil(ghcomp.Length(extend_line)), horizontal)
+        white_start, _, _ = ghcomp.DivideCurve(extend_line, grid_num, False)
+        
+        grid_vec, _ = ghcomp.VectorXYZ(-1, -1, 0)
+        if block_aligned == False:
+            grid_vec, _ = ghcomp.VectorXYZ(-horizontal/2, -vertical, 0)
+        else:
+            grid_vec, _ = ghcomp.VectorXYZ(-horizontal, -vertical, 0)
+            
+        white_grid_array = ghcomp.LineSDL(white_start, grid_vec, diag_length)
+        
+        black_start = []
+        if band_aligned == False:
+            for i in range(len(white_start)-1):
+                black_start.append(ghcomp.Division(ghcomp.Addition(white_start[i]+white_start[i+1]),2))
+        black_grid_array = ghcomp.LineSDL(black_start, grid_vec, diag_length)
+        
+        grid_start, _, _ = ghcomp.CurveXCurve(white_grid_array, top_border)
+        grid_end, _, _ = ghcomp.CurveXCurve(white_grid_array, bottom_border)
+        white_grid_line = ghcomp.Line(grid_start, grid_end)
+        white_grid_line = white_grid_line.flatten()
+        
+        return white_grid_line, white_grid_array, black_grid_array
+        
+    def array_white_fill(self, grid_crv, horizontal, vertical, aligned, fit_ends):
+        #给定上下边界填充斜向阵列
+        pts = []
+        unit_length = 1
+        
+        top_pts = []
+        bottom_pts = []
+        limbo_pts = []
+        
+        if aligned == False:
+            unit_length = math.sqrt(0.25 * horizontal*horizontal + vertical*vertical)
+        else:
+            unit_length = math.sqrt(horizontal*horizontal + vertical*vertical)
+        
+        for i in range(len(fit_ends)):
+            cur_crv = fit_ends[i]
+            start_pt, end_pt = ghcomp.EndPoints(cur_crv)
+            x = start_pt.X
+            y = start_pt.Y
+            z = start_pt.Z
+            x_domain = end_pt.X - x
+            y_domain = end_pt.Y - y
+            z_domain = end_pt.Z - z
+            num = int(math.floor(ghcomp.Length(cur_crv)/unit_length)+1)
+            cur_pts = []
+            for k in range(num+1):
+                cur_fac = k/num
+                cur_x = x + cur_fac*x_domain
+                cur_y = y + cur_fac*y_domain
+                cur_z = z + cur_fac*z_domain
+                cur_pt = ghcomp.ConstructPoint(cur_x, cur_y, cur_z)
+                cur_pts.append(cur_pt)
+            for k in range(1, num-1):
+                pts.append(cur_pts[k])
+            if num>1:
+                top_pts.append(cur_pts[0])
+            bottom_pts.append(cur_pts[-1])
+            limbo_pts.append(cur_pts[-2])
+        
+        return pts, top_pts, bottom_pts, limbo_pts
 
     @staticmethod
     def load_block_xml(file_path, region):
