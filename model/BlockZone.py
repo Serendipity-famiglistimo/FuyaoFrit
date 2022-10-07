@@ -35,18 +35,15 @@ class BlockZone(Zone):
     
     def fill_dots(self):
         # 填充最顶部的一行
-       
         row_num = len(self.rows)
         top_curve = None
         bottom_curve = self.curves[0]
-        first_bottom_row_dots = None
         first_bottom_row = None
         for i in range(row_num):
             if self.rows[i].row_id < 0:
                 self.rows[i].fill_dots()
                 self.block_dots.append(self.rows[i].dots)
                 if self.rows[i].row_id == -1:
-                    first_bottom_row_dots = self.rows[i].dots
                     first_bottom_row = self.rows[i]
         bottom_curve = self.curves[0]
         top_curve = self.rows[-1].get_bottom_curve()
