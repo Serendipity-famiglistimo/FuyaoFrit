@@ -12,7 +12,7 @@ class BandZone(Zone):
         Zone.__init__(self)
         self.type = 'band'
         self.rows = list()
-        self.curves = [None, None]
+        self.curves = [None, None, None]
         self.is_flip = [False, False]
         self.relations = {}
     

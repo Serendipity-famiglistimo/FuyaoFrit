@@ -257,10 +257,14 @@ class RowFrits:
         
 
     @staticmethod
-    def load_band_xml(file_path, region):
+    def load_band_xml(file_path, region, band_type='general'):
         xmldoc = System.Xml.XmlDocument()
         xmldoc.Load(file_path)
-        items = xmldoc.SelectNodes("setting/band/row")
+        items = None
+        if band_type == 'general':
+            items = xmldoc.SelectNodes("setting/band/row")
+        else:
+            items = xmldoc.SelectNodes("setting/bottom/row")
         rows = []
         for item in items:
             nid = int(item.GetAttributeNode('id').Value)

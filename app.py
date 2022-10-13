@@ -34,7 +34,6 @@ import clr
 from System.Drawing import Color
 
 
-
 class FritDialog(forms.Dialog[bool]):
     def __init__(self):
         current_path1 = os.getcwd()
@@ -58,7 +57,9 @@ class FritDialog(forms.Dialog[bool]):
         self.tab.Pages.Add(page)
         page2 = view.BlockPage.BlockPage(1)
         self.tab.Pages.Add(page2)
-        self.regions = [page, page2]
+        page3 = view.BandPage.BandPage(0, 'bottom')
+        self.tab.Pages.Add(page3)
+        self.regions = [page, page2, page3]
 
  
         # 标题
@@ -93,6 +94,11 @@ class FritDialog(forms.Dialog[bool]):
         add_region_menu1.MenuText = "添加块状区域"
         add_region_menu1.Image = drawing.Bitmap(current_path + '\\ico\\rect.png')
         edit_menu.Items.Add(add_region_menu1,1)
+
+        add_region_menu2 = forms.Command(self.AddBottomRegionCommand)
+        add_region_menu2.MenuText = "添加底部区域"
+        add_region_menu2.Image = drawing.Bitmap(current_path + '\\ico\\rect.png')
+        edit_menu.Items.Add(add_region_menu2,1)
     
     def create_toolbar(self):
         current_path = os.getcwd()
@@ -122,6 +128,11 @@ class FritDialog(forms.Dialog[bool]):
 
     def AddBandRegionCommand(self, sender, e):
         page = view.BandPage.BandPage(len(self.regions))
+        self.regions.append(page)
+        self.tab.Pages.Add(page)
+    
+    def AddBottomRegionCommand(self, sender, e):
+        page = view.BandPage.BandPage(len(self.regions), 'bottom')
         self.regions.append(page)
         self.tab.Pages.Add(page)
 

@@ -27,15 +27,19 @@ class BandPage(forms.TabPage):
     def __new__(cls, *args):
         return forms.TabPage.__new__(cls)    
 
-    def __init__(self, page_id):
+    def __init__(self, page_id, band_type='general'):
         self.page_id = page_id
+        self.band_type = band_type
+
         self.Text = '带状区域'
+        if band_type == 'bottom':
+            self.Text = '底部区域'
         self.row_num = 1
         self.panel = forms.Scrollable()
         self.panel.Padding = drawing.Padding(10)
         self.model = BandZone()
         self.row_panels = list()
-        self.pick_event_btn = None
+        
         self.create_interface()
         
     def create_interface(self):
@@ -78,9 +82,27 @@ class BandPage(forms.TabPage):
         else:
             self.is_pick_label2.Text = '选择了曲线{0}.'.format(self.model.curves[1])
             self.is_pick_label2.TextColor = drawing.Color.FromArgb(44,162,95)
+        
+        self.outer_btn = forms.Button(Text='选取外部参考线')
+        self.outer_btn.Size = Size(100, 30)
+        self.outer_btn.Click += self.PickReferCurve
+        self.outer_btn.Tag = 'outer_btn'
+        
+        # checkbox
+        self.flip_check3 = forms.CheckBox()
+        self.flip_check3.Tag = 'is_outer_flip'
+        self.flip_check3.CheckedChanged += self.FlipCheckClick
+        self.flip_check3.Text = '是否反转该曲线'
+        self.is_pick_label3 = forms.Label()
+        if self.model.curves[2] is None:
+            self.is_pick_label3.Text = '未选择曲线'
+            self.is_pick_label3.TextColor = drawing.Color.FromArgb(255, 0, 0)
+        else:
+            self.is_pick_label3.Text = '选择了曲线{0}.'.format(self.model.curves[2])
+            self.is_pick_label3.TextColor = drawing.Color.FromArgb(44,162,95)
 
         self.fill_label = forms.Label(Text='- 设置或加载填充规则', Font = Font('Microsoft YaHei', 12.))
-        self.fill_btn = forms.Button(Text='手动添加新行')
+        self.fill_btn = forms.Button(Text='一键填充')
         self.fill_btn.Size = Size(100, 30)
         self.fill_btn.Click += self.AddButtonClick
 
@@ -116,18 +138,22 @@ class BandPage(forms.TabPage):
 
 
     def AddButtonClick(self, sender, e):
-        self.row_num += 1
-        row_frits = RowFrits(len(self.model.rows), self.model)
+        # self.row_num += 1
+        # row_frits = RowFrits(len(self.model.rows), self.model)
        
-        self.model.rows.append(row_frits)
-        # row_frits.band_model = self.model  # type: ignore
-        self.create_interface()
+        # self.model.rows.append(row_frits)
+        # # row_frits.band_model = self.model  # type: ignore
+        # self.create_interface()
+        for row_panel in self.row_panels:
+            row_panel.fill_row_frits(None, None)
     
     def FlipCheckClick(self, sender, e):
         if sender.Tag == 'is_refer_flip':
             self.model.is_flip[0] = self.flip_check.Checked
         elif sender.Tag == 'is_inner_flip':
             self.model.is_flip[1] = self.flip_check2.Checked
+        elif sender.Tag == 'is_outer_flip':
+            self.model.is_flip[2] = self.flip_check3.Checked
         
     
     def LoadButtonClick(self, sender, e):
@@ -139,7 +165,7 @@ class BandPage(forms.TabPage):
         fd.MultiSelect = False
         if fd.ShowOpenDialog():
             file_name = fd.FileName
-            rows = RowFrits.load_band_xml(file_name, self.model)
+            rows = RowFrits.load_band_xml(file_name, self.model, self.band_type)
             self.model.rows = rows
         self.create_interface()
         

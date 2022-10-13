@@ -12,8 +12,9 @@ import Eto.Forms as forms
 import Eto.Drawing as drawing
 from Eto.Drawing import Font
 from model.HoleFrits import HoleArrangeType, HoleFrits
-
+import rhinoscriptsyntax as rs
 from frits import FritType
+import utils
 
 class HoleConfigPanel(forms.GroupBox):
     def __init__(self, parent, hole_config):
@@ -154,5 +155,9 @@ class HoleConfigPanel(forms.GroupBox):
         self.display.Clear()
     
     def bake(self):
+        layer_name = 'page_{0}_hole_{1}'.format(self.parent.page_id, self.model.hole_id)
+        rs.AddLayer(layer_name, utils.get_color(self.model.hole_id), parent='fuyao_frits')
         for d in self.model.dots:
-            d.bake()
+            obj = d.bake()
+            rs.ObjectLayer(obj, layer_name)
+        

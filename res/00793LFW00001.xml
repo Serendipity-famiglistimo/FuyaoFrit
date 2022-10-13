@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<setting>
+<band>
+<row id='0' type='roundrect' arrange='heading'>
+    <k>0.55</k>
+    <r>0.1375</r>
+    <stepping>2.0</stepping>
+    <position>2.725</position>
+</row>
+<row id='1' type='roundrect' arrange='cross'>
+    <k>0.775</k>
+    <r>0.19375</r>
+    <stepping>2.0</stepping>
+    <position>1.65</position>
+</row>
+<row id='2' type='roundrect' arrange='heading'>
+    <k>1.0</k>
+    <r>0.25</r>
+    <stepping>2.0</stepping>
+    <position>0.5</position>
+</row>
+<row id='3' type='roundrect' arrange='heading'>
+    <k>0.9</k>
+    <r>0.225</r>
+    <stepping>2.0</stepping>
+    <position>-0.495</position>
+</row>
+<row id='4' type='roundrect' arrange='cross'>
+    <k>0.8</k>
+    <r>0.2</r>
+    <stepping>2.0</stepping>
+    <position>-1.65</position>
+</row>
+<row id='5' type='roundrect' arrange='heading'>
+    <k>0.6</k>
+    <r>0.15</r>
+    <stepping>2.0</stepping>
+    <position>-2.7</position>
+</row>
+</band>
+
+<bottom>
+<row id='0' type='roundrect' arrange='heading'>
+    <k>0.55</k>
+    <r>0.1375</r>
+    <stepping>2.0</stepping>
+    <position>2.725</position>
+</row>
+<row id='1' type='roundrect' arrange='cross'>
+    <k>0.775</k>
+    <r>0.19375</r>
+    <stepping>2.0</stepping>
+    <position>1.65</position>
+</row>
+<row id='2' type='roundrect' arrange='heading'>
+    <k>1.0</k>
+    <r>0.25</r>
+    <stepping>2.0</stepping>
+    <position>0.5</position>
+</row>
+<row id='3' type='roundrect' arrange='heading'>
+    <k>0.9</k>
+    <r>0.225</r>
+    <stepping>2.0</stepping>
+    <position>-0.495</position>
+</row>
+<row id='4' type='roundrect' arrange='cross'>
+    <k>0.8</k>
+    <r>0.2</r>
+    <stepping>2.0</stepping>
+    <position>-1.65</position>
+</row>
+<row id='5' type='roundrect' arrange='heading'>
+    <k>0.6</k>
+    <r>0.15</r>
+    <stepping>2.0</stepping>
+    <position>-2.7</position>
+</row>
+<row id='6' type='roundrect' arrange='cross'>
+    <k>0.6</k>
+    <r>0.15</r>
+    <stepping>2.0</stepping>
+    <position>-3.7065</position>
+</row>
+<row id='7' type='roundrect' arrange='heading'>
+    <k>0.6</k>
+    <r>0.15</r>
+    <stepping>2.0</stepping>
+    <position>-4.713</position>
+</row>
+<row id='8' type='roundrect' arrange='cross'>
+    <k>0.6</k>
+    <r>0.15</r>
+    <stepping>2.0</stepping>
+    <position>-5.7195</position>
+</row>
+<row id='9' type='roundrect' arrange='heading'>
+    <k>0.6</k>
+    <r>0.15</r>
+    <stepping>2.0</stepping>
+    <position>-6.726</position>
+</row>
+<row id='10' type='roundrect' arrange='cross'>
+    <k>0.6</k>
+    <r>0.15</r>
+    <stepping>2.0</stepping>
+    <position>-7.7325</position>
+</row>
+<row id='11' type='roundrect' arrange='heading'>
+    <k>0.6</k>
+    <r>0.15</r>
+    <stepping>2.0</stepping>
+    <position>-8.739</position>
+</row>
+<row id='12' type='roundrect' arrange='cross'>
+    <k>0.6</k>
+    <r>0.15</r>
+    <stepping>2.0</stepping>
+    <position>-9.7455</position>
+</row>
+<row id='13' type='roundrect' arrange='heading'>
+    <k>0.6</k>
+    <r>0.15</r>
+    <stepping>2.0</stepping>
+    <position>-10.752</position>
+</row>
+<row id='14' type='roundrect' arrange='cross'>
+    <k>0.6</k>
+    <r>0.15</r>
+    <stepping>2.0</stepping>
+    <position>-11.7585</position>
+</row>
+<row id='15' type='roundrect' arrange='heading'>
+    <k>0.6</k>
+    <r>0.15</r>
+    
+    <stepping>2.0</stepping>
+    <position>-12.765</position>
+</row>
+<row id='16' type='roundrect' arrange='cross'>
+    <k>0.6</k>
+    <r>0.15</r>
+    
+    <stepping>2.0</stepping>
+    <position>-13.7715</position>
+</row>
+<row id='17' type='roundrect' arrange='heading'>
+    <k>0.6</k>
+    <r>0.15</r>
+    <stepping>2.0</stepping>
+    <position>-14.778</position>
+</row>
+</bottom>
+
+</setting>
+
+
+
+
+

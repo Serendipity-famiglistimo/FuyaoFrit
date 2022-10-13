@@ -1,0 +1,38 @@
+<setting>
+<band>
+<row id='0' type='roundrect' arrange='heading'>
+    <k>0.55</k>
+    <r>0.1375</r>
+    <stepping>2.0</stepping>
+    <position>2.995</position>
+</row>
+<row id='1' type='roundrect' arrange='cross'>
+    <k>0.77</k>
+    <r>0.1925</r>
+    <stepping>2.0</stepping>
+    <position>1.615</position>
+</row>
+<row id='2' type='roundrect' arrange='heading'>
+    <k>1.0</k>
+    <r>0.25</r>
+    <stepping>2.0</stepping>
+    <position>0.5</position>
+</row>
+<row id='3' type='roundrect' arrange='heading'>
+    <k>0.9</k>
+    <r>0.225</r>
+    <stepping>2.0</stepping>
+    <position>-0.55</position>
+</row>
+<row id ='4' type='circle' arrange='cross'>
+    <r>0.585</r>
+    <stepping>2</stepping>
+    <position>-1.4</position>
+</row>
+</band>
+</setting>
+
+
+
+
+
