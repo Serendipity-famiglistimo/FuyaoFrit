@@ -1,0 +1,11 @@
+<setting>
+<block>
+<hole id ='0' type='roundrect' arrange='heading'>
+    <fposition>-0.5</fposition>
+    <k>0.9</k>
+    <r>0.23</r>
+    <stepping>2</stepping>
+    <vspace>1.7</vspace>
+</hole>
+</block>
+</setting>

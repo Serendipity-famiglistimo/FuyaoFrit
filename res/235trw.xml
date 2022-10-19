@@ -2,9 +2,9 @@
 <setting>
 <band>
 <row id='0' type='arcdot' arrange='heading'>
-    <lr>1.2</lr>
-    <sr>0.49</sr>
-    <angle>90</angle>
+    <lr>1.</lr>
+    <sr>0.45</sr>
+    <angle>87.3</angle>
     <stepping>2</stepping>
     <position>0</position>
 </row>

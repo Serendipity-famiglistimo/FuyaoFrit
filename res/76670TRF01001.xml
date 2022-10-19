@@ -1,0 +1,36 @@
+<setting>
+
+<band>
+<row id='0' type='circle' arrange='heading'>
+    <r>0.4</r>
+    <stepping>2.6</stepping>
+    <position>4.2</position>
+</row>
+<row id='1' type='circle' arrange='cross'>
+    <r>0.55</r>
+    <stepping>2.6</stepping>
+    <position>2.9</position>
+</row>
+<row id='2' type='circle' arrange='heading'>
+    <r>0.7</r>
+    <stepping>2.6</stepping>
+    <position>1.6</position>
+</row>
+<row id='3' type='circle' arrange='cross'>
+    <r>0.85</r>
+    <stepping>2.6</stepping>
+    <position>0.3</position>
+</row>
+<row id='4' type='circle' arrange='heading'>
+    <r>1.0</r>
+    <stepping>2.6</stepping>
+    <position>-1.0</position>
+</row>
+</band>
+</setting>
+
+
+
+
+
+

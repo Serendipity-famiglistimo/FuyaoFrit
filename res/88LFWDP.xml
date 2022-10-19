@@ -19,6 +19,21 @@
     <position>1.7</position>
 </row>
 </band>
+<block>
+<row id='-1' type='arcdot' arrange='heading'>
+    <lr>1.3</lr>
+    <sr>1</sr>
+    <angle>120</angle>
+    <stepping>3.9</stepping>
+    <position>0</position>
+</row>
+<hole id ='0' type='circle' arrange='cross'>
+    <fposition>2.0</fposition>
+    <r>1</r>
+    <stepping>3.9</stepping>
+    <vspace>2.3</vspace>
+</hole>
+</block>
 </setting>
 
 

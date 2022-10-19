@@ -32,7 +32,7 @@ class RoundRectDot(Dot):
         y = self.centroid.Y
         x_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(x, self.config.k / 2), ghcomp.Addition(x, self.config.k / 2))
         y_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(y, self.config.k / 2), ghcomp.Addition(y, self.config.k / 2))
-        rec, _ = ghcomp.Rectangle(rs.WorldXYPlane(), x_domain, y_domain, ghcomp.Division(self.config.r, 2))
+        rec, _ = ghcomp.Rectangle(rs.WorldXYPlane(), x_domain, y_domain, self.config.r)
         rec, _ = ghcomp.Rotate(rec, self.theta, self.centroid)
         self.curve = rec
         display.AddCurve(rec, display_color, 1)

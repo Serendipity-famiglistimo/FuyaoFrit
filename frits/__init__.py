@@ -11,7 +11,8 @@ class FritType:
     CIRCLE_DOT=0
     ROUND_RECT=1
     ARC_CIRCLE=2
+    TRI_ARC=3
     @staticmethod
     def get_frit_type_strings():
-        return ['圆点', '圆角矩形', '弧形']
+        return ['圆点', '圆角矩形', '弧形', '三段弧形']
     

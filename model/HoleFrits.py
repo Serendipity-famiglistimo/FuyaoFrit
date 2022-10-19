@@ -52,6 +52,397 @@ class HoleFrits:
     def bake(self):
         pass
     
+    def fill_dots_88LFW(self):
+        self.top_curve = self.region.curves[2]
+        if self.region.is_flip[2] == True:
+            self.top_curve, _ = ghcomp.FlipCurve(self.top_curve)
+        self.bottom_curve = self.region.curves[0]
+        if self.region.is_flip[0] == True:
+            self.bottom_curve, _ = ghcomp.FlipCurve(self.bottom_curve)
+        
+        first_line_curve = ghcomp.OffsetCurve(self.top_curve, plane = rs.WorldXYPlane(), distance=self.first_line_position, corners=1)
+        crv_length = ghcomp.Length(first_line_curve)   
+        pts_num = int(crv_length / self.stepping)
+        line_pts, _, t = ghcomp.DivideCurve(first_line_curve, pts_num, False)
+        new_t = []
+        for i in range(len(t) - 1):
+            new_t.append((t[i] + t[i + 1]) / 2)
+        
+        cross_pts, vec, _ = ghcomp.EvaluateCurve(first_line_curve, new_t)
+        
+        _, _, blockborder = self.construct_border(self.top_curve, self.bottom_curve)
+        # 估计排数
+        bbox = blockborder.GetBoundingBox(True)
+        
+        leftup = bbox.Min
+        bottomright = bbox.Max
+      
+        yStart = leftup.Y
+        yEnd = bottomright.Y
+        
+       
+        yLength = yEnd - yStart 
+        
+        # 随便估算一下
+        yCount = int(math.ceil(yLength / self.vspace) / 2 + 2)
+        bottom_pts = []
+        all_dots = []
+        dots_list = []
+        for i in range(yCount):
+            l2 = ghcomp.Addition(rg.Vector3d(0, -self.vspace * 2 * i, 0), cross_pts)
+            l3 = ghcomp.Addition(rg.Vector3d(0, -self.vspace * (2* i + 1), 0), line_pts)
+            new_l2 = []
+            new_l3 = []
+            for pt in l2:
+                PtCtmt = blockborder.Contains(pt)
+                if PtCtmt == rg.PointContainment.Inside:
+                    new_l2.append(pt)
+            
+            for pt in l3:
+                PtCtmt = blockborder.Contains(pt)
+                if PtCtmt == rg.PointContainment.Inside:
+                    new_l3.append(pt)
+            if len(new_l2):
+                dots_list.append(new_l2)
+            if len(new_l3):
+                dots_list.append(new_l3)
+        big_dots = []
+        start_pt, end_pt = ghcomp.EndPoints(self.top_curve)
+        #首先判断斜率得方向
+        sx, sy, sz = ghcomp.Deconstruct(start_pt)
+        ex, ey, ez = ghcomp.Deconstruct(end_pt)
+        left_or_right = 1 # 左边
+        if (ey - sy) * (ex - sx) > 0:
+            left_or_right = -1 # 右边
+        if left_or_right == 1:
+            for i in range(len(dots_list)):
+                for j in range(len(dots_list[i])):
+                    if i == len(dots_list) - 1:
+                        bottom_pts.append(dots_list[i][j])
+                    else:
+                        dot = dots_list[i][j]
+                        dot1 = dots_list[i+1][0]
+                        dx, _, _ = ghcomp.Deconstruct(dot)
+                        dx1, _, _ = ghcomp.Deconstruct(dot1)
+                        if dx < dx1:
+                            bottom_pts.append(dot)
+                        else:
+                            break
+        else:
+            for i in range(len(dots_list)):
+            
+                for j in range(len(dots_list[i])):
+                    if i == len(dots_list) - 1:
+                        bottom_pts.append(dots_list[i][j])
+                    else:
+                        dot = dots_list[i][len(dots_list[i]) - 1- j]
+                        dot1 = dots_list[i+1][len(dots_list[i + 1]) - 1]
+                        dx, _, _ = ghcomp.Deconstruct(dot)
+                        dx1, _, _ = ghcomp.Deconstruct(dot1)
+                        if dx > dx1:
+                            bottom_pts.append(dot)
+                        else:
+                            break
+        for i in range(0, len(dots_list) - 1):
+            big_dots += dots_list[i]
+        big_dots += dots_list[-1]
+        # draw big dots
+        for i in range(len(big_dots)):
+            theta = 0 # utils.tgt_angle(vec[i])
+            c = CircleDotConfig()
+            c.r = 1
+            dot = CircleDot(big_dots[i].X, big_dots[i].Y, c, theta)
+            self.dots.append(dot)
+
+        
+        small_curve = self.region.curves[1]
+        if self.region.is_flip[1] == True:
+            small_curve, _ = ghcomp.FlipCurve(small_curve)
+         # 从顶部发射射线与下部相交
+        default_length = 500
+        dirc = rg.Vector3d(-left_or_right * self.stepping / 2, -self.vspace, 0)
+        diag_lines = ghcomp.LineSDL(bottom_pts, dirc, default_length)
+
+        # 射线与底线相交
+        offset_dis = -0.5
+        bcurve = ghcomp.OffsetCurve(small_curve, plane = rs.WorldXYPlane(), distance=offset_dis, corners=1)
+        line = []
+        fill_pts = []
+        for i in range(len(diag_lines)):
+            small_pts, _, _ = ghcomp.CurveXCurve(diag_lines[i], bcurve)
+            if small_pts:
+                line.append(ghcomp.Line(bottom_pts[i], small_pts))
+            
+        
+        # line = ghcomp.Line(top_pts, bottom_pts)
+        unit_length = math.sqrt(0.25 * self.stepping * self.stepping + self.vspace * self.vspace)
+        for l in line:
+            crv_length = ghcomp.Length(l)   
+            pts_num = int(crv_length / unit_length)
+            # offset curve
+            line_pts, _, t = ghcomp.DivideCurve(l, pts_num, False)
+            line_pts.reverse()
+            if line_pts:
+                # line_pts = line_pts[1:]
+                if line_pts:
+                    for i in range(len(line_pts) - 1): 
+                        c = CircleDotConfig()
+                        c.r = 0.5 + 0.1 * i
+                        dot = CircleDot(line_pts[i].X, line_pts[i].Y, c, 0)
+                        self.dots.append(dot)
+        
+
+    # 76720LFW00027
+    def fill_dots_76720LFW00027(self):
+        # top_curve
+        self.top_curve = self.region.curves[2]
+        if self.region.is_flip[2] == True:
+            self.top_curve, _ = ghcomp.FlipCurve(self.top_curve)
+        
+        box = ghcomp.BoundingBox(self.top_curve, rs.WorldXYPlane())
+        box_centroid, _, _, _, _ = ghcomp.BoxProperties(box)
+        cx, cy, cz = ghcomp.Deconstruct(box_centroid[0])
+        # 向下平移半径长度
+        # 这里先假设是圆形
+        curve = ghcomp.OffsetCurve(self.top_curve, plane = rs.WorldXYPlane(), distance=0.36, corners=1)
+        # 先画一条水平线
+        start_pt, end_pt = ghcomp.EndPoints(curve)
+        #首先判断斜率得方向
+        sx, sy, sz = ghcomp.Deconstruct(start_pt)
+        ex, ey, ez = ghcomp.Deconstruct(end_pt)
+        left_or_right = 1 # 左边
+        if (ey - sy) * (ex - sx) > 0:
+            left_or_right = -1 # 右边
+        sx0 = sx - left_or_right * (sy - cy) / self.vspace / 2  * self.stepping
+        ex0 = ex - left_or_right * (ey - cy) / self.vspace / 2 * self.stepping
+        pts_num = int(abs(ex0 - sx0) / self.stepping)
+        xs = []
+        default_xd = 500
+        top_pts = []
+        for i in range(pts_num + 1):
+            mx = sx0 + i * (ex0 - sx0) / pts_num
+            lx = mx - default_xd
+            ly = cy - left_or_right * default_xd * self.vspace * 2 / self.stepping
+            rx = mx + default_xd
+            ry = cy + left_or_right * default_xd * self.vspace * 2 /self.stepping
+            line = ghcomp.Line(rg.Point3d(lx, ly, 0), rg.Point3d(rx, ry, 0))
+            jpt, _, _ = ghcomp.CurveXCurve(line, curve)
+            top_pts.append(jpt)
+        # offset curve
+        
+        # 从顶部发射射线与下部相交
+        default_length = 500
+        dirc = rg.Vector3d(-left_or_right * self.stepping / 2, -self.vspace, 0)
+        diag_lines = ghcomp.LineSDL(top_pts, dirc, default_length)
+
+        # 射线与底线相交
+        offset_dis = -0.5
+        self.bottom_curve = self.region.curves[0]
+        if self.region.is_flip[0] == True:
+            self.bottom_curve, _ = ghcomp.FlipCurve(self.bottom_curve)
+        bcurve = ghcomp.OffsetCurve(self.bottom_curve, plane = rs.WorldXYPlane(), distance=offset_dis, corners=1)
+        line = []
+        fill_pts = []
+        for i in range(len(diag_lines)):
+            bottom_pts, _, _ = ghcomp.CurveXCurve(diag_lines[i], bcurve)
+            if bottom_pts:
+                line.append(ghcomp.Line(top_pts[i], bottom_pts))
+            
+        
+        # line = ghcomp.Line(top_pts, bottom_pts)
+        unit_length = math.sqrt(0.25 * self.stepping * self.stepping + self.vspace * self.vspace)
+
+        
+        for l in line:
+            crv_length = ghcomp.Length(l)   
+            pts_num = int(crv_length / unit_length)
+            # offset curve
+            line_pts, _, t = ghcomp.DivideCurve(l, pts_num, False)
+            if line_pts:
+                fill_pts += line_pts[1:]
+            
+
+        for i in range(len(top_pts)):
+            theta = ghcomp.Pi() * 0.25 # utils.tgt_angle(vec[i])
+            c = RoundRectConfig()
+            c.k = 0.6
+            c.r = 0.15
+            dot = RoundRectDot(top_pts[i].X, top_pts[i].Y, c, theta)
+            self.dots.append(dot)
+
+        for i in range(len(fill_pts)):
+            theta = ghcomp.Pi() * 0.25 # utils.tgt_angle(vec[i])
+            dot = RoundRectDot(fill_pts[i].X, fill_pts[i].Y, self.round_rect_config, theta)
+            self.dots.append(dot)
+
+    def fill_from_bottom(self):
+        self.top_curve = self.region.curves[2]
+        if self.region.is_flip[2] == True:
+            self.top_curve, _ = ghcomp.FlipCurve(self.top_curve)
+        self.bottom_curve = self.region.curves[0]
+        if self.region.is_flip[0] == True:
+            self.bottom_curve, _ = ghcomp.FlipCurve(self.bottom_curve)
+        
+        start_pt, end_pt = ghcomp.EndPoints(self.top_curve)
+        #首先判断斜率得方向
+        sx, sy, sz = ghcomp.Deconstruct(start_pt)
+        ex, ey, ez = ghcomp.Deconstruct(end_pt)
+        left_or_right = 1 # 左边
+        if (ey - sy) * (ex - sx) > 0:
+            left_or_right = -1 # 右边
+        first_line_curve = self.region.curves[1]
+        if self.region.is_flip[1] == True:
+            first_line_curve, _ = ghcomp.FlipCurve(self.region.curves[1])
+        first_line_curve = ghcomp.OffsetCurve(first_line_curve, plane = rs.WorldXYPlane(), distance=self.first_line_position, corners=1)
+        crv_length = ghcomp.Length(first_line_curve)   
+        pts_num = int(crv_length / self.stepping)
+        line_pts, v1, t = ghcomp.DivideCurve(first_line_curve, pts_num, False)
+         # cross
+        new_t = []
+        for i in range(len(t) - 1):
+            new_t.append((t[i] + t[i + 1]) / 2)
+        
+        cross_pts, v1, _ = ghcomp.EvaluateCurve(first_line_curve, new_t)
+        # 旋转90度做垂线，分别往两个方向分别取100个点
+        v2 = rg.Vector3d(left_or_right * self.stepping / 2, self.vspace, 0)
+        all_dots = list(cross_pts)
+        for i in range(1, 300):
+            l2 = ghcomp.Addition(ghcomp.Multiplication(v2, i), cross_pts) 
+            all_dots += l2
+        # 边界
+        # bcurve = ghcomp.OffsetCurve(self.bottom_curve, plane = rs.WorldXYPlane(), distance=self.first_line_position, corners=1)
+        tcurve = self.top_curve
+        bcurve = self.bottom_curve
+        _, _, blockborder = self.construct_border(tcurve, bcurve)
+        # blockborder = ghcomp.OffsetCurve(blockborder, plane = rs.WorldXYPlane(), distance=self.first_line_position, corners=1)
+        filter_pts = []
+        for pt in all_dots:
+            PtCtmt = blockborder.Contains(pt)
+            if PtCtmt == rg.PointContainment.Inside:
+                filter_pts.append(pt)
+        
+        for i in range(len(filter_pts)):
+            theta = 0
+            dot = None
+            if self.dot_type == FritType.CIRCLE_DOT:
+                dot = CircleDot(filter_pts[i].X, filter_pts[i].Y, self.circle_config)
+            elif self.dot_type == FritType.ROUND_RECT:
+                dot = RoundRectDot(filter_pts[i].X, filter_pts[i].Y, self.round_rect_config, theta)
+            self.dots.append(dot)
+
+    # 针对00215 设计填充算法
+
+    def fill_angle(self):
+        self.top_curve = self.region.curves[2]
+        if self.region.is_flip[2] == True:
+            self.top_curve, _ = ghcomp.FlipCurve(self.top_curve)
+        self.bottom_curve = self.region.curves[0]
+        if self.region.is_flip[0] == True:
+            self.bottom_curve, _ = ghcomp.FlipCurve(self.bottom_curve)
+        first_line_curve = self.region.curves[1]
+        if self.region.is_flip[1] == True:
+            first_line_curve, _ = ghcomp.FlipCurve(self.region.curves[1])
+        first_line_curve = ghcomp.OffsetCurve(first_line_curve, plane = rs.WorldXYPlane(), distance=self.first_line_position, corners=1)
+        second_curve = ghcomp.OffsetCurve(self.bottom_curve, plane = rs.WorldXYPlane(), distance=self.first_line_position, corners=1)
+        # second_curve = ghcomp.RebuildCurve(second_curve, 3, 300, True) 
+         # 先画一条水平线
+        start_pt, end_pt = ghcomp.EndPoints(self.top_curve)
+        #首先判断斜率得方向
+        sx, sy, sz = ghcomp.Deconstruct(start_pt)
+        ex, ey, ez = ghcomp.Deconstruct(end_pt)
+        left_or_right = 1 # 左边
+        if (ey - sy) * (ex - sx) > 0:
+            left_or_right = -1 # 右边
+        crv_length = ghcomp.Length(first_line_curve)   
+        pts_num = int(crv_length / self.stepping)
+        line_pts, v1, t = ghcomp.DivideCurve(first_line_curve, pts_num, False)
+        # cross
+        new_t = []
+        for i in range(len(t) - 1):
+            new_t.append((t[i] + t[i + 1]) / 2)
+        
+        cross_pts, v1, _ = ghcomp.EvaluateCurve(first_line_curve, new_t)
+        # 旋转90度做垂线，分别往两个方向分别取100个点
+        new_v = list()
+        for i in range(len(v1)):
+            new_v.append(v1[1])
+        # fuck Fuck fuck!!! 离谱！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！必须写小数
+        v2, _ = ghcomp.Rotate(new_v, ghcomp.Pi()*(-0.3333) * left_or_right, rg.Point3d(0, 0, 0))
+        # ghcomp.Rotate(
+        print(v2[0])
+        
+        top_pts = []
+        
+        for i in range(len(cross_pts)):     
+            line = ghcomp.LineSDL(cross_pts[i], -v2[i], 500)
+            # cl = rg.NurbsCurve.CreateFromLine(line)
+            # events = rg.Intersect.Intersection.CurveCurve(second_curve, cl, 0.001, 0.0)
+            # jpt = rs.CurveCurveIntersection(line,second_curve)
+            jpt, _, _ = ghcomp.CurveXCurve(line, second_curve)
+            if jpt:
+                top_pts.append(jpt)
+            line = ghcomp.LineSDL(cross_pts[i], v2[i], 500)
+            jpt, _, _ = ghcomp.CurveXCurve(line, second_curve)
+            if jpt:
+                top_pts.append(jpt)
+        # offset curve
+        
+        # 从顶部发射射线与下部相交
+        default_length = 500
+        
+        diag_lines = ghcomp.LineSDL(top_pts, -v2[0] * left_or_right, default_length)
+
+        # 射线与底线相交
+        # offset_dis = self.first_line_position # self.region.rows[-1].position - self.vspace - 0.1
+        
+        bcurve = ghcomp.OffsetCurve(self.top_curve, plane = rs.WorldXYPlane(), distance=0, corners=1)
+        line = []
+        fill_pts = []
+        for i in range(len(diag_lines)):
+            bottom_pts, _, _ = ghcomp.CurveXCurve(diag_lines[i], bcurve)
+            if bottom_pts:
+                line.append(ghcomp.Line(top_pts[i], bottom_pts))
+            else:
+                fill_pts.append(top_pts[i])
+        
+        # line = ghcomp.Line(top_pts, bottom_pts)
+        unit_length = math.sqrt(0.25 * self.stepping * self.stepping + self.vspace * self.vspace)
+
+        
+        for l in line:
+            crv_length = ghcomp.Length(l)   
+            pts_num = int(crv_length / unit_length)
+            # offset curve
+            line_pts, _, t = ghcomp.DivideCurve(l, pts_num, False)
+            if line_pts:
+                fill_pts += line_pts
+            else:
+                sp, ep = ghcomp.EndPoints(l)
+                fill_pts.append(sp)
+
+        # 边界
+        blocksrf = ghcomp.RuledSurface(self.top_curve, self.bottom_curve)
+        edgelist = []
+        for i in range(blocksrf.Edges.Count):
+            edgelist.append(blocksrf.Edges[i].EdgeCurve)
+        blockborder = ghcomp.JoinCurves(edgelist)
+        blockborder = ghcomp.OffsetCurve(blockborder, plane = rs.WorldXYPlane(), distance=self.first_line_position, corners=1)
+        filter_pts = []
+        for pt in fill_pts:
+            PtCtmt = blockborder.Contains(pt)
+            if PtCtmt == rg.PointContainment.Inside:
+                filter_pts.append(pt)
+        
+        for i in range(len(filter_pts)):
+            theta = utils.tgt_angle(v1[0])
+            dot = None
+            if self.dot_type == FritType.CIRCLE_DOT:
+                dot = CircleDot(filter_pts[i].X, filter_pts[i].Y, self.circle_config)
+            elif self.dot_type == FritType.ROUND_RECT:
+                dot = RoundRectDot(filter_pts[i].X, filter_pts[i].Y, self.round_rect_config, theta)
+            self.dots.append(dot)
+
+
     # 针对00841LFW00001 设计填充算法
     def fill_simple(self):
         self.top_curve = self.region.curves[2]
@@ -96,7 +487,10 @@ class HoleFrits:
             l3 = ghcomp.Addition(rg.Vector3d(0, -self.vspace * (2* i + 1), 0), cross_pts)
             all_dots += l2
             all_dots += l3
-        blockborder = ghcomp.OffsetCurve(blockborder, plane = rs.WorldXYPlane(), distance=-self.round_rect_config.k / 2, corners=1)
+        if self.dot_type == FritType.CIRCLE_DOT:
+            blockborder = ghcomp.OffsetCurve(blockborder, plane = rs.WorldXYPlane(), distance=-self.circle_config.r, corners=1)
+        elif self.dot_type == FritType.ROUND_RECT:
+             blockborder = ghcomp.OffsetCurve(blockborder, plane = rs.WorldXYPlane(), distance=-self.round_rect_config.k / 2, corners=1)
         filter_pts = []
         for pt in all_dots:
             PtCtmt = blockborder.Contains(pt)
@@ -206,7 +600,7 @@ class HoleFrits:
         diag_lines = ghcomp.LineSDL(top_pts, dirc, default_length)
 
         # 射线与底线相交
-        offset_dis = self.region.rows[-1].position - self.vspace - 0.1
+        offset_dis = self.region.rows[-1].position - self.vspace - 0.2
         self.bottom_curve = self.region.curves[0]
         if self.region.is_flip[0] == True:
             self.bottom_curve, _ = ghcomp.FlipCurve(self.bottom_curve)
@@ -245,7 +639,11 @@ class HoleFrits:
             self.dots.append(dot)
 
     def fill_dots(self):
-        self.fill_simple()
+        self.fill_angle()
+        # self.fill_from_bottom()
+        # self.fill_simple()
+        # self.fill_dots_88LFW()
+        # self.fill_dots_76720LFW00027()
         # self.fill_one_line()
         # self.fill_dots_diag_and_sticky()
 

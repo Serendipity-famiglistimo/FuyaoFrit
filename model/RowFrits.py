@@ -11,6 +11,8 @@ from frits.CircleDot import CircleDot, CircleDotConfig
 from frits.Dot import Dot
 from frits.RoundRectDot import RoundRectConfig, RoundRectDot
 from frits.ArcDot import ArcDot, ArcDotConfig
+from frits.TriArc import TriArc, TriArcConfig
+
 import ghpythonlib.components as ghcomp
 import rhinoscriptsyntax as rs
 import utils
@@ -38,6 +40,7 @@ class RowFrits:
         self.circle_config = CircleDotConfig()
         self.round_rect_config = RoundRectConfig()
         self.arc_config = ArcDotConfig()
+        self.tri_arc_config = TriArcConfig()
 
         self.is_transit = False
         self.transit_radius = 0
@@ -100,6 +103,8 @@ class RowFrits:
                 dot = RoundRectDot(pts[i].X, pts[i].Y, self.round_rect_config, theta)
             elif self.dot_type == FritType.ARC_CIRCLE:
                 dot = ArcDot(pts[i].X, pts[i].Y, self.arc_config, theta)
+            elif self.dot_type == FritType.TRI_ARC:
+                dot = TriArc(pts[i].X, pts[i].Y, self.tri_arc_config, theta)
             self.dots.append(dot)
     
     def shift_y_dots(self, shift_y):
@@ -211,6 +216,8 @@ class RowFrits:
                 dot = RoundRectDot(pts[i].X, pts[i].Y, self.round_rect_config, theta)
             elif self.dot_type == FritType.ARC_CIRCLE:
                 dot = ArcDot(pts[i].X, pts[i].Y, self.arc_config, theta)
+            elif self.dot_type == FritType.TRI_ARC:
+                dot = TriArc(pts[i].X, pts[i].Y, self.tri_arc_config, theta)
             self.dots.append(dot)
 
     def get_bottom_curve(self):
@@ -231,6 +238,8 @@ class RowFrits:
             dis = self.round_rect_config.bottom()
         elif self.dot_type == FritType.ARC_CIRCLE:
             dis = self.arc_config.bottom()
+        elif self.dot_type == FritType.TRI_ARC:
+            dis = self.tri_arc_config.bottom()
         curve = ghcomp.OffsetCurve(refer_curve, plane = rs.WorldXYPlane(), distance=self.position + dis, corners=1)
         return curve
         
@@ -252,6 +261,8 @@ class RowFrits:
             dis = self.round_rect_config.top()
         elif self.dot_type == FritType.ARC_CIRCLE:
             dis = self.arc_config.top()
+        elif self.dot_type == FritType.TRI_ARC:
+            dis = self.tri_arc_config.top()
         curve = ghcomp.OffsetCurve(refer_curve, plane = rs.WorldXYPlane(), distance=self.position - dis, corners=1)
         return curve
         
@@ -270,7 +281,7 @@ class RowFrits:
             nid = int(item.GetAttributeNode('id').Value)
             row = RowFrits(nid, region)
             dot_type = item.GetAttributeNode('type').Value
-            row.dot_type = {'circle': FritType.CIRCLE_DOT, 'roundrect': FritType.ROUND_RECT, 'arcdot': FritType.ARC_CIRCLE}[dot_type]
+            row.dot_type = {'circle': FritType.CIRCLE_DOT, 'roundrect': FritType.ROUND_RECT, 'arcdot': FritType.ARC_CIRCLE, 'triarc': FritType.TRI_ARC}[dot_type]
             arrange_type = item.GetAttributeNode('arrange').Value
             row.arrange_type = {'heading': RowArrangeType.HEADING, 'cross': RowArrangeType.CROSS }[arrange_type]
             val = dict()
@@ -287,6 +298,10 @@ class RowFrits:
                 row.arc_config.lr = val['lr']
                 row.arc_config.sr = val['sr']
                 row.arc_config.angle = val['angle']
+            elif row.dot_type == FritType.TRI_ARC:
+                row.tri_arc_config.lr = val['lr']
+                row.tri_arc_config.sr = val['sr']
+                row.tri_arc_config.angle = val['angle']
             if 'transit' in val.keys():
                 row.is_transit = True
                 row.transit_radius = val['transit']
@@ -305,7 +320,7 @@ class RowFrits:
             nid = int(item.GetAttributeNode('id').Value)
             row = RowFrits(nid, region)
             dot_type = item.GetAttributeNode('type').Value
-            row.dot_type = {'circle': FritType.CIRCLE_DOT, 'roundrect': FritType.ROUND_RECT, 'arcdot': FritType.ARC_CIRCLE}[dot_type]
+            row.dot_type = {'circle': FritType.CIRCLE_DOT, 'roundrect': FritType.ROUND_RECT, 'arcdot': FritType.ARC_CIRCLE, 'triarc': FritType.TRI_ARC}[dot_type]
             arrange_type = item.GetAttributeNode('arrange').Value
             row.arrange_type = {'heading': RowArrangeType.HEADING, 'cross': RowArrangeType.CROSS }[arrange_type]
             val = dict()
@@ -323,6 +338,11 @@ class RowFrits:
                 row.arc_config.lr = val['lr']
                 row.arc_config.sr = val['sr']
                 row.arc_config.angle = val['angle']
+            elif row.dot_type == FritType.TRI_ARC:
+                row.tri_arc_config.lr = val['lr']
+                row.tri_arc_config.sr = val['sr']
+                row.tri_arc_config.angle = val['angle']
+
             if 'transit' in val.keys():
                 row.is_transit = True
                 row.transit_radius = val['transit']

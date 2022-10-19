@@ -36,6 +36,7 @@
     <position>0.9</position>
 </row>
 <hole id ='0' type='circle' arrange='cross'>
+    <fposition>-1</fposition>
     <r>0.95</r>
     <stepping>2.2</stepping>
     <vspace>1.9</vspace>
