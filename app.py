@@ -16,6 +16,7 @@ import view.RowConfigPanel as RowConfigPanel
 import view.DefaultPage as DefaultPage
 import view.BandPage
 import view.BlockPage
+import view.dzBlockPage
 import model.RowFrits
 import model.HoleFrits
 import view.HoleConfigPanel
@@ -30,7 +31,7 @@ reload(RowConfigPanel)
 reload(DefaultPage)
 import os
 import clr
-# from RowControl import RowControl
+#from RowControl import RowControl
 from System.Drawing import Color
 
 
@@ -40,6 +41,7 @@ class FritDialog(forms.Dialog[bool]):
         self.Title = '福耀印刷花点排布工具'
         self.Icon = drawing.Icon(current_path1+"\\ico\\FY.ico")
         self.Padding = drawing.Padding(10)
+#        self.type = type
         self.Resizable = False
         self.Closing += self.OnFormClosed
         self.MinimumSize = Size(800, 600)
@@ -53,27 +55,15 @@ class FritDialog(forms.Dialog[bool]):
         default_page = DefaultPage.DefaultPage()
         # default_page.create()
         self.tab.Pages.Add(default_page)
-        page = view.BandPage.BandPage(0)
-        self.tab.Pages.Add(page)
-        page2 = view.BlockPage.BlockPage(1)
-        self.tab.Pages.Add(page2)
-        page3 = view.BandPage.BandPage(0, 'bottom')
-        self.tab.Pages.Add(page3)
-        self.regions = [page, page2, page3]
-
- 
-        # 标题
-        # self.heading_label = forms.Label(Text= '带状区域', Font = Font('Microsoft YaHei', 14., FontStyle.Bold))
-        # # self.m_headding.Color = drawing.Color.FromArgb(255, 0, 0)
-        # self.heading_label.TextAlignment = forms.TextAlignment.Center
-        # self.addButton = forms.Button(Text='添加行')
-        # self.addButton.Click += self.AddButtonClick
+        self.regions = []
         self.layout = forms.DynamicLayout()
         # default is circle dot
         self.layout.AddRow(self.tab)
         self.Content = self.layout 
 
     def create_menu(self):
+        
+        
         self.Menu = forms.MenuBar()
         current_path = os.getcwd()
         
@@ -99,6 +89,7 @@ class FritDialog(forms.Dialog[bool]):
         add_region_menu2.MenuText = "添加底部区域"
         add_region_menu2.Image = drawing.Bitmap(current_path + '\\ico\\rect.png')
         edit_menu.Items.Add(add_region_menu2,1)
+            
     
     def create_toolbar(self):
         current_path = os.getcwd()
@@ -137,9 +128,14 @@ class FritDialog(forms.Dialog[bool]):
         self.tab.Pages.Add(page)
 
     def AddBlockRegionCommand(self, sender, e):
-        page = view.BlockPage.BlockPage(len(self.regions))
-        self.regions.append(page)
-        self.tab.Pages.Add(page)
+        if DefaultPage.con.type == '大众算法':
+            page = view.dzBlockPage.BlockPage(len(self.regions))
+            self.regions.append(page)
+            self.tab.Pages.Add(page)
+        else:
+            page = view.BlockPage.BlockPage(len(self.regions))
+            self.regions.append(page)
+            self.tab.Pages.Add(page)
 
     def HandleTransitCurve(self, sender, e):
         objectId = rs.GetCurveObject("Select curve:")
@@ -181,7 +177,6 @@ class FritDialog(forms.Dialog[bool]):
         for page in self.regions:
             page.bake()
             page.clear_dots()
-        
 
 if __name__ == "__main__":
     dialog = FritDialog();
