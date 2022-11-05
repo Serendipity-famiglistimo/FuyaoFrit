@@ -20,6 +20,12 @@ import utils
 reload(utils)
 import model.BandZone
 reload(model.BandZone)
+from LoadData import Save
+from Rhino.UI import * 
+from Eto.Forms import * 
+from Eto.Drawing import * 
+import os
+import clr
 
 class BandPage(forms.TabPage):
     
@@ -30,15 +36,15 @@ class BandPage(forms.TabPage):
     def __init__(self, page_id, band_type='general'):
         self.page_id = page_id
         self.band_type = band_type
-
         self.Text = '带状区域'
         if band_type == 'bottom':
             self.Text = '底部区域'
         self.row_num = 1
-        self.panel = forms.Scrollable()
-        self.panel.Padding = drawing.Padding(10)
         self.model = BandZone()
         self.row_panels = list()
+        self.panel = forms.Scrollable()
+        self.panel.Padding = drawing.Padding(10)
+        
         
         self.create_interface()
         
@@ -106,35 +112,89 @@ class BandPage(forms.TabPage):
         self.fill_btn.Size = Size(100, 30)
         self.fill_btn.Click += self.AddButtonClick
 
-        self.load_btn = forms.Button(Text='加载填充规则')
-        self.load_btn.Size = Size(100, 30)
-        self.load_btn.Click += self.LoadButtonClick
+#        self.load_btn = forms.Button(Text='加载填充规则')
+#        self.load_btn.Size = Size(100, 30)
+#        self.load_btn.Click += self.LoadButtonClick
+
+#groupbox1
+        self.m_groupbox = forms.GroupBox(Text = '参考线示意图')
+        self.m_groupbox.Padding = drawing.Padding(5)
+ 
+        grouplayout = forms.DynamicLayout()
+        grouplayout.Spacing = Size(3, 3)
+        current_path1 = os.getcwd()
+ 
+        self.img = ImageView()
+        self.img.Image = Bitmap(current_path1+"\\ico\\dz_block.png")
+        grouplayout.AddRow(self.img.Image)
+        self.m_groupbox.Content = grouplayout
+
+#groupbox2
+        self.m_groupbox2 = forms.GroupBox(Text = '参考线选取')
+        self.m_groupbox2.Padding = drawing.Padding(5)
+ 
+        grouplayout = forms.DynamicLayout()
+        grouplayout.Spacing = Size(3, 3)
+        grouplayout.AddRow(self.pick_label)
+#        self.layout.BeginVertical(padding=drawing.Padding(20, 0, 0, 0))
+        grouplayout.AddRow(self.refer_btn)
+        grouplayout.AddRow(self.flip_check)
+        grouplayout.AddRow(self.is_pick_label)
+
+        grouplayout.AddRow(self.inner_btn)
+        grouplayout.AddRow(self.flip_check2)
+        grouplayout.AddRow(self.is_pick_label2)
+
+#        grouplayout.AddRow(self.outer_btn)
+#        grouplayout.AddRow(self.flip_check3)
+#        grouplayout.AddRow(self.is_pick_label3)
+        #grouplayout.AddRow(self.img.Image)
+        self.m_groupbox2.Content = grouplayout
+
 
         self.layout.DefaultSpacing = drawing.Size(8, 8)
-        self.layout.AddSeparateRow(self.pick_label, None)
+#        self.layout.AddSeparateRow(self.pick_label, None)
         self.layout.BeginVertical(padding=drawing.Padding(20, 0, 0, 0))
-        self.layout.AddRow(self.refer_btn, None)
-        self.layout.AddRow(self.flip_check, None)
-        self.layout.AddRow(self.is_pick_label, None)
-
-        self.layout.AddRow(self.inner_btn, None)
-        self.layout.AddRow(self.flip_check2, None)
-        self.layout.AddRow(self.is_pick_label2, None)
+        self.layout.AddRow(self.m_groupbox2, self.m_groupbox)
+#        self.layout.AddRow(self.refer_btn, None)
+#        self.layout.AddRow(self.flip_check, None)
+#        self.layout.AddRow(self.is_pick_label, None)
+#
+#        self.layout.AddRow(self.inner_btn, None)
+#        self.layout.AddRow(self.flip_check2, None)
+#        self.layout.AddRow(self.is_pick_label2, None)
 
         self.layout.EndVertical()
         self.layout.AddSeparateRow(self.fill_label, None)
-        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn, self.load_btn, None])
-       
-        del self.row_panels[:]
-        self.layout.BeginVertical()
-        for i in range(len(self.model.rows)):
-            rpanel = RowConfigPanel(self, self.model.rows[i])
-            self.layout.AddRow(rpanel)
-            self.row_panels.append(rpanel)
-        self.layout.EndVertical()
+        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,  None])
+        
+        
+        if Save.path_data:
+            file_name = Save.path_data
+            rows = RowFrits.load_band_xml(file_name, self.model, self.band_type)
+            self.model.rows = rows
+            del self.row_panels[:]
+            self.layout.BeginVertical()
+            for i in range(len(self.model.rows)):
+                rpanel = RowConfigPanel(self, self.model.rows[i])
+                self.layout.AddRow(rpanel)
+                self.row_panels.append(rpanel)
+            self.layout.EndVertical()
+#            self.layout.AddSpace()
+#            self.panel.Content = self.layout
+#            self.Content = self.panel
+        else:
+            self.layout.BeginVertical()
+            self.warn_label = forms.Label(Text='---未加载带状配置---', Font = Font('Microsoft YaHei', 12.), TextColor = drawing.Color.FromArgb(255, 0, 0))
+            self.layout.AddRow(self.warn_label)
+            print('获取文件路径失败')
+            self.layout.EndVertical()
+            
+            
         self.layout.AddSpace()
         self.panel.Content = self.layout
         self.Content = self.panel
+            
 
 
     def AddButtonClick(self, sender, e):
@@ -156,18 +216,18 @@ class BandPage(forms.TabPage):
             self.model.is_flip[2] = self.flip_check3.Checked
         
     
-    def LoadButtonClick(self, sender, e):
-        # 清空现有的填充规则
-        del self.model.rows[:]
-        fd = Rhino.UI.OpenFileDialog()
-        fd.Title = '加载规则文件'
-        fd.Filter = '规则文件 (*.xml)'
-        fd.MultiSelect = False
-        if fd.ShowOpenDialog():
-            file_name = fd.FileName
-            rows = RowFrits.load_band_xml(file_name, self.model, self.band_type)
-            self.model.rows = rows
-        self.create_interface()
+#    def LoadButtonClick(self, sender, e):
+#        # 清空现有的填充规则
+#        del self.model.rows[:]
+#        fd = Rhino.UI.OpenFileDialog()
+#        fd.Title = '加载规则文件'
+#        fd.Filter = '规则文件 (*.xml)'
+#        fd.MultiSelect = False
+#        if fd.ShowOpenDialog():
+#            file_name = fd.FileName
+#            rows = RowFrits.load_band_xml(file_name, self.model, self.band_type)
+#            self.model.rows = rows
+#        self.create_interface()
         
         pass
     

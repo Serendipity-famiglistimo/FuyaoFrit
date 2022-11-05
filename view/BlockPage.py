@@ -22,6 +22,12 @@ from model.RowFrits import RowFrits
 from model.HoleFrits import HoleFrits
 from RowConfigPanel import RowConfigPanel
 from HoleConfigPanel import HoleConfigPanel
+from LoadData import Save
+from Rhino.UI import * 
+from Eto.Forms import * 
+from Eto.Drawing import * 
+import os
+import clr
 
 class BlockPage(forms.TabPage):
     
@@ -46,7 +52,7 @@ class BlockPage(forms.TabPage):
         # Create a table layout and add all the controls
         self.layout = forms.DynamicLayout()
         self.pick_label = forms.Label(Text='- 拾取几何轮廓', Font = Font('Microsoft YaHei', 12.))
-        self.refer_btn = forms.Button(Text='选取参考线')
+        self.refer_btn = forms.Button(Text='选取参考线1')
         self.refer_btn.Size = Size(100, 30)
         self.refer_btn.Click += self.PickReferCurve
         self.refer_btn.Tag = 'refer_btn'
@@ -64,7 +70,7 @@ class BlockPage(forms.TabPage):
             self.is_pick_label.Text = '选择了曲线{0}.'.format(self.model.curves[0])
             self.is_pick_label.TextColor = drawing.Color.FromArgb(44,162,95)
 
-        self.inner_btn = forms.Button(Text='选取参考线')
+        self.inner_btn = forms.Button(Text='选取参考线2')
         self.inner_btn.Size = Size(100, 30)
         self.inner_btn.Click += self.PickReferCurve
         self.inner_btn.Tag = 'inner_btn'
@@ -82,7 +88,7 @@ class BlockPage(forms.TabPage):
             self.is_pick_label2.Text = '选择了曲线{0}.'.format(self.model.curves[1])
             self.is_pick_label2.TextColor = drawing.Color.FromArgb(44,162,95)
 
-        self.outer_btn = forms.Button(Text='选取参考线')
+        self.outer_btn = forms.Button(Text='选取参考线3')
         self.outer_btn.Size = Size(100, 30)
         self.outer_btn.Click += self.PickReferCurve
         self.outer_btn.Tag = 'outer_btn'
@@ -105,49 +111,102 @@ class BlockPage(forms.TabPage):
         self.fill_btn.Size = Size(100, 30)
         self.fill_btn.Click += self.AddButtonClick
 
-        self.load_btn = forms.Button(Text='加载填充规则')
-        self.load_btn.Size = Size(100, 30)
-        self.load_btn.Click += self.LoadButtonClick
+#        self.load_btn = forms.Button(Text='加载填充规则')
+#        self.load_btn.Size = Size(100, 30)
+#        self.load_btn.Click += self.LoadButtonClick
 
         self.insert_btn = forms.Button(Text='一键填充')
         self.insert_btn.Size = Size(100, 30)
         self.insert_btn.Click += self.InsertButtonClick
+#groupbox1
+        self.m_groupbox = forms.GroupBox(Text = '参考线示意图')
+        self.m_groupbox.Padding = drawing.Padding(5)
+ 
+        grouplayout = forms.DynamicLayout()
+        grouplayout.Spacing = Size(3, 3)
+        current_path1 = os.getcwd()
+ 
+        self.img = ImageView()
+        self.img.Image = Bitmap(current_path1+"\\ico\\dz_block.png")
+        grouplayout.AddRow(self.img.Image)
+        self.m_groupbox.Content = grouplayout
+
+#groupbox2
+        self.m_groupbox2 = forms.GroupBox(Text = '参考线选取')
+        self.m_groupbox2.Padding = drawing.Padding(5)
+ 
+        grouplayout = forms.DynamicLayout()
+        grouplayout.Spacing = Size(3, 3)
+        grouplayout.AddRow(self.pick_label)
+#        self.layout.BeginVertical(padding=drawing.Padding(20, 0, 0, 0))
+        grouplayout.AddRow(self.refer_btn)
+        grouplayout.AddRow(self.flip_check)
+        grouplayout.AddRow(self.is_pick_label)
+
+        grouplayout.AddRow(self.inner_btn)
+        grouplayout.AddRow(self.flip_check2)
+        grouplayout.AddRow(self.is_pick_label2)
+
+        grouplayout.AddRow(self.outer_btn)
+        grouplayout.AddRow(self.flip_check3)
+        grouplayout.AddRow(self.is_pick_label3)
+        #grouplayout.AddRow(self.img.Image)
+        self.m_groupbox2.Content = grouplayout
+
+
+
+
 
         self.layout.DefaultSpacing = drawing.Size(8, 8)
         self.layout.AddSeparateRow(self.pick_label, None)
         self.layout.BeginVertical(padding=drawing.Padding(20, 0, 0, 0))
-        self.layout.AddRow(self.refer_btn, None)
-        self.layout.AddRow(self.flip_check, None)
-        self.layout.AddRow(self.is_pick_label, None)
-
-        self.layout.AddRow(self.inner_btn, None)
-        self.layout.AddRow(self.flip_check2, None)
-        self.layout.AddRow(self.is_pick_label2, None)
-
-        self.layout.AddRow(self.outer_btn, None)
-        self.layout.AddRow(self.flip_check3, None)
-        self.layout.AddRow(self.is_pick_label3, None)
-        
+#        self.layout.AddRow(self.refer_btn, None)
+#        self.layout.AddRow(self.flip_check, None)
+#        self.layout.AddRow(self.is_pick_label, None)
+#
+#        self.layout.AddRow(self.inner_btn, None)
+#        self.layout.AddRow(self.flip_check2, None)
+#        self.layout.AddRow(self.is_pick_label2, None)
+#
+#        self.layout.AddRow(self.outer_btn, None)
+#        self.layout.AddRow(self.flip_check3, None)
+#        self.layout.AddRow(self.is_pick_label3, None)
+        self.layout.AddRow(self.m_groupbox2, self.m_groupbox)
         self.layout.AddRow(self.insert_btn, None)
         self.layout.EndVertical()
         self.layout.AddSeparateRow(self.fill_label, None)
-        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn, self.load_btn, None])
-       
-        del self.row_panels[:]
-        self.layout.BeginVertical()
-        for i in range(len(self.model.rows)):
-            rpanel = RowConfigPanel(self, self.model.rows[i])
-            self.layout.AddRow(rpanel)
-            self.row_panels.append(rpanel)
-        self.layout.EndVertical()
-
-        del self.hole_panels[:]
-        self.layout.BeginVertical()
-        for i in range(len(self.model.holes)):
-            rpanel = HoleConfigPanel(self, self.model.holes[i])
-            self.layout.AddRow(rpanel)
-            self.hole_panels.append(rpanel)
-        self.layout.EndVertical()
+        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,  None])
+        
+        
+        
+        if Save.path_data:
+            file_name = Save.path_data
+            rows = RowFrits.load_block_xml(file_name, self.model)
+            holes = HoleFrits.load_block_xml(file_name, self.model)
+            self.model.holes = holes
+            self.model.rows = rows
+            
+            del self.row_panels[:]
+            self.layout.BeginVertical()
+            for i in range(len(self.model.rows)):
+                rpanel = RowConfigPanel(self, self.model.rows[i])
+                self.layout.AddRow(rpanel)
+                self.row_panels.append(rpanel)
+            self.layout.EndVertical()
+    
+            del self.hole_panels[:]
+            self.layout.BeginVertical()
+            for i in range(len(self.model.holes)):
+                rpanel = HoleConfigPanel(self, self.model.holes[i])
+                self.layout.AddRow(rpanel)
+                self.hole_panels.append(rpanel)
+            self.layout.EndVertical()
+        else:
+            self.layout.BeginVertical()
+            self.warn_label = forms.Label(Text='---未加载块状配置---', Font = Font('Microsoft YaHei', 12.), TextColor = drawing.Color.FromArgb(255, 0, 0))
+            self.layout.AddRow(self.warn_label)
+            print('获取文件路径失败')
+            self.layout.EndVertical()
 
         # self.block_fill_label = forms.Label(Text='- 填充块状区域', Font = Font('Microsoft YaHei', 12.))
         # self.block_fill_btn = forms.Button(Text='填充块状部分')
@@ -190,20 +249,20 @@ class BlockPage(forms.TabPage):
         elif sender.Tag == 'is_outer_flip':
             self.model.is_flip[2] = self.flip_check3.Checked
     
-    def LoadButtonClick(self, sender, e):
-        # 清空现有的填充规则
-        del self.model.rows[:]
-        fd = Rhino.UI.OpenFileDialog()
-        fd.Title = '加载规则文件'
-        fd.Filter = '规则文件 (*.xml)'
-        fd.MultiSelect = False
-        if fd.ShowOpenDialog():
-            file_name = fd.FileName
-            rows = RowFrits.load_block_xml(file_name, self.model)
-            holes = HoleFrits.load_block_xml(file_name, self.model)
-            self.model.holes = holes
-            self.model.rows = rows
-        self.create_interface()
+#    def LoadButtonClick(self, sender, e):
+#        # 清空现有的填充规则
+#        del self.model.rows[:]
+#        fd = Rhino.UI.OpenFileDialog()
+#        fd.Title = '加载规则文件'
+#        fd.Filter = '规则文件 (*.xml)'
+#        fd.MultiSelect = False
+#        if fd.ShowOpenDialog():
+#            file_name = fd.FileName
+#            rows = RowFrits.load_block_xml(file_name, self.model)
+#            holes = HoleFrits.load_block_xml(file_name, self.model)
+#            self.model.holes = holes
+#            self.model.rows = rows
+#        self.create_interface()
     
     def OnGetRhinoObjects(self, sender, e):
         objectId = rs.GetCurveObject("Select curve:")
