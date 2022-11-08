@@ -127,7 +127,7 @@ class BlockPage(forms.TabPage):
         current_path1 = os.getcwd()
  
         self.img = ImageView()
-        self.img.Image = Bitmap(current_path1+"\\ico\\dz_block.png")
+        self.img.Image = Bitmap(current_path1+"\\ico\\block.png")
         grouplayout.AddRow(self.img.Image)
         self.m_groupbox.Content = grouplayout
 
