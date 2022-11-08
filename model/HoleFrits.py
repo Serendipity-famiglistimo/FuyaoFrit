@@ -127,10 +127,21 @@ class dazhong_fill_holes:
         pts += mid_pts
         if self.downline:
             pts += down_pts
-        print(self.boundary)
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        #self.display.AddCurve(self.boundary, self.display_color, 1)
+        #self.display.AddCurve(self.upline, self.display_color, 1)
+        #self.display.AddCurve(self.midline, self.display_color, 1)
+        #print(self.boundary)
+        print(len(um_pts))
         relation, _ = ghcomp.PointInCurve(pts, self.boundary)
+        #print(relation)
         pts, _ = ghcomp.Dispatch(pts, relation)
+        #print(len(pts))
         pts += um_pts
+        #self.display.AddPoint(pts, self.display_color, 1, 1.2)
+        print(len(pts))
         if self.downline:
             pts += md_pts
     
@@ -827,13 +838,18 @@ class HoleFrits:
             self.bottom1_crv, _ = ghcomp.FlipCurve(self.bottom1_crv)
             
         #offset outer_crv
-        crv1 = ghcomp.OffsetCurve(self.outer_crv, plane = rs.WorldXYPlane(), distance=2.4, corners=1)
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        crv1 = ghcomp.OffsetCurve(self.outer_crv, distance=2.4, corners=1)
         blocksrf = ghcomp.RuledSurface(crv1, self.reffer_crv)
         edgelist = []
         for i in range(blocksrf.Edges.Count):
             edgelist.append(blocksrf.Edges[i].EdgeCurve)
         blockborder = ghcomp.JoinCurves(edgelist)
-        boundary_crv = ghcomp.OffsetCurve(blockborder, plane = rs.WorldXYPlane(), distance=-0.1, corners=1)
+        #self.display.AddCurve(blockborder, self.display_color, 1)
+        boundary_crv = ghcomp.OffsetCurve(blockborder,  plane = rs.WorldXYPlane(),distance=-0.1, corners=1)
+        self.display.AddCurve(boundary_crv, self.display_color, 1)
         upline_crv = ghcomp.OffsetCurve(self.top_crv, plane = rs.WorldXYPlane(), distance=0.5, corners=1)
         pts, bound_pts = dazhong_fill_holes(upline = upline_crv, midline = self.bottom_crv, downline = self.bottom1_crv, boundary = boundary_crv, horizontal = 2.4, vertical = 1.2, aligned = False).run()
         bound_pts_white = edge_of_holes(head_pts = bound_pts, pts = pts, split_crv = self.reffer_crv).run()
