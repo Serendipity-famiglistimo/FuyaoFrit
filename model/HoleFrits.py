@@ -142,6 +142,8 @@ class dazhong_fill_holes:
         pts += um_pts
         #self.display.AddCircle(pts, self.display_color, 1, 1.2)
         print(len(pts))
+        #for i in range(len(pts)):
+            #self.display.AddCircle(rc.Geometry.Circle(pts[i],0.5),self.display_color,1)
         if self.downline:
             pts += md_pts
         return pts, bound_pts
@@ -223,6 +225,11 @@ class edge_of_holes:
                 count -= 1
                 continue
             i += 1
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        #for i in range(len(bound_pts)):
+            #self.display.AddCircle(rc.Geometry.Circle(bound_pts[i],0.5),self.display_color,1)
         return bound_pts
     
 
@@ -787,7 +794,17 @@ class black_white_transit:
         bound_crv, link_crv, black_seq_pts, black_n = self.generate_bound(seq_pts, seq_direc)
         bound_pts, bound_direcs = self.separate_pts(black_seq_pts, black_n)
         black_band = self.generate_black_band(bound_pts, bound_direcs, self.edge_crv)
-        return seq_pts
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        print(len(seq_pts))
+        print(len(link_crv))
+        print(len(black_band))
+        #for i in range(len(link_crv)):
+            #self.display.AddCurve(link_crv[i], self.display_color, 1)
+        #for i in range(len(black_band)):
+            #self.display.AddCircle(rc.Geometry.Circle(black_band[i]),self.display_color,1)
+        return seq_pts,link_crv,black_band
     
 
 
@@ -854,18 +871,27 @@ class HoleFrits:
         upline_crv = ghcomp.OffsetCurve(self.top_crv, plane = rs.WorldXYPlane(), distance=0.5, corners=1)
         pts, bound_pts = dazhong_fill_holes(upline = upline_crv, midline = self.bottom_crv, downline = self.bottom1_crv, boundary = boundary_crv, horizontal = 2.4, vertical = 1.2, aligned = False).run()
         bound_pts_white = edge_of_holes(head_pts = bound_pts, pts = pts, split_crv = self.reffer_crv).run()
-        transit_band = black_white_transit(white_pts = bound_pts_white, upline = self.top_crv, midline = self.bottom_crv, downline = self.bottom1_crv, edge_crv = self.inner_crv).run()
+        transit_band,link,black_band = black_white_transit(white_pts = bound_pts_white, upline = self.top_crv, midline = self.bottom_crv, downline = self.bottom1_crv, edge_crv = self.inner_crv).run()
         pat = ghcomp.Merge(True, False)
-        _, white_list = ghcomp.Dispatch(pat,transit_band)
-        _, Index_of_white, _ = ghcomp.ClosestPoint(white_list, pts)
-        inner_of_holes = ghcomp.CullIndex(Index_of_white,pts,True)
-        white_border = ghcomp.ClosestPoint(transit_band, inner_of_holes)
-        white_item = ghcomp.ListItem(white_border,inner_of_holes, True)
-        white_border_frit = ghcomp.DeleteConsecutive(white_item, False)
-        white_border_frit_dot = ghcomp.Circle(white_border_frit,0.585)
-        _, Index_boder_white, _ = ghcomp.ClosestPoint(white_border_frit, inner_of_holes)
-        white_hole_frit = ghcomp.CullIndex(Index_boder_white, inner_of_holes,True)
-        white_hole_frit_dot = ghcomp.Circle(white_hole_frit,0.5)
+        _,white_list = ghcomp.Dispatch(transit_band,pat)#OK
+        _, Index_of_white, _ = ghcomp.ClosestPoint(white_list, pts)#OK
+        #for i in range(len(Index_of_white)):
+        #    print(Index_of_white[i])
+        inner_of_holes = ghcomp.CullIndex(pts,Index_of_white,True)#OK
+        _,white_border,_ = ghcomp.ClosestPoint(transit_band, inner_of_holes)#OK
+        white_item = ghcomp.ListItem(inner_of_holes,white_border, True)#OK 222 values
+        white_border_frit,_ = ghcomp.DeleteConsecutive(white_item, False)#OK 111 values
+        for i in range(len(white_border_frit)):
+            self.display.AddCircle(rc.Geometry.Circle(white_border_frit[i],0.585),self.display_color,1)
+        #print(len(white_border_frit))
+        #for i in range(len(white_border_frit)):
+        #    print(white_border_frit[i])
+        _, Index_boder_white, _ = ghcomp.ClosestPoint(white_border_frit, inner_of_holes)#OK 111 values
+        white_hole_frit = ghcomp.CullIndex(inner_of_holes,Index_boder_white,True)#OK 3999 values
+        #print(len(white_hole_frit))
+        for i in range(len(white_hole_frit)):
+            self.display.AddCircle(rc.Geometry.Circle(white_hole_frit[i],0.5),self.display_color,1)
+        
         
         
         
