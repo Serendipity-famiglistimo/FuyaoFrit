@@ -140,10 +140,11 @@ class dazhong_fill_holes:
         pts, _ = ghcomp.Dispatch(pts, relation)
         #print(len(pts))
         pts += um_pts
-        #self.display.AddPoint(pts, self.display_color, 1, 1.2)
+        #self.display.AddCircle(pts, self.display_color, 1, 1.2)
         print(len(pts))
         if self.downline:
             pts += md_pts
+        return pts, bound_pts
     
 
 class edge_of_holes:
@@ -291,7 +292,7 @@ class black_white_transit:
             pt_ori, t, _ = ghcomp.CurveClosestPoint(cur_pt, upline)
             _, direc_ori, _ = ghcomp.EvaluateCurve(upline, t)
             
-            aux_line = ghcomp.LineSDL(pt_ori, ghcomp.Multiplication(-1, direc_ori), horizontal)
+            aux_line = ghcomp.LineSDL(pt_ori, ghcomp.Multiplication(-1, direc_ori), self.horizontal)
             _, black_pt_ori = ghcomp.EndPoints(aux_line)
             """
             cur_line = ghcomp.LineSDL(cur_pt, ghcomp.Multiplication(-1, cur_direc), self.horizontal)
@@ -300,7 +301,7 @@ class black_white_transit:
             black_pts.append(cur_black_pt)
         return black_pts, black_direc
     
-    def generate_seq(self, white_pts, black_pts):
+    def generate_seq(self, white_pts, black_pts,white_direc,black_direc):
         seq_pts = []
         seq_direc = []
         pre_pt = white_pts[0]
@@ -781,8 +782,8 @@ class black_white_transit:
         return black_band
     def run(self):
         white_direc = self.generate_white_direc(self.white_pts)
-        black_pts, black_direc = self.generate_black_pts(white_pts, white_direc, self.upline)
-        seq_pts, seq_direc = self.generate_seq(white_pts, black_pts)
+        black_pts, black_direc = self.generate_black_pts(self.white_pts, white_direc, self.upline)
+        seq_pts, seq_direc = self.generate_seq(self.white_pts, black_pts,white_direc,black_direc)
         bound_crv, link_crv, black_seq_pts, black_n = self.generate_bound(seq_pts, seq_direc)
         bound_pts, bound_direcs = self.separate_pts(black_seq_pts, black_n)
         black_band = self.generate_black_band(bound_pts, bound_direcs, self.edge_crv)
@@ -854,16 +855,17 @@ class HoleFrits:
         pts, bound_pts = dazhong_fill_holes(upline = upline_crv, midline = self.bottom_crv, downline = self.bottom1_crv, boundary = boundary_crv, horizontal = 2.4, vertical = 1.2, aligned = False).run()
         bound_pts_white = edge_of_holes(head_pts = bound_pts, pts = pts, split_crv = self.reffer_crv).run()
         transit_band = black_white_transit(white_pts = bound_pts_white, upline = self.top_crv, midline = self.bottom_crv, downline = self.bottom1_crv, edge_crv = self.inner_crv).run()
-        _, white_list = ghcomp.Dispatch(List = transit_band)
+        pat = ghcomp.Merge(True, False)
+        _, white_list = ghcomp.Dispatch(pat,transit_band)
         _, Index_of_white, _ = ghcomp.ClosestPoint(white_list, pts)
-        inner_of_holes = ghcomp.CullIndex(List = pts, Indices = Index_of_white, Wrap = True)
+        inner_of_holes = ghcomp.CullIndex(Index_of_white,pts,True)
         white_border = ghcomp.ClosestPoint(transit_band, inner_of_holes)
-        white_item = ghcomp.ListItem(List = inner_of_holes, Index = white_border, Wrap = True)
-        white_border_frit = ghcomp.DeleteConsecutive(set = white_item, Wrap = False)
-        white_border_frit_dot = ghcomp.Circle(white_border_frit,Radius = 0.585)
+        white_item = ghcomp.ListItem(white_border,inner_of_holes, True)
+        white_border_frit = ghcomp.DeleteConsecutive(white_item, False)
+        white_border_frit_dot = ghcomp.Circle(white_border_frit,0.585)
         _, Index_boder_white, _ = ghcomp.ClosestPoint(white_border_frit, inner_of_holes)
-        white_hole_frit = ghcomp.CullIndex(List = inner_of_holes, Indices = Index_boder_white, Wrap = True)
-        white_hole_frit_dot = ghcomp.Circle(white_hole_frit, Radius = 0.5)
+        white_hole_frit = ghcomp.CullIndex(Index_boder_white, inner_of_holes,True)
+        white_hole_frit_dot = ghcomp.Circle(white_hole_frit,0.5)
         
         
         
