@@ -37,7 +37,7 @@ class BandPage(forms.TabPage):
         self.page_id = page_id
         self.band_type = band_type
         self.Text = '带状区域'
-        if band_type == 'bottom':
+        if self.band_type == 'bottom':
             self.Text = '底部区域'
         self.row_num = 1
         self.model = BandZone()
@@ -125,7 +125,10 @@ class BandPage(forms.TabPage):
         current_path1 = os.getcwd()
  
         self.img = ImageView()
-        self.img.Image = Bitmap(current_path1+"\\ico\\dz_block.png")
+        if self.band_type == 'bottom':
+            self.img.Image = Bitmap(current_path1+"\\ico\\bottom.png")
+        else:
+            self.img.Image = Bitmap(current_path1+"\\ico\\band.png")
         grouplayout.AddRow(self.img.Image)
         self.m_groupbox.Content = grouplayout
 
