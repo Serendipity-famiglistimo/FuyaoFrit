@@ -30,7 +30,7 @@ class HoleArrangeType:
     def get_hole_arrange_type():
         return ['顶头', '交错']
 
-class dazhong_fill_holes:
+class Dazhong_fill_holes:
     def __init__(self,upline, midline, downline, boundary, horizontal, vertical, aligned = False):
         self.upline = upline
         self.midline = midline
@@ -149,7 +149,7 @@ class dazhong_fill_holes:
         return pts, bound_pts
     
 
-class edge_of_holes:
+class Edge_of_holes:
     def __init__(self,head_pts, pts, split_crv):
         self.head_pts = head_pts
         self.pts = pts
@@ -233,7 +233,7 @@ class edge_of_holes:
         return bound_pts
     
 
-class black_white_transit:
+class Black_white_transit:
     def __init__(self, white_pts, upline, midline, downline, edge_crv):
         self.white_pts = white_pts
         self.upline = upline
@@ -370,7 +370,7 @@ class black_white_transit:
             std_vec = ghcomp.UnitX(1)
             
             luarc_ct = ghcomp.ConstructPoint(x-k+r, y+k-r, 0)
-            lu_angle = ghcomp.ConstructDomain(ghcomp.Pi(1/2), ghcomp.Pi(1))
+            lu_angle = ghcomp.ConstructDomain(ghcomp.Pi(0.5), ghcomp.Pi(1))
             luarc, _ = ghcomp.Arc(ghcomp.XYPlane(luarc_ct), r, lu_angle)
             luarc = rg.NurbsCurve.CreateFromArc(luarc)
             luarc, _ = ghcomp.RotateDirection(luarc, cur_pt, std_vec, cur_n)
@@ -393,7 +393,7 @@ class black_white_transit:
             rec_crv = ghcomp.JoinCurves(ghcomp.Merge(up_crv, luarc), True)
             
             ruarc_ct = ghcomp.ConstructPoint(x+k-r, y+k-r, 0)
-            ru_angle = ghcomp.ConstructDomain(ghcomp.Pi(0), ghcomp.Pi(1/2))
+            ru_angle = ghcomp.ConstructDomain(ghcomp.Pi(0), ghcomp.Pi(0.5))
             ruarc, _ = ghcomp.Arc(ghcomp.XYPlane(ruarc_ct), r, ru_angle)
             ruarc = rg.NurbsCurve.CreateFromArc(ruarc)
             ruarc, _ = ghcomp.RotateDirection(ruarc, cur_pt, std_vec, cur_n)
@@ -418,7 +418,7 @@ class black_white_transit:
             rec_crv = ghcomp.JoinCurves(ghcomp.Merge(right_crv, rec_crv), True)
             
             rbarc_ct = ghcomp.ConstructPoint(x+k-r, y-k+r, 0)
-            rb_angle = ghcomp.ConstructDomain(ghcomp.Pi(-1/2), ghcomp.Pi(0))
+            rb_angle = ghcomp.ConstructDomain(ghcomp.Pi(-0.5), ghcomp.Pi(0))
             rbarc, _ = ghcomp.Arc(ghcomp.XYPlane(rbarc_ct), r, rb_angle)
             rbarc = rg.NurbsCurve.CreateFromArc(rbarc)
             rbarc, _ = ghcomp.RotateDirection(rbarc, cur_pt, std_vec, cur_n)
@@ -442,7 +442,7 @@ class black_white_transit:
             rec_crv = ghcomp.JoinCurves(ghcomp.Merge(bottom_crv, rec_crv), True)
             
             lbarc_ct = ghcomp.ConstructPoint(x-k+r, y-k+r, 0)
-            lb_angle = ghcomp.ConstructDomain(ghcomp.Pi(-1), ghcomp.Pi(-1/2))
+            lb_angle = ghcomp.ConstructDomain(ghcomp.Pi(-1), ghcomp.Pi(-0.5))
             lbarc, _ = ghcomp.Arc(ghcomp.XYPlane(lbarc_ct), r, lb_angle)
             lbarc = rg.NurbsCurve.CreateFromArc(lbarc)
             lbarc, _ = ghcomp.RotateDirection(lbarc, cur_pt, std_vec, cur_n)
@@ -805,8 +805,8 @@ class black_white_transit:
         for i in range(len(link_crv)):
             print(link_crv[i])
             self.display.AddCurve(link_crv[i], self.display_color, 1)
-        #for i in range(len(black_band)):
-            #self.display.AddCircle(black_band[i],self.display_color,1)
+        for i in range(len(black_band)):
+            self.display.AddCircle(black_band[i],self.display_color,1)
         return seq_pts,link_crv,black_band
     
 
@@ -872,9 +872,9 @@ class HoleFrits:
         boundary_crv = ghcomp.OffsetCurve(blockborder,  plane = rs.WorldXYPlane(),distance=-0.1, corners=1)
         self.display.AddCurve(boundary_crv, self.display_color, 1)
         upline_crv = ghcomp.OffsetCurve(self.top_crv, plane = rs.WorldXYPlane(), distance=0.5, corners=1)
-        pts, bound_pts = dazhong_fill_holes(upline = upline_crv, midline = self.bottom_crv, downline = self.bottom1_crv, boundary = boundary_crv, horizontal = 2.4, vertical = 1.2, aligned = False).run()
-        bound_pts_white = edge_of_holes(head_pts = bound_pts, pts = pts, split_crv = self.reffer_crv).run()
-        transit_band,link,black_band = black_white_transit(white_pts = bound_pts_white, upline = self.top_crv, midline = self.bottom_crv, downline = self.bottom1_crv, edge_crv = self.inner_crv).run()
+        pts, bound_pts = Dazhong_fill_holes(upline = upline_crv, midline = self.bottom_crv, downline = self.bottom1_crv, boundary = boundary_crv, horizontal = 2.4, vertical = 1.2, aligned = False).run()
+        bound_pts_white = Edge_of_holes(head_pts = bound_pts, pts = pts, split_crv = self.reffer_crv).run()
+        transit_band,link,black_band = Black_white_transit(white_pts = bound_pts_white, upline = self.top_crv, midline = self.bottom_crv, downline = self.bottom1_crv, edge_crv = self.inner_crv).run()
         pat = ghcomp.Merge(True, False)
         _,white_list = ghcomp.Dispatch(transit_band,pat)#OK
         _, Index_of_white, _ = ghcomp.ClosestPoint(white_list, pts)#OK
