@@ -791,19 +791,22 @@ class black_white_transit:
         white_direc = self.generate_white_direc(self.white_pts)
         black_pts, black_direc = self.generate_black_pts(self.white_pts, white_direc, self.upline)
         seq_pts, seq_direc = self.generate_seq(self.white_pts, black_pts,white_direc,black_direc)
+        #print(seq_pts)
         bound_crv, link_crv, black_seq_pts, black_n = self.generate_bound(seq_pts, seq_direc)
         bound_pts, bound_direcs = self.separate_pts(black_seq_pts, black_n)
         black_band = self.generate_black_band(bound_pts, bound_direcs, self.edge_crv)
         self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
         self.display = rc.Display.CustomDisplay(True)
         self.display.Clear()
+        print(len(seq_direc))
         print(len(seq_pts))
         print(len(link_crv))
         print(len(black_band))
-        #for i in range(len(link_crv)):
-            #self.display.AddCurve(link_crv[i], self.display_color, 1)
+        for i in range(len(link_crv)):
+            print(link_crv[i])
+            self.display.AddCurve(link_crv[i], self.display_color, 1)
         #for i in range(len(black_band)):
-            #self.display.AddCircle(rc.Geometry.Circle(black_band[i]),self.display_color,1)
+            #self.display.AddCircle(black_band[i],self.display_color,1)
         return seq_pts,link_crv,black_band
     
 
