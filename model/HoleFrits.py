@@ -30,6 +30,7 @@ class HoleArrangeType:
     def get_hole_arrange_type():
         return ['顶头', '交错']
 
+
 class Dazhong_fill_holes:
     def __init__(self,upline, midline, downline, boundary, horizontal, vertical, aligned = False):
         self.upline = upline
@@ -52,6 +53,7 @@ class Dazhong_fill_holes:
             except:
                 return pts
         return pts
+    
     def generate_grid_pts(self,base_pts, vertical, downline):
         pts = []
         bound_pts = []
@@ -107,6 +109,7 @@ class Dazhong_fill_holes:
                 pts += cur_pts
                 bound_pts.append(cur_pts[0])
         return dest_pts, pts, bound_pts
+    
     def run(self):
         pts = []
         bound_pts = []
@@ -127,13 +130,6 @@ class Dazhong_fill_holes:
         pts += mid_pts
         if self.downline:
             pts += down_pts
-        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
-        self.display = rc.Display.CustomDisplay(True)
-        self.display.Clear()
-        #self.display.AddCurve(self.boundary, self.display_color, 1)
-        #self.display.AddCurve(self.upline, self.display_color, 1)
-        #self.display.AddCurve(self.midline, self.display_color, 1)
-        #print(self.boundary)
         print(len(um_pts))
         relation, _ = ghcomp.PointInCurve(pts, self.boundary)
         #print(relation)
@@ -146,8 +142,8 @@ class Dazhong_fill_holes:
             #self.display.AddCircle(rc.Geometry.Circle(pts[i],0.5),self.display_color,1)
         if self.downline:
             pts += md_pts
-        return pts, bound_pts
-    
+        return pts, bound_pts 
+
 
 class Edge_of_holes:
     def __init__(self,head_pts, pts, split_crv):
@@ -225,13 +221,8 @@ class Edge_of_holes:
                 count -= 1
                 continue
             i += 1
-        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
-        self.display = rc.Display.CustomDisplay(True)
-        self.display.Clear()
-        #for i in range(len(bound_pts)):
-            #self.display.AddCircle(rc.Geometry.Circle(bound_pts[i],0.5),self.display_color,1)
         return bound_pts
-    
+
 
 class Black_white_transit:
     def __init__(self, white_pts, upline, midline, downline, edge_crv):
@@ -244,6 +235,11 @@ class Black_white_transit:
         self.horizontal = 2.4
         self.vertical = 1.2
         self.aligned = False
+
+        self.display_color = rc.Display.ColorHSL(0, 1, 0)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+
         if self.aligned == False:
             self.horizontal = self.horizontal/2
         
@@ -671,7 +667,6 @@ class Black_white_transit:
         
         return bound_crv, link_crv, black_pts, black_n
     
-    
     def generate_cross_band(self, cross_pts, edge_crv):
         #todo：用tweencrv进行offset
         cross_band = []
@@ -715,15 +710,20 @@ class Black_white_transit:
         num = len(band_pts21)
         band_pts2 = []
         for i in range(num):
-            cur_pt = ghcomp.Addition(ghcomp.Multiplication(band_pts21[i], (num-i)/num), ghcomp.Multiplication(band_pts22[i], i/num))
+            cur_pt = ghcomp.Addition(ghcomp.Multiplication(band_pts21[i], 1.0*(num-i)/num), ghcomp.Multiplication(band_pts22[i], 1.0*i/num))
+            print(band_pts21[i], band_pts22[i], cur_pt)
             band_pts2.append(cur_pt)
         
-        cross_band += ghcomp.Circle(band_pts2, ghcomp.Multiplication(real_factor, r2))
-        #crv3 = ghcomp.OffsetCurve(std_crv, factor*h3, ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), 1)
         crv3 = ghcomp.TweenCurve(std_crv, des_crv, h3/(h3+r3))
         band_pts3, _, _ = ghcomp.CurveClosestPoint(shift_pts, crv3)
-        cross_band += ghcomp.Circle(band_pts3, ghcomp.Multiplication(real_factor, r3))
+
+        circle_band = []
+        circle_band += ghcomp.Circle(band_pts2, ghcomp.Multiplication(real_factor, r2))
+        circle_band += ghcomp.Circle(band_pts3, ghcomp.Multiplication(real_factor, r3))
+        for i in range(len(circle_band)): 
+            circle_band[i] = rg.NurbsCurve.CreateFromCircle(circle_band[i])
         
+        cross_band += circle_band    
         return cross_band
     
     def generate_slope_band(self, slope_pts, h_direcs, edge_crv):
@@ -765,6 +765,9 @@ class Black_white_transit:
                     _, cpst_pt = ghcomp.EndPoints(ghcomp.LineSDL(cur_pt, cur_direc, dist-r0))
                     slope_band.append(ghcomp.Circle(cpst_pt, r0))
         
+        for i in range(len(slope_band)):
+            slope_band[i] = rg.NurbsCurve.CreateFromCircle(slope_band[i])
+        
         return slope_band
     
     def generate_black_band(self, bound_pts, bound_direcs, edge_crv):
@@ -787,6 +790,7 @@ class Black_white_transit:
         #两部分点：斜向阵列和贴边装饰点
         #横向点直接遵照规则做offset和shift
         return black_band
+    
     def run(self):
         white_direc = self.generate_white_direc(self.white_pts)
         black_pts, black_direc = self.generate_black_pts(self.white_pts, white_direc, self.upline)
@@ -795,21 +799,13 @@ class Black_white_transit:
         bound_crv, link_crv, black_seq_pts, black_n = self.generate_bound(seq_pts, seq_direc)
         bound_pts, bound_direcs = self.separate_pts(black_seq_pts, black_n)
         black_band = self.generate_black_band(bound_pts, bound_direcs, self.edge_crv)
-        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
-        self.display = rc.Display.CustomDisplay(True)
-        self.display.Clear()
-        print(len(seq_direc))
-        print(len(seq_pts))
-        print(len(link_crv))
-        print(len(black_band))
+        
         for i in range(len(link_crv)):
             print(link_crv[i])
             self.display.AddCurve(link_crv[i], self.display_color, 1)
         for i in range(len(black_band)):
-            self.display.AddCircle(black_band[i],self.display_color,1)
+            self.display.AddCurve(black_band[i],self.display_color,1)
         return seq_pts,link_crv,black_band
-    
-
 
 
 class HoleFrits:
@@ -859,7 +855,7 @@ class HoleFrits:
             self.bottom1_crv, _ = ghcomp.FlipCurve(self.bottom1_crv)
             
         #offset outer_crv
-        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        self.display_color = rc.Display.ColorHSL(0, 1, 0)
         self.display = rc.Display.CustomDisplay(True)
         self.display.Clear()
         crv1 = ghcomp.OffsetCurve(self.outer_crv, distance=2.4, corners=1)
@@ -894,15 +890,6 @@ class HoleFrits:
         #print(len(white_hole_frit))
         for i in range(len(white_hole_frit)):
             self.display.AddCircle(rc.Geometry.Circle(white_hole_frit[i],0.5),self.display_color,1)
-        
-        
-        
-        
-        
-        
-    
-    
-    
     
     def fill_dots_88LFW(self):
         self.top_curve = self.region.curves[2]
@@ -1042,7 +1029,6 @@ class HoleFrits:
                         c.r = 0.5 + 0.1 * i
                         dot = CircleDot(line_pts[i].X, line_pts[i].Y, c, 0)
                         self.dots.append(dot)
-        
 
     # 76720LFW00027
     def fill_dots_76720LFW00027(self):
@@ -1181,7 +1167,6 @@ class HoleFrits:
             elif self.dot_type == FritType.ROUND_RECT:
                 dot = RoundRectDot(filter_pts[i].X, filter_pts[i].Y, self.round_rect_config, theta)
             self.dots.append(dot)
-
     # 针对00215 设计填充算法
 
     def fill_angle(self):
@@ -1293,9 +1278,8 @@ class HoleFrits:
             elif self.dot_type == FritType.ROUND_RECT:
                 dot = RoundRectDot(filter_pts[i].X, filter_pts[i].Y, self.round_rect_config, theta)
             self.dots.append(dot)
-
-
     # 针对00841LFW00001 设计填充算法
+    
     def fill_simple(self):
         self.top_curve = self.region.curves[2]
         if self.region.is_flip[2] == True:
@@ -1407,7 +1391,6 @@ class HoleFrits:
             elif self.dot_type == FritType.ROUND_RECT:
                 dot = RoundRectDot(filter_pts[i].X, filter_pts[i].Y, self.round_rect_config, theta)
             self.dots.append(dot)
-
 
     # 针对00792LFW000023 设计填充算法
     def fill_dots_diag_and_sticky(self):
@@ -1646,7 +1629,7 @@ class HoleFrits:
             vertical = 2 * vertical
         
         
-        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        self.display_color = rc.Display.ColorHSL(0, 1, 0)
         self.display = rc.Display.CustomDisplay(True)
         self.display.Clear()
         self.display.AddCurve(outer_border, self.display_color, 1)
