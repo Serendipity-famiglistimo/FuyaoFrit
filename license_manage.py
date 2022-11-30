@@ -8,7 +8,12 @@ import re
 import datetime
 import sys
 clr.AddReference("System.Management")
+clr.AddReference("System")
+import System as st
 import System.Management as SM
+import System.Text as txt
+import System.Security.Cryptography as ct
+import System.IO as io
 
 
 
@@ -43,13 +48,15 @@ class SimpleEtoDialog(forms.Dialog):
         
         
     def Get_License_File(self,id,date):
-        license_file = 'C:\license_m\License.dat'
+        license_file = 'C:\license_m\License_test1.dat'
         code1 = id+"#"+date
         encrypt_code = ''.join(reversed(code1))
+        encrypt_code = ''.join(reversed(code1))
+        secret_info = encode(encrypt_code)
         #print(encrypt_code)
         #print(len(encrypt_code))
         with open(license_file, 'w') as LF:
-            LF.write('Encrypt_Code : %s\n'%encrypt_code)
+            LF.write('%s\n'%secret_info)
         
     def OnCommitButtonClick(self,sender,e):
         print(self.CPUID_textbox.Text)
@@ -94,6 +101,29 @@ class WarningDialog(forms.Dialog):
         self.Close()
     
 
+def ProcessDES(data,is_Encrypt):
+    dcsp = ct.DESCryptoServiceProvider()
+    #key_data = Md5(key)
+    rgb_key = txt.Encoding.Unicode.GetBytes('yyyy')
+    rgb_iv = txt.Encoding.Unicode.GetBytes('nnnn')
+    if is_Encrypt:
+        dcsp_key = dcsp.CreateEncryptor(rgb_key, rgb_iv)
+    else:
+        dcsp_key = dcsp.CreateDecryptor(rgb_key, rgb_iv)
+    
+    memory = io.MemoryStream()
+    c_stream = ct.CryptoStream(memory, dcsp_key, ct.CryptoStreamMode.Write)
+    c_stream.Write(data, 0, data.Length)
+    c_stream.FlushFinalBlock()
+    return memory.ToArray()
+
+def encode(code):
+    encode_text = ''
+    encode_text = txt.Encoding.UTF8.GetBytes(code)
+    output_data = ProcessDES(encode_text,True)
+    output_string = st.Convert.ToBase64String(output_data)
+    print('555'+output_string)
+    return output_string
 
 def WarningtoDialog():
     dialog1 = WarningDialog()
