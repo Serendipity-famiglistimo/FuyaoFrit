@@ -48,7 +48,7 @@ class SimpleEtoDialog(forms.Dialog):
         
         
     def Get_License_File(self,id,date):
-        license_file = 'C:\license_m\License_test1.dat'
+        license_file = 'C:\license_m\License.dat'
         code1 = id+"#"+date
         encrypt_code = ''.join(reversed(code1))
         encrypt_code = ''.join(reversed(code1))
@@ -59,10 +59,10 @@ class SimpleEtoDialog(forms.Dialog):
             LF.write('%s\n'%secret_info)
         
     def OnCommitButtonClick(self,sender,e):
-        print(self.CPUID_textbox.Text)
-        print(type(self.CPUID_textbox.Text))
-        print(self.Date_textbox.Text)
-        print(type(self.Date_textbox.Text))
+        #print(self.CPUID_textbox.Text)
+        #print(type(self.CPUID_textbox.Text))
+        #print(self.Date_textbox.Text)
+        #print(type(self.Date_textbox.Text))
         if (self.CPUID_textbox.Text == "") or (self.Date_textbox.Text == ""):
             WarningtoDialog()
         elif (len(self.Date_textbox.Text) != 8) or (re.match('^\D+$', self.Date_textbox.Text)):
@@ -122,8 +122,9 @@ def encode(code):
     encode_text = txt.Encoding.UTF8.GetBytes(code)
     output_data = ProcessDES(encode_text,True)
     output_string = st.Convert.ToBase64String(output_data)
-    print('555'+output_string)
-    return output_string
+    Output_String = output_string.replace('/','@')
+    #print('555'+Output_String)
+    return Output_String
 
 def WarningtoDialog():
     dialog1 = WarningDialog()

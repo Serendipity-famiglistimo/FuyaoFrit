@@ -41,7 +41,8 @@ def ProcessDES(data,is_Encrypt):
     
 def decode(code):
     decode_text = ''
-    decode_text = st.Convert.FromBase64String(code)
+    Code_convert = code.replace('@','/')
+    decode_text = st.Convert.FromBase64String(Code_convert)
     output_data1 = ProcessDES(decode_text,False)
     decode = txt.Encoding.UTF8.GetString(output_data1)
     print(decode)

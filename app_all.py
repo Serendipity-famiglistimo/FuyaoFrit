@@ -3843,16 +3843,16 @@ def ProcessDES(data,is_Encrypt):
 def Parse_License_file():
     license_dic = []
     input = []
-    license_file = 'C:\license_m\License_test1.dat'
+    license_file = 'C:\license\License.dat'
     try:
         with open(license_file, 'r') as LF:
             for line in LF.readlines():
-                print(line)
+                #print(line)
                 secret = decode(line)
                 if re.match('^\s*(\S+)\s*$', secret):
                         my_match = re.match('^\s*(\S+)\s*$', secret)
                         license_dic.append(my_match.group(1))
-                        print(license_dic)
+                        #print(license_dic)
     except:
         print('error1')
         sys.exit(1)
@@ -3861,15 +3861,16 @@ def Parse_License_file():
     decrypt_code = {}
     decrypt_code['CPU_ID'] = code3[0]
     decrypt_code['Date'] = code3[1]
-    print(decrypt_code)
+    #print(decrypt_code)
     return(decrypt_code)
 
 def decode(code):
     decode_text = ''
-    decode_text = st.Convert.FromBase64String(code)
+    Code_convert = code.replace('@','/')
+    decode_text = st.Convert.FromBase64String(Code_convert)
     output_data1 = ProcessDES(decode_text,False)
     decode = txt.Encoding.UTF8.GetString(output_data1)
-    print(decode)
+    #print(decode)
     return(decode)
 
 
@@ -3877,7 +3878,7 @@ def License_Check():
     date_now = datetime.datetime.now().strftime('%Y%m%d')
     CPU_ID = Get_CPUID()
     license = Parse_License_file()
-    print(license['Date'])
+    #print(license['Date'])
     if (CPU_ID != license['CPU_ID']) or (date_now >  license['Date']):
         print("许可验证失败！")
         print('error2')
