@@ -55,7 +55,7 @@ import clr
 #from RowControl import RowControl
 from System.Drawing import Color
 clr.AddReference("System.Xml")
-import System.Xml
+import System.Xml as XML
 
 
 
@@ -3168,9 +3168,15 @@ class BandPage(forms.TabPage):
             self.is_pick_label3.TextColor = drawing.Color.FromArgb(44,162,95)
 
         self.fill_label = forms.Label(Text='- 设置或加载填充规则', Font = Font('Microsoft YaHei', 12.))
+        self.add_btn = forms.Button(Text='手动添加新行')
+        self.add_btn.Size = Size(100, 30)
+        self.add_btn.Click += self.AddButtonClick
         self.fill_btn = forms.Button(Text='一键填充')
         self.fill_btn.Size = Size(100, 30)
-        self.fill_btn.Click += self.AddButtonClick
+        self.fill_btn.Click += self.FillButtonClick
+        self.xml_btn = forms.Button(Text='导出XML文件')
+        self.xml_btn.Size = Size(100, 30)
+        self.xml_btn.Click += self.XMLButtonClick
         #groupbox1
         self.m_groupbox = forms.GroupBox(Text = '参考线示意图')
         self.m_groupbox.Padding = drawing.Padding(5)
@@ -3210,35 +3216,38 @@ class BandPage(forms.TabPage):
 
         self.layout.EndVertical()
         self.layout.AddSeparateRow(self.fill_label, None)
-        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,  None])
+        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.add_btn,self.fill_btn,self.xml_btn,None])
         
-        
-        if Save.path_data:
-            file_name = Save.path_data
-            rows = RowFrits.load_band_xml(file_name, self.model, self.band_type)
-            self.model.rows = rows
-            del self.row_panels[:]
-            self.layout.BeginVertical()
-            for i in range(len(self.model.rows)):
-                rpanel = RowConfigPanel(self, self.model.rows[i])
-                self.layout.AddRow(rpanel)
-                self.row_panels.append(rpanel)
-            self.layout.EndVertical()
-        else:
-            self.layout.BeginVertical()
-            self.warn_label = forms.Label(Text='---未加载带状配置---', Font = Font('Microsoft YaHei', 12.), TextColor = drawing.Color.FromArgb(255, 0, 0))
-            self.layout.AddRow(self.warn_label)
-            print('获取文件路径失败')
-            self.layout.EndVertical()
+        if len(self.model.rows) == 0:
+            try:
+                file_name = Save.path_data
+                rows = RowFrits.load_band_xml(file_name, self.model, self.band_type)
+                for i in range(len(rows)):
+                    self.model.rows.append(rows[i])
+            except:
+                pass
             
-            
+        del self.row_panels[:]
+        self.layout.BeginVertical()
+        for i in range(len(self.model.rows)):
+            rpanel = RowConfigPanel(self, self.model.rows[i])
+            self.layout.AddRow(rpanel)
+            self.row_panels.append(rpanel)
+        self.layout.EndVertical()
         self.layout.AddSpace()
         self.panel.Content = self.layout
         self.Content = self.panel
             
 
-
     def AddButtonClick(self, sender, e):
+        self.row_num = len(self.model.rows)
+        self.row_num += 1
+        row_frits = RowFrits(len(self.model.rows), self.model)
+        self.model.rows.append(row_frits)
+        self.create_interface()
+
+
+    def FillButtonClick(self, sender, e):
         # self.row_num += 1
         # row_frits = RowFrits(len(self.model.rows), self.model)
        
@@ -3247,6 +3256,97 @@ class BandPage(forms.TabPage):
         # self.create_interface()
         for row_panel in self.row_panels:
             row_panel.fill_row_frits(None, None)
+            
+    def XMLButtonClick(self, sender, e):
+        xml = XML.XmlDocument()
+        xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
+        xml.AppendChild(xml_declaration)
+        set = xml.CreateElement('setting')
+        band = xml.CreateElement('band')
+        set.AppendChild(band)
+        xml.AppendChild(set)
+        for i in range(len(self.model.rows)):
+            print(i)
+            
+            row = xml.CreateElement('row')
+            band.AppendChild(row)
+            #row_id = xml.CreateAttribute('id')
+            row.SetAttribute('id',str(i))
+            #row.Attributes.Append(row_id)
+            #xml.AppendChild(row)
+            if self.model.rows[i].dot_type == FritType.CIRCLE_DOT:
+                type = xml.CreateAttribute('type')
+                type.Value = 'circle'
+                row.Attributes.Append(type)
+                if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'heading'
+                    row.Attributes.Append(arrange)
+                else:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'cross'
+                    row.Attributes.Append(arrange)
+                #print('圆形') row.circle_config.r
+                r = xml.CreateElement('r')
+                r.InnerText = str(self.model.rows[i].circle_config.r)
+                row.AppendChild(r)
+                
+                step = xml.CreateElement('stepping')
+                step.InnerText = str(self.model.rows[i].stepping)
+                row.AppendChild(step)
+                
+                position = xml.CreateElement('position')
+                position.InnerText = str(self.model.rows[i].position)
+                row.AppendChild(position)
+                if self.model.rows[i].is_transit:
+                    transit = xml.CreateElement('transit')
+                    transit.InnerText = str(self.model.rows[i].transit_radius)
+                    row.AppendChild(transit)
+                    
+                    transit_position = xml.CreateElement('transitposition')
+                    transit_position.InnerText = str(self.model.rows[i].transit_position)
+                    row.AppendChild(transit_position)
+                    
+            elif self.model.rows[i].dot_type == FritType.ROUND_RECT:
+                type = xml.CreateAttribute('type')
+                type.Value = 'roundrect'
+                row.Attributes.Append(type)
+                if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'heading'
+                    row.Attributes.Append(arrange)
+                else:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'cross'
+                    row.Attributes.Append(arrange)
+                #print('圆形') row.circle_config.r
+                r = xml.CreateElement('r')
+                r.InnerText = str(self.model.rows[i].round_rect_config.r)
+                row.AppendChild(r)
+                
+                k = xml.CreateElement('k')
+                k.InnerText = str(self.model.rows[i].round_rect_config.k)
+                row.AppendChild(k)
+                
+                step = xml.CreateElement('stepping')
+                step.InnerText = str(self.model.rows[i].stepping)
+                row.AppendChild(step)
+                
+                position = xml.CreateElement('position')
+                position.InnerText = str(self.model.rows[i].position)
+                row.AppendChild(position)
+                if self.model.rows[i].is_transit:
+                    transit = xml.CreateElement('transit')
+                    transit.InnerText = str(self.model.rows[i].transit_radius)
+                    row.AppendChild(transit)
+                    
+                    transit_position = xml.CreateElement('transitposition')
+                    transit_position.InnerText = str(self.model.rows[i].transit_position)
+                    row.AppendChild(transit_position)
+                #print('圆角矩形')
+            #xml.AppendChild(row)
+        xml.Save("E:\\XML\\Test.xml")
+        
     
     def FlipCheckClick(self, sender, e):
         if sender.Tag == 'is_refer_flip':
@@ -3703,34 +3803,38 @@ class dzBlockPage(forms.TabPage):
         self.layout.EndVertical()
         self.layout.AddSeparateRow(self.fill_label, None)
         self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,  None])
-        if Save.path_data:
-            file_name = Save.path_data
-            rows = RowFrits.load_block_xml(file_name, self.model)
-            holes = HoleFrits.load_block_xml(file_name, self.model)
-            self.model.holes = holes
-            self.model.rows = rows
+        if len(self.model.rows) == 0:
+            try:
+                file_name = Save.path_data
+                rows = RowFrits.load_block_xml(file_name, self.model)
+                holes = HoleFrits.load_block_xml(file_name, self.model)
+                self.model.holes = holes
+                self.model.rows = rows
+            except:
+                pass
             
-            del self.row_panels[:]
-            self.layout.BeginVertical()
-            for i in range(len(self.model.rows)):
-                rpanel = RowConfigPanel(self, self.model.rows[i])
-                self.layout.AddRow(rpanel)
-                self.row_panels.append(rpanel)
-            self.layout.EndVertical()
-    
-            del self.hole_panels[:]
-            self.layout.BeginVertical()
-            for i in range(len(self.model.holes)):
-                rpanel = HoleConfigPanel(self, self.model.holes[i])
-                self.layout.AddRow(rpanel)
-                self.hole_panels.append(rpanel)
-            self.layout.EndVertical()
-        else:
-            self.layout.BeginVertical()
-            self.warn_label = forms.Label(Text='---未加载块状配置---', Font = Font('Microsoft YaHei', 12.), TextColor = drawing.Color.FromArgb(255, 0, 0))
-            self.layout.AddRow(self.warn_label)
-            print('获取文件路径失败')
-            self.layout.EndVertical()
+        del self.row_panels[:]
+        self.layout.BeginVertical()
+        for i in range(len(self.model.rows)):
+            rpanel = RowConfigPanel(self, self.model.rows[i])
+            self.layout.AddRow(rpanel)
+            self.row_panels.append(rpanel)
+        self.layout.EndVertical()
+
+        del self.hole_panels[:]
+        self.layout.BeginVertical()
+        for i in range(len(self.model.holes)):
+            rpanel = HoleConfigPanel(self, self.model.holes[i])
+            self.layout.AddRow(rpanel)
+            self.hole_panels.append(rpanel)
+        self.layout.EndVertical()
+            
+        #else:
+            #self.layout.BeginVertical()
+            #self.warn_label = forms.Label(Text='---未加载块状配置---', Font = Font('Microsoft YaHei', 12.), TextColor = drawing.Color.FromArgb(255, 0, 0))
+            #self.layout.AddRow(self.warn_label)
+            #print('获取文件路径失败')
+            #self.layout.EndVertical()
 
         # self.block_fill_label = forms.Label(Text='- 填充块状区域', Font = Font('Microsoft YaHei', 12.))
         # self.block_fill_btn = forms.Button(Text='填充块状部分')
@@ -3749,10 +3853,12 @@ class dzBlockPage(forms.TabPage):
 
 
     def AddButtonClick(self, sender, e):
+        self.row_num = len(self.model.rows)
         self.row_num += 1
         row_frits = RowFrits(len(self.model.rows), self.model)
        
         self.model.rows.append(row_frits)
+        
         # row_frits.band_model = self.model  # type: ignore
         self.create_interface()
     
