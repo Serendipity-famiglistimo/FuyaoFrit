@@ -2897,19 +2897,34 @@ class RowConfigPanel(forms.GroupBox):
         self.circle_dot_radius.TextChanged += self.circle_dot_radius_changed
 
         self.arc_dot_large_radius_label = forms.Label(Text='大弧半径：')
-        self.arc_dot_large_radius = forms.TextBox(Text='{0}'.format(self.model.tri_arc_config.lr))
+        self.arc_dot_large_radius = forms.TextBox(Text='{0}'.format(self.model.arc_config.lr))
         self.arc_dot_large_radius.Size = drawing.Size(60, -1)
         self.arc_dot_large_radius.TextChanged += self.arc_dot_large_radius_changed
 
         self.arc_dot_small_radius_label = forms.Label(Text='小弧半径：')
-        self.arc_dot_small_radius = forms.TextBox(Text='{0}'.format(self.model.tri_arc_config.sr))
+        self.arc_dot_small_radius = forms.TextBox(Text='{0}'.format(self.model.arc_config.sr))
         self.arc_dot_small_radius.Size = drawing.Size(60, -1)
         self.arc_dot_small_radius.TextChanged += self.arc_dot_small_radius_changed
 
         self.arc_dot_angle_label = forms.Label(Text='弧度：')
-        self.arc_dot_angle = forms.TextBox(Text='{0}'.format(self.model.tri_arc_config.angle))
+        self.arc_dot_angle = forms.TextBox(Text='{0}'.format(self.model.arc_config.angle))
         self.arc_dot_angle.Size = drawing.Size(60, -1)
         self.arc_dot_angle.TextChanged += self.arc_dot_angle_changed
+        
+        self.tri_arc_dot_large_radius_label = forms.Label(Text='大弧半径：')
+        self.tri_arc_dot_large_radius = forms.TextBox(Text='{0}'.format(self.model.tri_arc_config.lr))
+        self.tri_arc_dot_large_radius.Size = drawing.Size(60, -1)
+        self.tri_arc_dot_large_radius.TextChanged += self.tri_arc_dot_large_radius_changed
+
+        self.tri_arc_dot_small_radius_label = forms.Label(Text='小弧半径：')
+        self.tri_arc_dot_small_radius = forms.TextBox(Text='{0}'.format(self.model.tri_arc_config.sr))
+        self.tri_arc_dot_small_radius.Size = drawing.Size(60, -1)
+        self.tri_arc_dot_small_radius.TextChanged += self.tri_arc_dot_small_radius_changed
+
+        self.tri_arc_dot_angle_label = forms.Label(Text='弧度：')
+        self.tri_arc_dot_angle = forms.TextBox(Text='{0}'.format(self.model.tri_arc_config.angle))
+        self.tri_arc_dot_angle.Size = drawing.Size(60, -1)
+        self.tri_arc_dot_angle.TextChanged += self.tri_arc_dot_angle_changed
 
         
         self.round_rect_edge_label = forms.Label(Text='圆角矩形边长：')
@@ -2977,8 +2992,8 @@ class RowConfigPanel(forms.GroupBox):
             self.layout.AddRow(self.dot_type_label, self.dot_type_combo, self.arc_dot_large_radius_label, self.arc_dot_large_radius,
                 self.arc_dot_small_radius_label, self.arc_dot_small_radius, self.arc_dot_angle_label, self.arc_dot_angle)
         elif self.model.dot_type == FritType.TRI_ARC:
-            self.layout.AddRow(self.dot_type_label, self.dot_type_combo, self.arc_dot_large_radius_label, self.arc_dot_large_radius,
-                self.arc_dot_small_radius_label, self.arc_dot_small_radius, self.arc_dot_angle_label, self.arc_dot_angle)
+            self.layout.AddRow(self.dot_type_label, self.dot_type_combo, self.tri_arc_dot_large_radius_label, self.tri_arc_dot_large_radius,
+                self.tri_arc_dot_small_radius_label, self.tri_arc_dot_small_radius, self.tri_arc_dot_angle_label, self.tri_arc_dot_angle)
 
         self.layout.EndVertical()
         self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
@@ -2997,6 +3012,10 @@ class RowConfigPanel(forms.GroupBox):
             self.model.dot_type = FritType.CIRCLE_DOT
         elif self.dot_type_combo.SelectedIndex == 1:
             self.model.dot_type = FritType.ROUND_RECT
+        elif self.dot_type_combo.SelectedIndex == 2:
+            self.model.dot_type = FritType.ARC_CIRCLE
+        elif self.dot_type_combo.SelectedIndex == 3:
+            self.model.dot_type = FritType.TRI_ARC
         self.setup_view()
 
     def change_row_arrange_type(self, sender, e):
@@ -3013,19 +3032,37 @@ class RowConfigPanel(forms.GroupBox):
     
     def arc_dot_large_radius_changed(self, sender, e):
         try:
-            self.model.tri_arc_config.lr = float(self.arc_dot_large_radius.Text)
+            self.model.arc_config.lr = float(self.arc_dot_large_radius.Text)
         except:
             pass
     
     def arc_dot_small_radius_changed(self, sender, e):
         try:
-            self.model.tri_arc_config.sr = float(self.arc_dot_small_radius.Text)
+            self.model.arc_config.sr = float(self.arc_dot_small_radius.Text)
         except:
             pass
     
     def arc_dot_angle_changed(self, sender, e):
         try:
-            self.model.tri_arc_config.angle = float(self.arc_dot_angle.Text)
+            self.model.arc_config.angle = float(self.arc_dot_angle.Text)
+        except:
+            pass
+    
+    def tri_arc_dot_large_radius_changed(self, sender, e):
+        try:
+            self.model.tri_arc_config.lr = float(self.tri_arc_dot_large_radius.Text)
+        except:
+            pass
+    
+    def tri_arc_dot_small_radius_changed(self, sender, e):
+        try:
+            self.model.tri_arc_config.sr = float(self.tri_arc_dot_small_radius.Text)
+        except:
+            pass
+    
+    def tri_arc_dot_angle_changed(self, sender, e):
+        try:
+            self.model.tri_arc_config.angle = float(self.tri_arc_dot_angle.Text)
         except:
             pass
     
@@ -3344,6 +3381,88 @@ class BandPage(forms.TabPage):
                         transit_position = xml.CreateElement('transitposition')
                         transit_position.InnerText = str(self.model.rows[i].transit_position)
                         row.AppendChild(transit_position)
+                elif self.model.rows[i].dot_type == FritType.ARC_CIRCLE:
+                    type = xml.CreateAttribute('type')
+                    type.Value = 'arcdot'
+                    row.Attributes.Append(type)
+                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'heading'
+                        row.Attributes.Append(arrange)
+                    else:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'cross'
+                        row.Attributes.Append(arrange)
+                    #print('圆形') row.circle_config.r
+                    lr = xml.CreateElement('lr')
+                    lr.InnerText = str(self.model.rows[i].arc_config.lr)
+                    row.AppendChild(lr)
+                    
+                    sr = xml.CreateElement('sr')
+                    sr.InnerText = str(self.model.rows[i].arc_config.sr)
+                    row.AppendChild(sr)
+                    
+                    angle = xml.CreateElement('angle')
+                    angle.InnerText = str(self.model.rows[i].arc_config.angle)
+                    row.AppendChild(angle)
+                    
+                    step = xml.CreateElement('stepping')
+                    step.InnerText = str('2.2')
+                    row.AppendChild(step)
+                    
+                    position = xml.CreateElement('position')
+                    position.InnerText = str('0.2')
+                    row.AppendChild(position)
+                    if self.model.rows[i].is_transit:
+                        
+                        transit = xml.CreateElement('transit')
+                        transit.InnerText = str(self.model.rows[i].transit_radius)
+                        row.AppendChild(transit)
+                        
+                        transit_position = xml.CreateElement('transitposition')
+                        transit_position.InnerText = str(self.model.rows[i].transit_position)
+                        row.AppendChild(transit_position)
+                elif self.model.rows[i].dot_type == FritType.TRI_ARC:
+                    type = xml.CreateAttribute('type')
+                    type.Value = 'triarc'
+                    row.Attributes.Append(type)
+                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'heading'
+                        row.Attributes.Append(arrange)
+                    else:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'cross'
+                        row.Attributes.Append(arrange)
+                    #print('圆形') row.circle_config.r
+                    lr = xml.CreateElement('lr')
+                    lr.InnerText = str(self.model.rows[i].tri_arc_config.lr)
+                    row.AppendChild(lr)
+                    
+                    sr = xml.CreateElement('sr')
+                    sr.InnerText = str(self.model.rows[i].tri_arc_config.sr)
+                    row.AppendChild(sr)
+                    
+                    angle = xml.CreateElement('angle')
+                    angle.InnerText = str(self.model.rows[i].tri_arc_config.angle)
+                    row.AppendChild(angle)
+                    
+                    step = xml.CreateElement('stepping')
+                    step.InnerText = str('2.2')
+                    row.AppendChild(step)
+                    
+                    position = xml.CreateElement('position')
+                    position.InnerText = str('0.2')
+                    row.AppendChild(position)
+                    
+                    if self.model.rows[i].is_transit:
+                        transit = xml.CreateElement('transit')
+                        transit.InnerText = str(self.model.rows[i].transit_radius)
+                        row.AppendChild(transit)
+                        
+                        transit_position = xml.CreateElement('transitposition')
+                        transit_position.InnerText = str(self.model.rows[i].transit_position)
+                        row.AppendChild(transit_position)
             xml.Save("E:\\XML\\band\\band.xml")
             
         elif self.band_type == 'bottom':
@@ -3352,6 +3471,7 @@ class BandPage(forms.TabPage):
             xml.AppendChild(set)
             for i in range(len(self.model.rows)):
                 print(i)
+                
                 row = xml.CreateElement('row')
                 bottom.AppendChild(row)
                 #row_id = xml.CreateAttribute('id')
@@ -3390,7 +3510,6 @@ class BandPage(forms.TabPage):
                         transit_position = xml.CreateElement('transitposition')
                         transit_position.InnerText = str(self.model.rows[i].transit_position)
                         row.AppendChild(transit_position)
-                        
                 elif self.model.rows[i].dot_type == FritType.ROUND_RECT:
                     type = xml.CreateAttribute('type')
                     type.Value = 'roundrect'
@@ -3419,6 +3538,88 @@ class BandPage(forms.TabPage):
                     position = xml.CreateElement('position')
                     position.InnerText = str(self.model.rows[i].position)
                     row.AppendChild(position)
+                    if self.model.rows[i].is_transit:
+                        transit = xml.CreateElement('transit')
+                        transit.InnerText = str(self.model.rows[i].transit_radius)
+                        row.AppendChild(transit)
+                        
+                        transit_position = xml.CreateElement('transitposition')
+                        transit_position.InnerText = str(self.model.rows[i].transit_position)
+                        row.AppendChild(transit_position)
+                elif self.model.rows[i].dot_type == FritType.ARC_CIRCLE:
+                    type = xml.CreateAttribute('type')
+                    type.Value = 'arcdot'
+                    row.Attributes.Append(type)
+                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'heading'
+                        row.Attributes.Append(arrange)
+                    else:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'cross'
+                        row.Attributes.Append(arrange)
+                    #print('圆形') row.circle_config.r
+                    lr = xml.CreateElement('lr')
+                    lr.InnerText = str(self.model.rows[i].arc_config.lr)
+                    row.AppendChild(lr)
+                    
+                    sr = xml.CreateElement('sr')
+                    sr.InnerText = str(self.model.rows[i].arc_config.sr)
+                    row.AppendChild(sr)
+                    
+                    angle = xml.CreateElement('angle')
+                    angle.InnerText = str(self.model.rows[i].arc_config.angle)
+                    row.AppendChild(angle)
+                    
+                    step = xml.CreateElement('stepping')
+                    step.InnerText = str('2.2')
+                    row.AppendChild(step)
+                    
+                    position = xml.CreateElement('position')
+                    position.InnerText = str('0.2')
+                    row.AppendChild(position)
+                    
+                    if self.model.rows[i].is_transit:
+                        transit = xml.CreateElement('transit')
+                        transit.InnerText = str(self.model.rows[i].transit_radius)
+                        row.AppendChild(transit)
+                        
+                        transit_position = xml.CreateElement('transitposition')
+                        transit_position.InnerText = str(self.model.rows[i].transit_position)
+                        row.AppendChild(transit_position)
+                elif self.model.rows[i].dot_type == FritType.TRI_ARC:
+                    type = xml.CreateAttribute('type')
+                    type.Value = 'triarc'
+                    row.Attributes.Append(type)
+                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'heading'
+                        row.Attributes.Append(arrange)
+                    else:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'cross'
+                        row.Attributes.Append(arrange)
+                    #print('圆形') row.circle_config.r
+                    lr = xml.CreateElement('lr')
+                    lr.InnerText = str(self.model.rows[i].tri_arc_config.lr)
+                    row.AppendChild(lr)
+                    
+                    sr = xml.CreateElement('sr')
+                    sr.InnerText = str(self.model.rows[i].tri_arc_config.sr)
+                    row.AppendChild(sr)
+                    
+                    angle = xml.CreateElement('angle')
+                    angle.InnerText = str(self.model.rows[i].tri_arc_config.angle)
+                    row.AppendChild(angle)
+                    
+                    step = xml.CreateElement('stepping')
+                    step.InnerText = str('2.2')
+                    row.AppendChild(step)
+                    
+                    position = xml.CreateElement('position')
+                    position.InnerText = str('0.2')
+                    row.AppendChild(position)
+                    
                     if self.model.rows[i].is_transit:
                         transit = xml.CreateElement('transit')
                         transit.InnerText = str(self.model.rows[i].transit_radius)
