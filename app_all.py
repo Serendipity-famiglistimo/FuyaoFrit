@@ -1420,11 +1420,11 @@ class HoleFrits:
         boundary_crv = ghcomp.OffsetCurve(blockborder,  plane = rs.WorldXYPlane(),distance=-0.1, corners=1)
         self.display.AddCurve(boundary_crv, self.display_color, 1)
         upline_crv = ghcomp.OffsetCurve(self.top_crv, plane = rs.WorldXYPlane(), distance=0.5, corners=1)
-        
+        #stepping
         dazhong_frit_generator = Dazhong_fill_holes(\
                                     upline = upline_crv, midline = self.bottom_crv, downline = self.bottom1_crv, \
                                     boundary = boundary_crv, split_crv = self.refer_crv, edge_crv = self.inner_crv, \
-                                    horizontal = 2.4, vertical = 1.2, region = self.region,aligned = False)
+                                    horizontal = self.region.rows[0].stepping, vertical = self.region.rows[0].position, region = self.region,aligned = False)
         dazhong_frit_generator.run()
         
         
