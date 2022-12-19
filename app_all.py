@@ -571,13 +571,11 @@ class Dazhong_fill_holes:
         self.display = rc.Display.CustomDisplay(True)
         self.display.Clear()
         
-        print(self.region.rows[0].circle_config.r1)
-        print(self.region.rows[0].circle_config.r2)
-        print(self.region.rows[0].circle_config.r3)
-        print(self.region.rows[0].circle_config.r4)
-        print(self.region.rows[0].circle_config.r5)
-        print(self.region.rows[0].circle_config.r6)
-        print(self.region.rows[0].circle_config.r7)
+        print(self.region.rows[0].circle_config.cross_k1)
+        print(self.region.rows[0].circle_config.cross_position3)
+        print(self.region.rows[0].circle_config.cross_position2)
+        print(self.region.rows[0].circle_config.cross_position1)
+        print(self.region.rows[0].circle_config.cross_k2)
     
     def _generate_grid_pts(self, base_pts, vertical, downline):
         pts = []
@@ -1174,14 +1172,14 @@ class Dazhong_fill_holes:
         shift_pts = []
         for i in range(len(cross_pts)-1):
             shift_pts.append(ghcomp.Division(ghcomp.Addition(cross_pts[i] + cross_pts[i+1]), 2))
-        k0 = self.region.rows[0].circle_config.r1
-        h1 = self.region.rows[0].circle_config.r2 + k0/2
-        h2 = self.region.rows[0].circle_config.r3 + k0/2
-        h3 = self.region.rows[0].circle_config.r4 + k0/2
-        k1 = self.region.rows[0].circle_config.r5
-        sr1 = self.region.rows[0].circle_config.r6
-        r2 = self.region.rows[0].circle_config.r7/2
-        r3 = self.region.rows[0].circle_config.r8/2
+        k0 = self.region.rows[0].circle_config.cross_k1
+        h1 = self.region.rows[0].circle_config.cross_position3 + k0/2
+        h2 = self.region.rows[0].circle_config.cross_position2 + k0/2
+        h3 = self.region.rows[0].circle_config.cross_position1 + k0/2
+        k1 = self.region.rows[0].circle_config.cross_k2
+        sr1 = self.region.rows[0].circle_config.cross_round_rect_r
+        r2 = self.region.rows[0].circle_config.cross_r2/2
+        r3 = self.region.rows[0].circle_config.cross_r1/2
         
         std_crv = ghcomp.PolyLine(cross_pts, False)
         
@@ -1230,10 +1228,10 @@ class Dazhong_fill_holes:
     def generate_slope_band(self, slope_pts, h_direcs, edge_crv):
         slope_band = []
         
-        r0 = self.region.rows[0].circle_config.r9/2 #装饰性圆点
-        r1 = self.region.rows[0].circle_config.r10/2
-        r2 = self.region.rows[0].circle_config.r11/2
-        r3 = self.region.rows[0].circle_config.r12/2
+        r0 = self.region.rows[0].circle_config.slope_r1/2 #装饰性圆点
+        r1 = self.region.rows[0].circle_config.slope_r2/2
+        r2 = self.region.rows[0].circle_config.slope_r3/2
+        r3 = self.region.rows[0].circle_config.slope_r4/2
         
         horizontal = self.horizontal
         if self.aligned == False:
@@ -1823,18 +1821,18 @@ class RowFrits:
             row.stepping = val['horizontal']
             row.position = val['vertical']
             #if row.dot_type == FritType.CIRCLE_DOT:
-            row.circle_config.r1 = val['r1']
-            row.circle_config.r2 = val['r2']
-            row.circle_config.r3 = val['r3']
-            row.circle_config.r4 = val['r4']
-            row.circle_config.r5 = val['r5']
-            row.circle_config.r6 = val['r6']
-            row.circle_config.r7 = val['r7']
-            row.circle_config.r8 = val['r8']
-            row.circle_config.r9 = val['r9']
-            row.circle_config.r10 = val['r10']
-            row.circle_config.r11 = val['r11']
-            row.circle_config.r12 = val['r12']
+            row.circle_config.cross_k1 = val['cross_k1']
+            row.circle_config.cross_position3 = val['cross_position3']
+            row.circle_config.cross_position2 = val['cross_position2']
+            row.circle_config.cross_position1 = val['cross_position1']
+            row.circle_config.cross_k2 = val['cross_k2']
+            row.circle_config.cross_round_rect_r = val['cross_round_rect_r']
+            row.circle_config.cross_r2 = val['cross_r2']
+            row.circle_config.cross_r1 = val['cross_r1']
+            row.circle_config.slope_r1 = val['slope_r1']
+            row.circle_config.slope_r2 = val['slope_r2']
+            row.circle_config.slope_r3 = val['slope_r3']
+            row.circle_config.slope_r4 = val['slope_r4']
             rows.append(row)
         return rows
 
@@ -2517,18 +2515,18 @@ class ArcDot(Dot):
 #原CircleDot
 class CircleDotConfig:
     def __init__(self):
-        self.r1 = 0
-        self.r2 = 0
-        self.r3 = 0
-        self.r4 = 0
-        self.r5 = 0
-        self.r6 = 0
-        self.r7 = 0
-        self.r8 = 0
-        self.r9 = 0
-        self.r10 = 0
-        self.r11 = 0
-        self.r12 = 0
+        self.cross_k1 = 0
+        self.cross_position3 = 0
+        self.cross_position2 = 0
+        self.cross_position1 = 0
+        self.cross_k2 = 0
+        self.cross_round_rect_r = 0
+        self.cross_r2 = 0
+        self.cross_r1 = 0
+        self.slope_r1 = 0
+        self.slope_r2 = 0
+        self.slope_r3 = 0
+        self.slope_r4 = 0
         self.r = 0
     
     def top(self):
@@ -3205,62 +3203,62 @@ class DZ_ConfigPanel(forms.GroupBox):
         self.RemoveAll()
         self.basic_setting_label = forms.Label(Text='基础设置:', Font = Font('Microsoft YaHei', 12.))
         self.circle1_dot_radius_label = forms.Label(Text='矩形边长1：')
-        self.circle1_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.r1))
+        self.circle1_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.cross_k1))
         self.circle1_dot_radius.Size = drawing.Size(60, -1)
         self.circle1_dot_radius.TextChanged += self.circle1_dot_radius_changed
         
         self.circle2_dot_radius_label = forms.Label(Text='3排相对参考线距离：')
-        self.circle2_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.r2))
+        self.circle2_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.cross_position3))
         self.circle2_dot_radius.Size = drawing.Size(60, -1)
         self.circle2_dot_radius.TextChanged += self.circle2_dot_radius_changed
         
         self.circle3_dot_radius_label = forms.Label(Text='2排相对参考线距离：')
-        self.circle3_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.r3))
+        self.circle3_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.cross_position2))
         self.circle3_dot_radius.Size = drawing.Size(60, -1)
         self.circle3_dot_radius.TextChanged += self.circle3_dot_radius_changed
         
         self.circle4_dot_radius_label = forms.Label(Text='1排相对参考线距离：')
-        self.circle4_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.r4))
+        self.circle4_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.cross_position1))
         self.circle4_dot_radius.Size = drawing.Size(60, -1)
         self.circle4_dot_radius.TextChanged += self.circle4_dot_radius_changed
         
         self.circle5_dot_radius_label = forms.Label(Text='矩形边长2：')
-        self.circle5_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.r5))
+        self.circle5_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.cross_k2))
         self.circle5_dot_radius.Size = drawing.Size(60, -1)
         self.circle5_dot_radius.TextChanged += self.circle5_dot_radius_changed
         
         self.circle6_dot_radius_label = forms.Label(Text='矩形圆角半径：')
-        self.circle6_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.r6))
+        self.circle6_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.cross_round_rect_r))
         self.circle6_dot_radius.Size = drawing.Size(60, -1)
         self.circle6_dot_radius.TextChanged += self.circle6_dot_radius_changed
         
         self.circle7_dot_radius_label = forms.Label(Text='2排直径：')
-        self.circle7_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.r7))
+        self.circle7_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.cross_r2))
         self.circle7_dot_radius.Size = drawing.Size(60, -1)
         self.circle7_dot_radius.TextChanged += self.circle7_dot_radius_changed
         
         self.circle8_dot_radius_label = forms.Label(Text='1排直径：')
-        self.circle8_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.r8))
+        self.circle8_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.cross_r1))
         self.circle8_dot_radius.Size = drawing.Size(60, -1)
         self.circle8_dot_radius.TextChanged += self.circle8_dot_radius_changed
         
         self.circle9_dot_radius_label = forms.Label(Text='圆点半径1：')
-        self.circle9_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.r9))
+        self.circle9_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.slope_r1))
         self.circle9_dot_radius.Size = drawing.Size(60, -1)
         self.circle9_dot_radius.TextChanged += self.circle9_dot_radius_changed
         
         self.circle10_dot_radius_label = forms.Label(Text='圆点半径2：')
-        self.circle10_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.r10))
+        self.circle10_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.slope_r2))
         self.circle10_dot_radius.Size = drawing.Size(60, -1)
         self.circle10_dot_radius.TextChanged += self.circle10_dot_radius_changed
         
         self.circle11_dot_radius_label = forms.Label(Text='圆点半径3：')
-        self.circle11_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.r11))
+        self.circle11_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.slope_r3))
         self.circle11_dot_radius.Size = drawing.Size(60, -1)
         self.circle11_dot_radius.TextChanged += self.circle11_dot_radius_changed
         
         self.circle12_dot_radius_label = forms.Label(Text='圆点半径4：')
-        self.circle12_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.r12))
+        self.circle12_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.slope_r4))
         self.circle12_dot_radius.Size = drawing.Size(60, -1)
         self.circle12_dot_radius.TextChanged += self.circle12_dot_radius_changed
         
@@ -3295,62 +3293,62 @@ class DZ_ConfigPanel(forms.GroupBox):
         
     def circle1_dot_radius_changed(self, sender, e):
         try:
-            self.model.circle_config.r1 = float(self.circle1_dot_radius.Text)
+            self.model.circle_config.cross_k1 = float(self.circle1_dot_radius.Text)
         except:
             pass
     def circle2_dot_radius_changed(self, sender, e):
         try:
-            self.model.circle_config.r2 = float(self.circle2_dot_radius.Text)
+            self.model.circle_config.cross_position3 = float(self.circle2_dot_radius.Text)
         except:
             pass
     def circle3_dot_radius_changed(self, sender, e):
         try:
-            self.model.circle_config.r3 = float(self.circle3_dot_radius.Text)
+            self.model.circle_config.cross_position2 = float(self.circle3_dot_radius.Text)
         except:
             pass
     def circle4_dot_radius_changed(self, sender, e):
         try:
-            self.model.circle_config.r4 = float(self.circle4_dot_radius.Text)
+            self.model.circle_config.cross_position1 = float(self.circle4_dot_radius.Text)
         except:
             pass
     def circle5_dot_radius_changed(self, sender, e):
         try:
-            self.model.circle_config.r5 = float(self.circle5_dot_radius.Text)
+            self.model.circle_config.cross_k2 = float(self.circle5_dot_radius.Text)
         except:
             pass
     def circle6_dot_radius_changed(self, sender, e):
         try:
-            self.model.circle_config.r6 = float(self.circle6_dot_radius.Text)
+            self.model.circle_config.cross_round_rect_r = float(self.circle6_dot_radius.Text)
         except:
             pass
     def circle7_dot_radius_changed(self, sender, e):
         try:
-            self.model.circle_config.r7 = float(self.circle7_dot_radius.Text)
+            self.model.circle_config.cross_r2 = float(self.circle7_dot_radius.Text)
         except:
             pass
     def circle8_dot_radius_changed(self, sender, e):
         try:
-            self.model.circle_config.r8 = float(self.circle8_dot_radius.Text)
+            self.model.circle_config.cross_r1 = float(self.circle8_dot_radius.Text)
         except:
             pass
     def circle9_dot_radius_changed(self, sender, e):
         try:
-            self.model.circle_config.r9 = float(self.circle9_dot_radius.Text)
+            self.model.circle_config.slope_r1 = float(self.circle9_dot_radius.Text)
         except:
             pass
     def circle10_dot_radius_changed(self, sender, e):
         try:
-            self.model.circle_config.r10 = float(self.circle10_dot_radius.Text)
+            self.model.circle_config.slope_r2 = float(self.circle10_dot_radius.Text)
         except:
             pass
     def circle11_dot_radius_changed(self, sender, e):
         try:
-            self.model.circle_config.r11 = float(self.circle11_dot_radius.Text)
+            self.model.circle_config.slope_r3 = float(self.circle11_dot_radius.Text)
         except:
             pass
     def circle12_dot_radius_changed(self, sender, e):
         try:
-            self.model.circle_config.r12 = float(self.circle12_dot_radius.Text)
+            self.model.circle_config.slope_r4 = float(self.circle12_dot_radius.Text)
         except:
             pass
     
@@ -4290,7 +4288,7 @@ class dzBlockPage(forms.TabPage):
         self.fill_btn = forms.Button(Text='手动添加新行')
         self.fill_btn.Size = Size(100, 30)
         self.fill_btn.Click += self.AddButtonClick
-        self.insert_btn = forms.Button(Text='填充')
+        self.insert_btn = forms.Button(Text='一键填充')
         self.insert_btn.Size = Size(100, 30)
         self.insert_btn.Click += self.InsertButtonClick
         self.xml_btn = forms.Button(Text='导出XML文件')
@@ -4428,52 +4426,52 @@ class dzBlockPage(forms.TabPage):
             block.AppendChild(row)
             row.SetAttribute('id',str(i))
             
-            r1 = xml.CreateElement('r1')
-            r1.InnerText = str(self.model.rows[i].circle_config.r1)
+            r1 = xml.CreateElement('cross_k1')
+            r1.InnerText = str(self.model.rows[i].circle_config.cross_k1)
             row.AppendChild(r1)
             
-            r2 = xml.CreateElement('r2')
-            r2.InnerText = str(self.model.rows[i].circle_config.r2)
+            r2 = xml.CreateElement('cross_position3')
+            r2.InnerText = str(self.model.rows[i].circle_config.cross_position3)
             row.AppendChild(r2)
             
-            r3 = xml.CreateElement('r3')
-            r3.InnerText = str(self.model.rows[i].circle_config.r3)
+            r3 = xml.CreateElement('cross_position2')
+            r3.InnerText = str(self.model.rows[i].circle_config.cross_position2)
             row.AppendChild(r3)
             
-            r4 = xml.CreateElement('r4')
-            r4.InnerText = str(self.model.rows[i].circle_config.r4)
+            r4 = xml.CreateElement('cross_position1')
+            r4.InnerText = str(self.model.rows[i].circle_config.cross_position1)
             row.AppendChild(r4)
             
-            r5 = xml.CreateElement('r5')
-            r5.InnerText = str(self.model.rows[i].circle_config.r5)
+            r5 = xml.CreateElement('cross_k2')
+            r5.InnerText = str(self.model.rows[i].circle_config.cross_k2)
             row.AppendChild(r5)
             
-            r6 = xml.CreateElement('r6')
-            r6.InnerText = str(self.model.rows[i].circle_config.r6)
+            r6 = xml.CreateElement('cross_round_rect_r')
+            r6.InnerText = str(self.model.rows[i].circle_config.cross_round_rect_r)
             row.AppendChild(r6)
             
-            r7 = xml.CreateElement('r7')
-            r7.InnerText = str(self.model.rows[i].circle_config.r7)
+            r7 = xml.CreateElement('cross_r2')
+            r7.InnerText = str(self.model.rows[i].circle_config.cross_r2)
             row.AppendChild(r7)
             
-            r8 = xml.CreateElement('r8')
-            r8.InnerText = str(self.model.rows[i].circle_config.r8)
+            r8 = xml.CreateElement('cross_r1')
+            r8.InnerText = str(self.model.rows[i].circle_config.cross_r1)
             row.AppendChild(r8)
             
-            r9 = xml.CreateElement('r9')
-            r9.InnerText = str(self.model.rows[i].circle_config.r9)
+            r9 = xml.CreateElement('slope_r1')
+            r9.InnerText = str(self.model.rows[i].circle_config.slope_r1)
             row.AppendChild(r9)
             
-            r10 = xml.CreateElement('r10')
-            r10.InnerText = str(self.model.rows[i].circle_config.r10)
+            r10 = xml.CreateElement('slope_r2')
+            r10.InnerText = str(self.model.rows[i].circle_config.slope_r2)
             row.AppendChild(r10)
             
-            r11 = xml.CreateElement('r11')
-            r11.InnerText = str(self.model.rows[i].circle_config.r11)
+            r11 = xml.CreateElement('slope_r3')
+            r11.InnerText = str(self.model.rows[i].circle_config.slope_r3)
             row.AppendChild(r11)
             
-            r12 = xml.CreateElement('r12')
-            r12.InnerText = str(self.model.rows[i].circle_config.r12)
+            r12 = xml.CreateElement('slope_r4')
+            r12.InnerText = str(self.model.rows[i].circle_config.slope_r4)
             row.AppendChild(r12)
             
             stepping = xml.CreateElement('horizontal')
