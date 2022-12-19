@@ -56,8 +56,23 @@ import clr
 from System.Drawing import Color
 clr.AddReference("System.Xml")
 import System.Xml as XML
+from scriptcontext import doc
+from System.Windows.Forms import *
+import Rhino.UI
+from System import Environment
 
 
+def XMLPATH():
+    file_name = "";
+    save_file_dialog = Rhino.UI.SaveFileDialog()
+    save_file_dialog.FileName = ".xml"
+    save_file_dialog.Filter = "(*.xml)"
+    #save_file_dialog.InitialDirectory = \
+    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+    if save_file_dialog.ShowDialog() == DialogResult.OK:
+        file_name = save_file_dialog.FileName
+    print(file_name)
+    return file_name
 
 class FritDialog(forms.Dialog[bool]):
     def __init__(self):
@@ -3707,7 +3722,8 @@ class BandPage(forms.TabPage):
                         transit_position = xml.CreateElement('transitposition')
                         transit_position.InnerText = str(self.model.rows[i].transit_position)
                         row.AppendChild(transit_position)
-            xml.Save("E:\\XML\\band\\band.xml")
+            f_path = XMLPATH()
+            xml.Save(f_path)
             
         elif self.band_type == 'bottom':
             bottom = xml.CreateElement('bottom')
@@ -3872,7 +3888,8 @@ class BandPage(forms.TabPage):
                         transit_position = xml.CreateElement('transitposition')
                         transit_position.InnerText = str(self.model.rows[i].transit_position)
                         row.AppendChild(transit_position)
-            xml.Save("E:\\XML\\bottom\\bottom.xml")
+            f_path = XMLPATH()
+            xml.Save(f_path)
         #xml.Save("E:\\XML\\Test.xml")
     def FlipCheckClick(self, sender, e):
         if sender.Tag == 'is_refer_flip':
@@ -4466,7 +4483,8 @@ class dzBlockPage(forms.TabPage):
             position = xml.CreateElement('vertical')
             position.InnerText = str(self.model.rows[i].position)
             row.AppendChild(position)
-        xml.Save("E:\\XML\\block\\block.xml")
+        f_path = XMLPATH()
+        xml.Save(f_path)
     
     def FlipCheckClick(self, sender, e):
         if sender.Tag == 'is_outer_flip':
