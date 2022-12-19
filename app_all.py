@@ -4276,6 +4276,10 @@ class dzBlockPage(forms.TabPage):
         self.insert_btn = forms.Button(Text='填充')
         self.insert_btn.Size = Size(100, 30)
         self.insert_btn.Click += self.InsertButtonClick
+        self.xml_btn = forms.Button(Text='导出XML文件')
+        self.xml_btn.Size = Size(100, 30)
+        self.xml_btn.Click += self.XMLButtonClick
+        
         #groupbox1
         self.m_groupbox = forms.GroupBox(Text = '参考线示意图')
         self.m_groupbox.Padding = drawing.Padding(5)
@@ -4325,10 +4329,11 @@ class dzBlockPage(forms.TabPage):
         #        self.layout.AddSeparateRow(self.pick_label, None)
         self.layout.BeginVertical(padding=drawing.Padding(20, 0, 0, 0))
         self.layout.AddRow(self.m_groupbox2, self.m_groupbox)
-        self.layout.AddRow(self.insert_btn, None)
         self.layout.EndVertical()
         self.layout.AddSeparateRow(self.fill_label, None)
-        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,  None])
+        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,self.insert_btn,self.xml_btn,None])
+        #self.layout.AddRow(self.fill_btn,self.insert_btn,self.xml_btn, None)
+        #self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,self.insert_btn,self.xml_btn  None])
         if len(self.model.rows) == 0:
             try:
                 file_name = Save.path_data
@@ -4392,8 +4397,76 @@ class dzBlockPage(forms.TabPage):
         self.clear_dots()
         HoleFrits(1,self.model).dazhong_fill_dots()
         
-        
-        
+    def XMLButtonClick(self, sender, e):
+        xml = XML.XmlDocument()
+        xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
+        xml.AppendChild(xml_declaration)
+        set = xml.CreateElement('setting')
+        block = xml.CreateElement('block')
+        set.AppendChild(block)
+        xml.AppendChild(set)
+        for i in range(len(self.model.rows)):
+            print(i)
+            row = xml.CreateElement('row')
+            block.AppendChild(row)
+            row.SetAttribute('id',str(i))
+            
+            r1 = xml.CreateElement('r1')
+            r1.InnerText = str(self.model.rows[i].circle_config.r1)
+            row.AppendChild(r1)
+            
+            r2 = xml.CreateElement('r2')
+            r2.InnerText = str(self.model.rows[i].circle_config.r2)
+            row.AppendChild(r2)
+            
+            r3 = xml.CreateElement('r3')
+            r3.InnerText = str(self.model.rows[i].circle_config.r3)
+            row.AppendChild(r3)
+            
+            r4 = xml.CreateElement('r4')
+            r4.InnerText = str(self.model.rows[i].circle_config.r4)
+            row.AppendChild(r4)
+            
+            r5 = xml.CreateElement('r5')
+            r5.InnerText = str(self.model.rows[i].circle_config.r5)
+            row.AppendChild(r5)
+            
+            r6 = xml.CreateElement('r6')
+            r6.InnerText = str(self.model.rows[i].circle_config.r6)
+            row.AppendChild(r6)
+            
+            r7 = xml.CreateElement('r7')
+            r7.InnerText = str(self.model.rows[i].circle_config.r7)
+            row.AppendChild(r7)
+            
+            r8 = xml.CreateElement('r8')
+            r8.InnerText = str(self.model.rows[i].circle_config.r8)
+            row.AppendChild(r8)
+            
+            r9 = xml.CreateElement('r9')
+            r9.InnerText = str(self.model.rows[i].circle_config.r9)
+            row.AppendChild(r9)
+            
+            r10 = xml.CreateElement('r10')
+            r10.InnerText = str(self.model.rows[i].circle_config.r10)
+            row.AppendChild(r10)
+            
+            r11 = xml.CreateElement('r11')
+            r11.InnerText = str(self.model.rows[i].circle_config.r11)
+            row.AppendChild(r11)
+            
+            r12 = xml.CreateElement('r12')
+            r12.InnerText = str(self.model.rows[i].circle_config.r12)
+            row.AppendChild(r12)
+            
+            stepping = xml.CreateElement('horizontal')
+            stepping.InnerText = str(self.model.rows[i].stepping)
+            row.AppendChild(stepping)
+            
+            position = xml.CreateElement('vertical')
+            position.InnerText = str(self.model.rows[i].position)
+            row.AppendChild(position)
+        xml.Save("E:\\XML\\block\\block.xml")
     
     def FlipCheckClick(self, sender, e):
         if sender.Tag == 'is_outer_flip':
