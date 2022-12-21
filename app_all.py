@@ -1532,7 +1532,7 @@ class RowFrits:
         # crv = ghcomp.OffsetCurve(curve, plane = ghcomp.XYPlane(), distance=self.position, corners=1)
         crv = refer_curve
         crv_length = ghcomp.Length(crv)   
-        pts_num = int(crv_length / self.stepping)
+        pts_num = int(crv_length / self.stepping)#计算出当前stepp规则下点在线上分布的数量
         # offset curve
         pts = None
         t = None
@@ -2443,9 +2443,9 @@ class Dot:
 #原ArcDot
 class ArcDotConfig:
     def __init__(self):
-        self.lr = 0
-        self.sr = 0
-        self.angle = 0
+        self.lr = 0#0.2
+        self.sr = 0#0.9
+        self.angle = 0#180
     
     def top(self):
         return 0
@@ -2459,21 +2459,21 @@ class ArcDot(Dot):
     
     def draw(self, display, display_color):
         # draw the large circle
-        angle_start = (180 - self.config.angle)  / 2
-        angle_end = angle_start + self.config.angle
-        center_angle = ghcomp.ConstructDomain(angle_start * 1.0 / 180  * ghcomp.Pi(), angle_end * 1.0 / 180  * ghcomp.Pi())
+        angle_start = (180 - self.config.angle)  / 2#0
+        angle_end = angle_start + self.config.angle#180
+        center_angle = ghcomp.ConstructDomain(angle_start * 1.0 / 180  * ghcomp.Pi(), angle_end * 1.0 / 180  * ghcomp.Pi())#ok
         center_arc, _ = ghcomp.Arc(self.centroid, self.config.sr, center_angle)
-        center_start_point = center_arc.StartPoint
-        center_end_point = center_arc.EndPoint
+        center_start_point = center_arc.StartPoint#(0.9,0)
+        center_end_point = center_arc.EndPoint#(-0.9,0)
         # left center
-        left_x = (self.config.lr / self.config.sr) * (center_end_point.X - self.centroid.X) + center_end_point.X
-        left_y = (self.config.lr / self.config.sr) * (center_end_point.Y - self.centroid.Y) + center_end_point.Y
+        left_x = (self.config.lr / self.config.sr) * (center_end_point.X - self.centroid.X) + center_end_point.X#-1.1
+        left_y = (self.config.lr / self.config.sr) * (center_end_point.Y - self.centroid.Y) + center_end_point.Y#0
         # right center
-        right_x = (self.config.lr / self.config.sr) * (center_start_point.X - self.centroid.X) + center_start_point.X
-        right_y = (self.config.lr / self.config.sr) * (center_start_point.Y - self.centroid.Y) + center_start_point.Y
+        right_x = (self.config.lr / self.config.sr) * (center_start_point.X - self.centroid.X) + center_start_point.X#1.1
+        right_y = (self.config.lr / self.config.sr) * (center_start_point.Y - self.centroid.Y) + center_start_point.Y#0
 
-        left_angle = ghcomp.ConstructDomain(ghcomp.Pi(1.5), ghcomp.Pi(1.5) + self.config.angle * 1.0 / 2 / 180.0 * ghcomp.Pi())
-        right_angle = ghcomp.ConstructDomain(ghcomp.Pi(1.5) - self.config.angle * 1.0 / 2 / 180.0 * ghcomp.Pi(), ghcomp.Pi(1.5))
+        left_angle = ghcomp.ConstructDomain(ghcomp.Pi(1.5), ghcomp.Pi(1.5) + self.config.angle * 1.0 / 2 / 180.0 * ghcomp.Pi())#1.5p-2p
+        right_angle = ghcomp.ConstructDomain(ghcomp.Pi(1.5) - self.config.angle * 1.0 / 2 / 180.0 * ghcomp.Pi(), ghcomp.Pi(1.5))#p-1.5p
         left_arc, _ = ghcomp.Arc(rg.Point3d(left_x, left_y, 0), self.config.lr, left_angle)
         right_arc, _ = ghcomp.Arc(rg.Point3d(right_x, right_y, 0), self.config.lr, right_angle)
 
@@ -2563,11 +2563,11 @@ class RoundRectConfig:
 
 class RoundRectDot(Dot):
     def __init__(self, x, y, config, theta):
-        Dot.__init__(self, x, y, config, theta)
+        Dot.__init__(self, x, y, config, theta)#初始化点坐标的x、y值以及圆角矩形的K、r值以及偏移角
     
     def draw(self, display, display_color):
-        x = self.centroid.X
-        y = self.centroid.Y
+        x = self.centroid.X#圆角矩形中心坐标X值
+        y = self.centroid.Y#圆角矩形中心坐标Y值
         x_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(x, self.config.k / 2), ghcomp.Addition(x, self.config.k / 2))
         y_domain = ghcomp.ConstructDomain(ghcomp.Subtraction(y, self.config.k / 2), ghcomp.Addition(y, self.config.k / 2))
         rec, _ = ghcomp.Rectangle(rs.WorldXYPlane(), x_domain, y_domain, self.config.r)
@@ -3040,6 +3040,11 @@ class RowConfigPanel(forms.GroupBox):
         self.update_btn = forms.Button(Text='填充花点')
         self.update_btn.Size = drawing.Size(100, 30)
         self.update_btn.Click += self.fill_row_frits
+        
+        self.undo_panel = forms.Panel()
+        self.undo_btn = forms.Button(Text='清除花点')
+        self.undo_btn.Size = drawing.Size(100, 30)
+        self.undo_btn.Click += self.undo_fill_row_frits
 
         self.layout = forms.DynamicLayout()
         self.layout.DefaultSpacing = drawing.Size(10, 10)
@@ -3071,7 +3076,7 @@ class RowConfigPanel(forms.GroupBox):
         self.layout.AddRow(self.arrage_type_label, self.arrage_type_combo, self.transit_check, self.transit_label, self.transit_input, self.transit_label2, self.transit_position_input, None)
         self.layout.EndVertical()
         self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
-        self.layout.AddRow(self.update_btn, None)
+        self.layout.AddRow(self.update_btn,self.undo_btn, None)
         self.layout.EndVertical()
         self.Content = self.layout
     
@@ -3179,8 +3184,13 @@ class RowConfigPanel(forms.GroupBox):
         for d in self.model.dots:
             d.draw(self.display, self.display_color)
     
+    def undo_fill_row_frits(self, sender, e):
+        self.clear_dots()
+        del self.model.dots[:]
+    
     def clear_dots(self):
         self.display.Clear()
+        
     
     def bake(self):
         layer_name = 'page_{0}_row_{1}'.format(self.parent.page_id, self.model.row_id)
@@ -3372,6 +3382,7 @@ class DZ_ConfigPanel(forms.GroupBox):
     
     def clear_dots(self):
         self.display.Clear()
+        del self.model.dots[self.model.row_id]
     
     def bake(self):
         layer_name = 'page_{0}_row_{1}'.format(self.parent.page_id, self.model.row_id)
