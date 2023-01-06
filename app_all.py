@@ -1391,6 +1391,7 @@ class HoleFrits:
             self.outer_crv, _ = ghcomp.FlipCurve(self.outer_crv)
             
         self.inner_crv = self.region.curves[1]
+        self.inner_crv, _ = ghcomp.FlipCurve(self.inner_crv)
         if self.region.is_flip[1] == True:
             self.inner_crv, _ = ghcomp.FlipCurve(self.inner_crv)
             
