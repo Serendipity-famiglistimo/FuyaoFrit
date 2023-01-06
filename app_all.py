@@ -3382,7 +3382,8 @@ class DZ_ConfigPanel(forms.GroupBox):
     
     def clear_dots(self):
         self.display.Clear()
-        del self.model.dots[self.model.row_id]
+        #print(self.model.row_id)
+        #del self.model.dots[self.model.row_id]
     
     def bake(self):
         layer_name = 'page_{0}_row_{1}'.format(self.parent.page_id, self.model.row_id)
