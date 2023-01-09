@@ -102,6 +102,11 @@ class RowConfigPanel(forms.GroupBox):
         self.update_btn = forms.Button(Text='填充花点')
         self.update_btn.Size = drawing.Size(100, 30)
         self.update_btn.Click += self.fill_row_frits
+        
+        self.undo_panel = forms.Panel()
+        self.undo_btn = forms.Button(Text='清除花点')
+        self.undo_btn.Size = drawing.Size(100, 30)
+        self.undo_btn.Click += self.undo_fill_row_frits
 
         self.layout = forms.DynamicLayout()
         self.layout.DefaultSpacing = drawing.Size(10, 10)
@@ -142,6 +147,10 @@ class RowConfigPanel(forms.GroupBox):
             self.model.dot_type = FritType.CIRCLE_DOT
         elif self.dot_type_combo.SelectedIndex == 1:
             self.model.dot_type = FritType.ROUND_RECT
+        elif self.dot_type_combo.SelectedIndex == 2:
+            self.model.dot_type = FritType.ARC_CIRCLE
+        elif self.dot_type_combo.SelectedIndex == 3:
+            self.model.dot_type = FritType.TRI_ARC
         self.setup_view()
 
     def change_row_arrange_type(self, sender, e):
@@ -218,6 +227,10 @@ class RowConfigPanel(forms.GroupBox):
         self.model.fill_dots()
         for d in self.model.dots:
             d.draw(self.display, self.display_color)
+            
+    def undo_fill_row_frits(self, sender, e):
+        self.clear_dots()
+        del self.model.dots[:]
     
     def clear_dots(self):
         self.display.Clear()
