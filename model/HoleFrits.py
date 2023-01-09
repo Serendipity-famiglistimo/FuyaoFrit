@@ -22,7 +22,7 @@ import copy
 
 clr.AddReference("System.Xml")
 import System.Xml
-
+import System.Xml as XML
 class HoleArrangeType:
     HEADING=0
     CROSS=1
@@ -32,7 +32,7 @@ class HoleArrangeType:
 
 
 class Dazhong_fill_holes:
-    def __init__(self, upline, midline, downline, boundary, split_crv, edge_crv, horizontal, vertical, aligned = False):
+    def __init__(self, upline, midline, downline, boundary, split_crv, edge_crv, horizontal, vertical, region, aligned = False):
         self.upline = upline
         self.midline = midline
         self.downline = downline
@@ -47,10 +47,17 @@ class Dazhong_fill_holes:
         self.vertical = vertical
         self.aligned = aligned
         self.tolerance = 0.5
+        self.region = region
         
         self.display_color = rc.Display.ColorHSL(0, 1, 0)
         self.display = rc.Display.CustomDisplay(True)
         self.display.Clear()
+        
+        print(self.region.rows[0].circle_config.cross_k1)
+        print(self.region.rows[0].circle_config.cross_position3)
+        print(self.region.rows[0].circle_config.cross_position2)
+        print(self.region.rows[0].circle_config.cross_position1)
+        print(self.region.rows[0].circle_config.cross_k2)
     
     def _generate_grid_pts(self, base_pts, vertical, downline):
         pts = []
@@ -647,14 +654,14 @@ class Dazhong_fill_holes:
         shift_pts = []
         for i in range(len(cross_pts)-1):
             shift_pts.append(ghcomp.Division(ghcomp.Addition(cross_pts[i] + cross_pts[i+1]), 2))
-        k0 = 1.15
-        h1 = 0.595 + k0/2
-        h2 = 1.725 + k0/2
-        h3 = 3.165 + k0/2
-        k1 = 1.13
-        sr1 = 0.2
-        r2 = 1.11/2
-        r3 = 1.03/2
+        k0 = self.region.rows[0].circle_config.cross_k1
+        h1 = self.region.rows[0].circle_config.cross_position3 + k0/2
+        h2 = self.region.rows[0].circle_config.cross_position2 + k0/2
+        h3 = self.region.rows[0].circle_config.cross_position1 + k0/2
+        k1 = self.region.rows[0].circle_config.cross_k2
+        sr1 = self.region.rows[0].circle_config.cross_round_rect_r
+        r2 = self.region.rows[0].circle_config.cross_r2/2
+        r3 = self.region.rows[0].circle_config.cross_r1/2
         
         std_crv = ghcomp.PolyLine(cross_pts, False)
         
@@ -703,10 +710,10 @@ class Dazhong_fill_holes:
     def generate_slope_band(self, slope_pts, h_direcs, edge_crv):
         slope_band = []
         
-        r0 = 0.55/2 #装饰性圆点
-        r1 = 0.825/2
-        r2 = 1.11/2
-        r3 = 1.15/2
+        r0 = self.region.rows[0].circle_config.slope_r1/2 #装饰性圆点
+        r1 = self.region.rows[0].circle_config.slope_r2/2
+        r2 = self.region.rows[0].circle_config.slope_r3/2
+        r3 = self.region.rows[0].circle_config.slope_r4/2
         
         horizontal = self.horizontal
         if self.aligned == False:
@@ -773,19 +780,19 @@ class Dazhong_fill_holes:
         
     def bake(self):
         layer_name = 'fuyao_black'
-        rs.AddLayer(layer_name, self.display_color, parent='fuyao_frits')
+        rs.AddLayer(layer_name, self.display_color)
         for i in range(len(self.frit_black)):
             obj = scriptcontext.doc.Objects.AddCurve(self.frit_black[i])
             rs.ObjectLayer(obj, layer_name)
         
         layer_name = 'fuyao_white'
-        rs.AddLayer(layer_name, self.display_color, parent='fuyao_frits')
+        rs.AddLayer(layer_name, self.display_color)
         for i in range(len(self.frit_white)):
             obj = scriptcontext.doc.Objects.AddCurve(self.frit_white[i])
             rs.ObjectLayer(obj, layer_name)
         
         layer_name = 'fuyao_bound'
-        rs.AddLayer(layer_name, self.display_color, parent='fuyao_frits')
+        rs.AddLayer(layer_name, self.display_color)
         for i in range(len(self.frit_bound)):
             obj = scriptcontext.doc.Objects.AddCurve(self.frit_bound[i])
             rs.ObjectLayer(obj, layer_name)
@@ -838,7 +845,7 @@ class Dazhong_fill_holes:
         
         self.bake()
 
-
+#原HoleFrits 块状填充算法
 class HoleFrits:
     def __init__(self, hole_id, region):
         self.hole_id = hole_id
@@ -866,6 +873,7 @@ class HoleFrits:
             self.outer_crv, _ = ghcomp.FlipCurve(self.outer_crv)
             
         self.inner_crv = self.region.curves[1]
+        self.inner_crv, _ = ghcomp.FlipCurve(self.inner_crv)
         if self.region.is_flip[1] == True:
             self.inner_crv, _ = ghcomp.FlipCurve(self.inner_crv)
             
@@ -886,11 +894,19 @@ class HoleFrits:
             self.bottom1_crv, _ = ghcomp.FlipCurve(self.bottom1_crv)
             
         #offset outer_crv
-        #self.display_color = rc.Display.ColorHSL(0, 1, 0)
-        #self.display = rc.Display.CustomDisplay(True)
-        #self.display.Clear()
+        self.display_color = rc.Display.ColorHSL(0, 1, 0)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        #crv1 = ghcomp.OffsetCurve(self.outer_crv, distance= 2.4, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
         
         crv1 = ghcomp.OffsetCurve(self.outer_crv, distance= 2.4, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        endpt0, _ = ghcomp.EndPoints(self.outer_crv)
+        endpt1, _ = ghcomp.EndPoints(crv1)
+        _, y0, _ = ghcomp.Deconstruct(endpt0)
+        _, y1, _ = ghcomp.Deconstruct(endpt1)
+        if y0>y1:
+            crv1 = ghcomp.OffsetCurve(self.outer_crv, distance= -2.4, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        
         blocksrf = ghcomp.RuledSurface(crv1, self.refer_crv)
         edgelist = []
         for i in range(blocksrf.Edges.Count):
@@ -898,13 +914,13 @@ class HoleFrits:
         blockborder = ghcomp.JoinCurves(edgelist)
         #self.display.AddCurve(blockborder, self.display_color, 1)
         boundary_crv = ghcomp.OffsetCurve(blockborder,  plane = rs.WorldXYPlane(),distance=-0.1, corners=1)
-        #self.display.AddCurve(boundary_crv, self.display_color, 1)
+        self.display.AddCurve(boundary_crv, self.display_color, 1)
         upline_crv = ghcomp.OffsetCurve(self.top_crv, plane = rs.WorldXYPlane(), distance=0.5, corners=1)
-        
+        #stepping
         dazhong_frit_generator = Dazhong_fill_holes(\
                                     upline = upline_crv, midline = self.bottom_crv, downline = self.bottom1_crv, \
                                     boundary = boundary_crv, split_crv = self.refer_crv, edge_crv = self.inner_crv, \
-                                    horizontal = 2.4, vertical = 1.2, aligned = False)
+                                    horizontal = self.region.rows[0].stepping, vertical = self.region.rows[0].position, region = self.region,aligned = False)
         dazhong_frit_generator.run()
         
         
