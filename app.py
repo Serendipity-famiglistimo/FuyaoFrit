@@ -14,9 +14,8 @@ import Eto.Drawing as drawing
 from Eto.Drawing import Size, Font, FontStyle
 import view.RowConfigPanel as RowConfigPanel
 import view.DefaultPage as DefaultPage
-import view.BandPage
+from view.BandPage import BandPage
 import view.BlockPage
-import view.dzBlockPage
 import model.RowFrits
 import model.HoleFrits
 import view.HoleConfigPanel
@@ -33,20 +32,20 @@ import os
 import clr
 #from RowControl import RowControl
 from System.Drawing import Color
-
+from view.dzBlockPage import dzBlockPage
+from view.BlockPage import BlockPage
+from view.DefaultPage import con
 
 class FritDialog(forms.Dialog[bool]):
     def __init__(self):
         current_path1 = os.getcwd()
         self.Title = '福耀印刷花点排布工具'
-        self.Icon = drawing.Icon(current_path1+"\\ico\\FY.ico")
+        self.Icon = drawing.Icon("C:\\ico\\FY.ico")
         self.Padding = drawing.Padding(10)
-#        self.type = type
+        #self.type = type
         self.Resizable = False
         self.Closing += self.OnFormClosed
         self.MinimumSize = Size(800, 600)
-
-
         # 菜单
         self.create_menu()
         self.create_toolbar()
@@ -72,22 +71,22 @@ class FritDialog(forms.Dialog[bool]):
         
         open_menu = forms.Command()
         open_menu.MenuText = "打开"
-        open_menu.Image = drawing.Bitmap(current_path + '\\ico\\file-open.png')
+        open_menu.Image = drawing.Bitmap('C:\\ico\\file-open.png')
         file_menu.Items.Add(open_menu, 0)
         
         add_region_menu = forms.Command(self.AddBandRegionCommand)
         add_region_menu.MenuText = "添加带状区域"
-        add_region_menu.Image = drawing.Bitmap(current_path + '\\ico\\line.png')
+        add_region_menu.Image = drawing.Bitmap('C:\\ico\\line.png')
         edit_menu.Items.Add(add_region_menu,0)
         
         add_region_menu1 = forms.Command(self.AddBlockRegionCommand)
         add_region_menu1.MenuText = "添加块状区域"
-        add_region_menu1.Image = drawing.Bitmap(current_path + '\\ico\\rect.png')
+        add_region_menu1.Image = drawing.Bitmap('C:\\ico\\rect.png')
         edit_menu.Items.Add(add_region_menu1,1)
 
         add_region_menu2 = forms.Command(self.AddBottomRegionCommand)
         add_region_menu2.MenuText = "添加底部区域"
-        add_region_menu2.Image = drawing.Bitmap(current_path + '\\ico\\rect.png')
+        add_region_menu2.Image = drawing.Bitmap('C:\\ico\\rect.png')
         edit_menu.Items.Add(add_region_menu2,1)
             
     
@@ -98,12 +97,12 @@ class FritDialog(forms.Dialog[bool]):
         
         transit_curve = forms.Command(self.TransitCurveCommand)
         transit_curve.MenuText = '过渡曲线'
-        transit_curve.Image = drawing.Bitmap(current_path + '\\ico\\cross.png')
+        transit_curve.Image = drawing.Bitmap('C:\\ico\\cross.png')
         self.ToolBar.Items.Add(transit_curve)
 
         bake_dots = forms.Command(self.BakeDotsCommand)
         bake_dots.MenuText = '导出花点'
-        bake_dots.Image = drawing.Bitmap(current_path + '\\ico\\bake.png')
+        bake_dots.Image = drawing.Bitmap('C:\\ico\\bake.png')
         self.ToolBar.Items.Add(bake_dots)
 
         # self.ToolBar.Items.Add(bake_dots)
@@ -118,22 +117,22 @@ class FritDialog(forms.Dialog[bool]):
     
 
     def AddBandRegionCommand(self, sender, e):
-        page = view.BandPage.BandPage(len(self.regions))
+        page = BandPage(len(self.regions))
         self.regions.append(page)
         self.tab.Pages.Add(page)
     
     def AddBottomRegionCommand(self, sender, e):
-        page = view.BandPage.BandPage(len(self.regions), 'bottom')
+        page = BandPage(len(self.regions), 'bottom')
         self.regions.append(page)
         self.tab.Pages.Add(page)
 
     def AddBlockRegionCommand(self, sender, e):
-        if DefaultPage.con.type == '大众算法':
-            page = view.dzBlockPage.BlockPage(len(self.regions))
+        if con.type == '大众算法':
+            page = dzBlockPage(len(self.regions))
             self.regions.append(page)
             self.tab.Pages.Add(page)
         else:
-            page = view.BlockPage.BlockPage(len(self.regions))
+            page = BlockPage(len(self.regions))
             self.regions.append(page)
             self.tab.Pages.Add(page)
 
