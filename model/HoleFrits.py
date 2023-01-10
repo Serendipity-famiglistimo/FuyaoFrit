@@ -19,7 +19,7 @@ import scriptcontext
 import rhinoscriptsyntax as rs
 import clr
 import copy
-
+from model.ChooseZone import con
 clr.AddReference("System.Xml")
 import System.Xml
 
@@ -639,7 +639,22 @@ class HoleFrits:
             self.dots.append(dot)
 
     def fill_dots(self):
-        self.fill_angle()
+        print(con.type+'算法')
+        if con.type == '大众图纸':
+            pass
+        elif con.type == '88LF':
+            self.fill_dots_88LFW()
+        elif con.type == '76720LFW00027':
+            self.fill_dots_76720LFW00027()
+        elif con.type == '00215':
+            self.fill_angle()
+        elif con.type == '00841LFW00001':
+            self.fill_simple()
+        elif con.type == '00399LFW00012':
+            self.fill_one_line()
+        elif con.type == '00792LFW000023':
+            self.fill_dots_diag_and_sticky()
+        
         # self.fill_from_bottom()
         # self.fill_simple()
         # self.fill_dots_88LFW()
