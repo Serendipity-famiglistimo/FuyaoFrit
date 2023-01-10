@@ -254,7 +254,7 @@ class DefaultPage(forms.TabPage):
         
 
     def typeselected(self, sender, e):
-        print('typeselected被调用为'+con.type)
+        #print('typeselected被调用为'+con.type)
         if self.list.SelectedIndex == 0:
             self.type = '大众算法'
             
@@ -265,7 +265,7 @@ class DefaultPage(forms.TabPage):
             self.type = '其他'
         con.type = self.type
         self.create(self.type)
-        print('DEF界面下传的self'+con.type)
+        print(con.type)
         
         
     def LoadButtonClick(self, sender, e):
@@ -295,7 +295,7 @@ class BandZone(Zone):
     def add_relation(self):
         pass
 
-#原BlockZone 初始化块状填充区域变量
+#原BlockZone 初始化块状填充区域变量 封装普通型号块状填充算法
 class BlockZone(Zone):
     def __init__(self):
         Zone.__init__(self)
@@ -3945,6 +3945,7 @@ class BlockPage(forms.TabPage):
         self.Text = '块状区域'
         self.panel = forms.Scrollable()
         self.panel.Padding = drawing.Padding(10)
+        self.row_num = 1
         self.model = BlockZone()
         self.row_panels = list()
         self.hole_panels = list()
@@ -4008,12 +4009,18 @@ class BlockPage(forms.TabPage):
             self.is_pick_label3.TextColor = drawing.Color.FromArgb(44,162,95)
 
         self.fill_label = forms.Label(Text='- 设置或加载填充规则', Font = Font('Microsoft YaHei', 12.))
-        self.fill_btn = forms.Button(Text='手动添加新行')
-        self.fill_btn.Size = Size(100, 30)
-        self.fill_btn.Click += self.AddButtonClick
+        self.fill_btn1 = forms.Button(Text='手动添加新行(row)')
+        self.fill_btn1.Size = Size(120, 30)
+        self.fill_btn1.Click += self.AddButtonClick_row
+        self.fill_btn2 = forms.Button(Text='手动添加新行(hole)')
+        self.fill_btn2.Size = Size(120, 30)
+        self.fill_btn2.Click += self.AddButtonClick_hole
         self.insert_btn = forms.Button(Text='一键填充')
-        self.insert_btn.Size = Size(100, 30)
+        self.insert_btn.Size = Size(120, 30)
         self.insert_btn.Click += self.InsertButtonClick
+        self.xml_btn = forms.Button(Text='导出XML文件')
+        self.xml_btn.Size = Size(120, 30)
+        self.xml_btn.Click += self.XMLButtonClick
         #groupbox1
         self.m_groupbox = forms.GroupBox(Text = '参考线示意图')
         self.m_groupbox.Padding = drawing.Padding(5)
@@ -4049,41 +4056,39 @@ class BlockPage(forms.TabPage):
         self.layout.AddSeparateRow(self.pick_label, None)
         self.layout.BeginVertical(padding=drawing.Padding(20, 0, 0, 0))
         self.layout.AddRow(self.m_groupbox2, self.m_groupbox)
-        self.layout.AddRow(self.insert_btn, None)
+        #self.layout.AddRow(self.insert_btn,self.xml_btn, None)
         self.layout.EndVertical()
         self.layout.AddSeparateRow(self.fill_label, None)
-        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,  None])
+        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.insert_btn,self.fill_btn1,self.fill_btn2,self.xml_btn, None])
+        ##self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,  None])
         
-        
-        
-        if Save.path_data:
-            file_name = Save.path_data
-            rows = RowFrits.load_block_xml(file_name, self.model)
-            holes = HoleFrits.load_block_xml(file_name, self.model)
-            self.model.holes = holes
-            self.model.rows = rows
-            
-            del self.row_panels[:]
-            self.layout.BeginVertical()
-            for i in range(len(self.model.rows)):
-                rpanel = RowConfigPanel(self, self.model.rows[i])
-                self.layout.AddRow(rpanel)
-                self.row_panels.append(rpanel)
-            self.layout.EndVertical()
+        if len(self.model.rows) == 0:
+            try:
+                file_name = Save.path_data
+                rows = RowFrits.load_block_xml(file_name, self.model)
+                holes = HoleFrits.load_block_xml(file_name, self.model)
+                for i in range(len(rows)):
+                    self.model.rows.append(rows[i])
+                for i in range(len(holes)):
+                    self.model.holes.append(holes[i])
+            except:
+                pass
+        del self.row_panels[:]
+        del self.hole_panels[:]
+        self.layout.BeginVertical()
+        for i in range(len(self.model.rows)):
+            rpanel = RowConfigPanel(self, self.model.rows[i])
+            self.layout.AddRow(rpanel)
+            self.row_panels.append(rpanel)
+        for i in range(len(self.model.holes)):
+            hpanel = HoleConfigPanel(self, self.model.holes[i])
+            self.layout.AddRow(hpanel)
+            self.hole_panels.append(hpanel)
+        self.layout.EndVertical()
+        self.layout.AddSpace()
+        self.panel.Content = self.layout
+        self.Content = self.panel
     
-            del self.hole_panels[:]
-            self.layout.BeginVertical()
-            for i in range(len(self.model.holes)):
-                rpanel = HoleConfigPanel(self, self.model.holes[i])
-                self.layout.AddRow(rpanel)
-                self.hole_panels.append(rpanel)
-            self.layout.EndVertical()
-        else:
-            self.layout.BeginVertical()
-            self.warn_label = forms.Label(Text='---未加载块状配置---', Font = Font('Microsoft YaHei', 12.), TextColor = drawing.Color.FromArgb(255, 0, 0))
-            self.layout.AddRow(self.warn_label)
-            print('获取文件路径失败')
-            self.layout.EndVertical()
 
         # self.block_fill_label = forms.Label(Text='- 填充块状区域', Font = Font('Microsoft YaHei', 12.))
         # self.block_fill_btn = forms.Button(Text='填充块状部分')
@@ -4101,14 +4106,263 @@ class BlockPage(forms.TabPage):
         self.Content = self.panel
 
 
-    def AddButtonClick(self, sender, e):
+    def AddButtonClick_row(self, sender, e):
+        self.row_num = len(self.model.rows)
         self.row_num += 1
         row_frits = RowFrits(len(self.model.rows), self.model)
-       
         self.model.rows.append(row_frits)
-        # row_frits.band_model = self.model  # type: ignore
+        self.create_interface()
+        
+    def AddButtonClick_hole(self, sender, e):
+        self.hole_num = len(self.model.holes)
+        self.hole_num += 1
+        hole_frits = HoleFrits(len(self.model.holes), self.model)
+        self.model.holes.append(hole_frits)
         self.create_interface()
     
+    
+    def XMLButtonClick(self, sender, e):
+        xml = XML.XmlDocument()
+        xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
+        xml.AppendChild(xml_declaration)
+        set = xml.CreateElement('setting')
+        block = xml.CreateElement('block')
+        set.AppendChild(block)
+        xml.AppendChild(set)
+        for i in range(len(self.model.rows)):
+            print(i)
+            row = xml.CreateElement('row')
+            block.AppendChild(row)
+            #row_id = xml.CreateAttribute('id')
+            row.SetAttribute('id',str(i))
+            if self.model.rows[i].dot_type == FritType.CIRCLE_DOT:
+                type = xml.CreateAttribute('type')
+                type.Value = 'circle'
+                row.Attributes.Append(type)
+                if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'heading'
+                    row.Attributes.Append(arrange)
+                else:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'cross'
+                    row.Attributes.Append(arrange)
+                #print('圆形') row.circle_config.r
+                r = xml.CreateElement('r')
+                r.InnerText = str(self.model.rows[i].circle_config.r)
+                row.AppendChild(r)
+                
+                step = xml.CreateElement('stepping')
+                step.InnerText = str(self.model.rows[i].stepping)
+                row.AppendChild(step)
+                
+                position = xml.CreateElement('position')
+                position.InnerText = str(self.model.rows[i].position)
+                row.AppendChild(position)
+                if self.model.rows[i].is_transit:
+                    transit = xml.CreateElement('transit')
+                    transit.InnerText = str(self.model.rows[i].transit_radius)
+                    row.AppendChild(transit)
+                    
+                    transit_position = xml.CreateElement('transitposition')
+                    transit_position.InnerText = str(self.model.rows[i].transit_position)
+                    row.AppendChild(transit_position)
+            elif self.model.rows[i].dot_type == FritType.ROUND_RECT:
+                type = xml.CreateAttribute('type')
+                type.Value = 'roundrect'
+                row.Attributes.Append(type)
+                if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'heading'
+                    row.Attributes.Append(arrange)
+                else:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'cross'
+                    row.Attributes.Append(arrange)
+                #print('圆形') row.circle_config.r
+                r = xml.CreateElement('r')
+                r.InnerText = str(self.model.rows[i].round_rect_config.r)
+                row.AppendChild(r)
+                
+                k = xml.CreateElement('k')
+                k.InnerText = str(self.model.rows[i].round_rect_config.k)
+                row.AppendChild(k)
+                
+                step = xml.CreateElement('stepping')
+                step.InnerText = str(self.model.rows[i].stepping)
+                row.AppendChild(step)
+                
+                position = xml.CreateElement('position')
+                position.InnerText = str(self.model.rows[i].position)
+                row.AppendChild(position)
+                if self.model.rows[i].is_transit:
+                    transit = xml.CreateElement('transit')
+                    transit.InnerText = str(self.model.rows[i].transit_radius)
+                    row.AppendChild(transit)
+                    
+                    transit_position = xml.CreateElement('transitposition')
+                    transit_position.InnerText = str(self.model.rows[i].transit_position)
+                    row.AppendChild(transit_position)
+            elif self.model.rows[i].dot_type == FritType.ARC_CIRCLE:
+                type = xml.CreateAttribute('type')
+                type.Value = 'arcdot'
+                row.Attributes.Append(type)
+                if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'heading'
+                    row.Attributes.Append(arrange)
+                else:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'cross'
+                    row.Attributes.Append(arrange)
+                #print('圆形') row.circle_config.r
+                lr = xml.CreateElement('lr')
+                lr.InnerText = str(self.model.rows[i].arc_config.lr)
+                row.AppendChild(lr)
+                
+                sr = xml.CreateElement('sr')
+                sr.InnerText = str(self.model.rows[i].arc_config.sr)
+                row.AppendChild(sr)
+                
+                angle = xml.CreateElement('angle')
+                angle.InnerText = str(self.model.rows[i].arc_config.angle)
+                row.AppendChild(angle)
+                
+                step = xml.CreateElement('stepping')
+                step.InnerText = str('2.2')
+                row.AppendChild(step)
+                
+                position = xml.CreateElement('position')
+                position.InnerText = str('0.2')
+                row.AppendChild(position)
+                if self.model.rows[i].is_transit:
+                    
+                    transit = xml.CreateElement('transit')
+                    transit.InnerText = str(self.model.rows[i].transit_radius)
+                    row.AppendChild(transit)
+                    
+                    transit_position = xml.CreateElement('transitposition')
+                    transit_position.InnerText = str(self.model.rows[i].transit_position)
+                    row.AppendChild(transit_position)
+            elif self.model.rows[i].dot_type == FritType.TRI_ARC:
+                type = xml.CreateAttribute('type')
+                type.Value = 'triarc'
+                row.Attributes.Append(type)
+                if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'heading'
+                    row.Attributes.Append(arrange)
+                else:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'cross'
+                    row.Attributes.Append(arrange)
+                #print('圆形') row.circle_config.r
+                lr = xml.CreateElement('lr')
+                lr.InnerText = str(self.model.rows[i].tri_arc_config.lr)
+                row.AppendChild(lr)
+                
+                sr = xml.CreateElement('sr')
+                sr.InnerText = str(self.model.rows[i].tri_arc_config.sr)
+                row.AppendChild(sr)
+                
+                angle = xml.CreateElement('angle')
+                angle.InnerText = str(self.model.rows[i].tri_arc_config.angle)
+                row.AppendChild(angle)
+                
+                step = xml.CreateElement('stepping')
+                step.InnerText = str('2.2')
+                row.AppendChild(step)
+                
+                position = xml.CreateElement('position')
+                position.InnerText = str('0.2')
+                row.AppendChild(position)
+                
+                if self.model.rows[i].is_transit:
+                    transit = xml.CreateElement('transit')
+                    transit.InnerText = str(self.model.rows[i].transit_radius)
+                    row.AppendChild(transit)
+                    
+                    transit_position = xml.CreateElement('transitposition')
+                    transit_position.InnerText = str(self.model.rows[i].transit_position)
+                    row.AppendChild(transit_position)
+        #f_path = XMLPATH()
+        #xml.Save(f_path)
+        for i in range(len(self.model.holes)):
+            print(i)
+            hole = xml.CreateElement('hole')
+            block.AppendChild(hole)
+            #row_id = xml.CreateAttribute('id')
+            hole.SetAttribute('id',str(i))
+            if self.model.holes[i].dot_type == FritType.CIRCLE_DOT:
+                type = xml.CreateAttribute('type')
+                type.Value = 'circle'
+                hole.Attributes.Append(type)
+                if self.model.holes[i].arrange_type == RowArrangeType.HEADING:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'heading'
+                    hole.Attributes.Append(arrange)
+                else:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'cross'
+                    hole.Attributes.Append(arrange)
+                #print('圆形') row.circle_config.r
+                r = xml.CreateElement('r')
+                r.InnerText = str(self.model.holes[i].circle_config.r)
+                hole.AppendChild(r)
+                
+                #k = xml.CreateElement('k')
+                #k.InnerText = str(self.model.rows[i].circle_config.k)
+                #row.AppendChild(k)
+                
+                step = xml.CreateElement('stepping')
+                step.InnerText = str(self.model.holes[i].stepping)
+                hole.AppendChild(step)
+                
+                vspace = xml.CreateElement('vspace')
+                vspace.InnerText = str(self.model.holes[i].vspace)
+                hole.AppendChild(vspace)
+                
+                fposition = xml.CreateElement('fposition')
+                fposition.InnerText = str(self.model.holes[i].first_line_position)
+                hole.AppendChild(fposition)
+                
+            elif self.model.holes[i].dot_type == FritType.ROUND_RECT:
+                type = xml.CreateAttribute('type')
+                type.Value = 'roundrect'
+                hole.Attributes.Append(type)
+                if self.model.holes[i].arrange_type == RowArrangeType.HEADING:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'heading'
+                    hole.Attributes.Append(arrange)
+                else:
+                    arrange = xml.CreateAttribute('arrange')
+                    arrange.Value = 'cross'
+                    hole.Attributes.Append(arrange)
+                #print('圆形') row.circle_config.r
+                r = xml.CreateElement('r')
+                r.InnerText = str(self.model.holes[i].round_rect_config.r)
+                hole.AppendChild(r)
+                
+                k = xml.CreateElement('k')
+                k.InnerText = str(self.model.holes[i].round_rect_config.k)
+                hole.AppendChild(k)
+                
+                step = xml.CreateElement('stepping')
+                step.InnerText = str(self.model.holes[i].stepping)
+                hole.AppendChild(step)
+                
+                vspace = xml.CreateElement('vspace')
+                vspace.InnerText = str(self.model.holes[i].vspace)
+                hole.AppendChild(vspace)
+                
+                fposition = xml.CreateElement('fposition')
+                fposition.InnerText = str(self.model.holes[i].fposition)
+                hole.AppendChild(fposition)
+                
+        f_path = XMLPATH()
+        xml.Save(f_path)
+        
+        
     def InsertButtonClick(self, sender, e):
         self.clear_dots()
         self.model.fill_dots()
