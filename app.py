@@ -20,6 +20,8 @@ import model.RowFrits
 import model.HoleFrits
 import view.HoleConfigPanel
 import model.BlockZone
+import view.dzBlockPage
+reload(view.dzBlockPage)
 reload(model.BlockZone)
 reload(model.HoleFrits)
 reload(view.HoleConfigPanel)
@@ -59,7 +61,9 @@ class FritDialog(forms.Dialog[bool]):
         self.tab.Pages.Add(page2)
         page3 = view.BandPage.BandPage(0, 'bottom')
         self.tab.Pages.Add(page3)
-        self.regions = [page, page2, page3]
+        page4 = view.dzBlockPage.dzBlockPage(1)
+        self.tab.Pages.Add(page4)
+        self.regions = [page, page2, page3,page4]
 
  
         # 标题

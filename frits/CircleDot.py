@@ -13,6 +13,18 @@ import scriptcontext
 
 class CircleDotConfig:
     def __init__(self):
+        self.cross_k1 = 0
+        self.cross_position3 = 0
+        self.cross_position2 = 0
+        self.cross_position1 = 0
+        self.cross_k2 = 0
+        self.cross_round_rect_r = 0
+        self.cross_r2 = 0
+        self.cross_r1 = 0
+        self.slope_r1 = 0
+        self.slope_r2 = 0
+        self.slope_r3 = 0
+        self.slope_r4 = 0
         self.r = 0
     
     def top(self):
