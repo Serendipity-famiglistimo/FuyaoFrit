@@ -107,12 +107,12 @@ class DZ_ConfigPanel(forms.GroupBox):
         self.layout.AddRow(self.basic_setting_label, None)
         self.layout.EndVertical()
         self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
-        ##self.layout.AddRow(self.circle1_dot_radius_label,self.circle1_dot_radius,self.circle5_dot_radius_label,self.circle5_dot_radius,self.circle2_dot_radius_label,self.circle2_dot_radius, self.circle3_dot_radius_label,self.circle3_dot_radius,self.circle4_dot_radius_label,self.circle4_dot_radius,self.circle6_dot_radius_label,self.circle6_dot_radius,self.circle9_dot_radius_label,self.circle9_dot_radius,self.circle10_dot_radius_label,self.circle10_dot_radius,self.circle11_dot_radius_label,self.circle11_dot_radius,self.circle12_dot_radius_label,self.circle12_dot_radius,self.stepping_label,self.stepping_input,self.position_label,self.position_input None)
+        
         self.layout.AddRow(self.circle1_dot_radius_label,self.circle1_dot_radius,self.circle5_dot_radius_label,self.circle5_dot_radius,None)
         self.layout.AddRow(self.circle2_dot_radius_label,self.circle2_dot_radius, self.circle3_dot_radius_label,self.circle3_dot_radius,self.circle4_dot_radius_label,self.circle4_dot_radius,None)
         self.layout.AddRow(self.circle6_dot_radius_label,self.circle6_dot_radius,self.circle7_dot_radius_label,self.circle7_dot_radius,self.circle8_dot_radius_label,self.circle8_dot_radius,None)
-        self.layout.AddRow(self.circle9_dot_radius_label,self.circle9_dot_radius,self.circle10_dot_radius_label,self.circle10_dot_radius,self.circle11_dot_radius_label,self.circle11_dot_radius,self.circle12_dot_radius_label,self.circle12_dot_radius,None)
-        self.layout.AddRow(self.stepping_label,self.stepping_input,self.position_label,self.position_input,None)
+        self.layout.AddRow(self.circle9_dot_radius_label,self.circle9_dot_radius,self.circle10_dot_radius_label,self.circle10_dot_radius,self.circle11_dot_radius_label,self.circle11_dot_radius,None)
+        self.layout.AddRow(self.circle12_dot_radius_label,self.circle12_dot_radius,self.stepping_label,self.stepping_input,self.position_label,self.position_input,None)
         self.layout.EndVertical()
         self.Content = self.layout
         

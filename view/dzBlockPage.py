@@ -69,7 +69,7 @@ from Eto.Forms import *
 from Eto.Drawing import * 
 import os
 import clr
-from LoadData import Save
+from model.LoadData import Save
 clr.AddReference("System.Xml")
 clr.AddReference("System")
 import System.Xml as XML
@@ -95,7 +95,7 @@ class dzBlockPage(forms.TabPage):
 
     def __init__(self, page_id):
         self.page_id = page_id
-        self.Text = '块状区域-大众'
+        self.Text = '第三遮阳区-大众'
         self.panel = forms.Scrollable()
         self.panel.Padding = drawing.Padding(10)
         self.model = dzBlockZone()
@@ -309,24 +309,6 @@ class dzBlockPage(forms.TabPage):
             self.hole_panels.append(rpanel)
         self.layout.EndVertical()
             
-        #else:
-            #self.layout.BeginVertical()
-            #self.warn_label = forms.Label(Text='---未加载块状配置---', Font = Font('Microsoft YaHei', 12.), TextColor = drawing.Color.FromArgb(255, 0, 0))
-            #self.layout.AddRow(self.warn_label)
-            #print('获取文件路径失败')
-            #self.layout.EndVertical()
-
-        # self.block_fill_label = forms.Label(Text='- 填充块状区域', Font = Font('Microsoft YaHei', 12.))
-        # self.block_fill_btn = forms.Button(Text='填充块状部分')
-        # self.block_fill_btn.Size = Size(100, 30)
-        # self.block_fill_btn.Click += self.BlockFillBtnClick
-
-        # self.layout.BeginVertical()
-        # self.layout.AddRow(self.block_fill_label, None)
-        # self.layout.AddRow(self.block_fill_btn, None)
-        # self.layout.EndVertical()
-
-
         self.layout.AddSpace()
         self.panel.Content = self.layout
         self.Content = self.panel

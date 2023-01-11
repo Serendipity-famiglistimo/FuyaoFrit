@@ -102,6 +102,12 @@ class RowConfigPanel(forms.GroupBox):
         self.update_btn = forms.Button(Text='填充花点')
         self.update_btn.Size = drawing.Size(100, 30)
         self.update_btn.Click += self.fill_row_frits
+        
+        
+        self.undo_panel = forms.Panel()
+        self.undo_btn = forms.Button(Text='清除花点')
+        self.undo_btn.Size = drawing.Size(100, 30)
+        self.undo_btn.Click += self.undo_fill_row_frits
 
         self.layout = forms.DynamicLayout()
         self.layout.DefaultSpacing = drawing.Size(10, 10)
@@ -133,7 +139,7 @@ class RowConfigPanel(forms.GroupBox):
         self.layout.AddRow(self.arrage_type_label, self.arrage_type_combo, self.transit_check, self.transit_label, self.transit_input, self.transit_label2, self.transit_position_input, None)
         self.layout.EndVertical()
         self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
-        self.layout.AddRow(self.update_btn, None)
+        self.layout.AddRow(self.update_btn,self.undo_btn, None)
         self.layout.EndVertical()
         self.Content = self.layout
     
@@ -218,6 +224,10 @@ class RowConfigPanel(forms.GroupBox):
         self.model.fill_dots()
         for d in self.model.dots:
             d.draw(self.display, self.display_color)
+    
+    def undo_fill_row_frits(self, sender, e):
+        self.clear_dots()
+        del self.model.dots[:]
     
     def clear_dots(self):
         self.display.Clear()

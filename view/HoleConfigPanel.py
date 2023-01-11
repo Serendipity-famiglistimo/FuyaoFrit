@@ -15,6 +15,7 @@ from model.HoleFrits import HoleArrangeType, HoleFrits
 import rhinoscriptsyntax as rs
 from frits import FritType
 import utils
+from model.ChooseZone import con
 
 class HoleConfigPanel(forms.GroupBox):
     def __init__(self, parent, hole_config):

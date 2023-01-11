@@ -8,19 +8,48 @@
 '''
 import Eto.Forms as forms
 from Eto.Drawing import Size, Font, FontStyle
+from model.LoadData import Save
+import Rhino
+import Eto.Drawing as drawing
 
 class DefaultPage(forms.TabPage):
     def __init__(self):
         forms.TabPage.__init__(self)
+        #self.type = '大众算法'
+        self.panel = forms.Scrollable()
+        self.panel.Padding = drawing.Padding(10)
         self.create()
-
+        
+        
     def create(self):
         self.Text = '基本属性'
-        # 标题
-        self.heading_label = forms.Label(Text= '福耀印刷花点排布工具', Font = Font('Microsoft YaHei', 14., FontStyle.Bold))
-        # self.m_headding.Color = drawing.Color.FromArgb(255, 0, 0)
-        self.heading_label.TextAlignment = forms.TextAlignment.Center
-
         self.layout = forms.DynamicLayout()
-        self.layout.AddRow(self.heading_label)
-        self.Content = self.layout 
+        self.pick_label = forms.Label(Text='选择填充算法:', Font=Font('Microsoft YaHei', 12.))
+        
+        #self.list.SelectedIndexChanged += self.typeselected
+        self.load_btn = forms.Button(Text='加载填充规则')
+        self.load_btn.Size = Size(100, 30)
+        self.load_btn.Click += self.LoadButtonClick
+        
+        self.layout.DefaultSpacing = drawing.Size(8, 8)
+        self.layout.AddSeparateRow(self.pick_label, None, None)
+        #self.layout.AddSeparateRow(self.list, None, None)
+        self.layout.AddSeparateRow(self.load_btn, None, None)
+        
+        
+        
+        
+        
+        self.layout.AddSpace()
+        self.panel.Content = self.layout
+        self.Content = self.panel
+        
+        
+    def LoadButtonClick(self, sender, e):
+        # 清空现有的填充规则
+        fd = Rhino.UI.OpenFileDialog()
+        fd.Title = '加载规则文件'
+        fd.Filter = '规则文件 (*.xml)'
+        fd.MultiSelect = False
+        if fd.ShowOpenDialog():
+            Save.path_data = fd.FileName
