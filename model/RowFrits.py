@@ -350,3 +350,38 @@ class RowFrits:
                     row.transit_position = val['transitposition']
             rows.append(row)
         return rows
+        
+    @staticmethod
+    def load_dz_block_xml(file_path, region):
+        xmldoc = System.Xml.XmlDocument()
+        xmldoc.Load(file_path)
+        items = xmldoc.SelectNodes("setting/block/row")
+        rows = []
+        for item in items:
+            nid = int(item.GetAttributeNode('id').Value)
+            row = RowFrits(nid, region)
+            #dot_type = item.GetAttributeNode('type').Value
+            #row.dot_type = {'circle': FritType.CIRCLE_DOT, 'roundrect': FritType.ROUND_RECT, 'arcdot': FritType.ARC_CIRCLE, 'triarc': FritType.TRI_ARC}[dot_type]
+            #arrange_type = item.GetAttributeNode('arrange').Value
+            #row.arrange_type = {'heading': RowArrangeType.HEADING, 'cross': RowArrangeType.CROSS }[arrange_type]
+            val = dict()
+            for node in item.ChildNodes:
+                val[node.Name] = float(node.InnerText)
+            row.stepping = val['horizontal']
+            row.position = val['vertical']
+            #if row.dot_type == FritType.CIRCLE_DOT:
+            row.circle_config.cross_k1 = val['cross_k1']
+            row.circle_config.cross_position3 = val['cross_position3']
+            row.circle_config.cross_position2 = val['cross_position2']
+            row.circle_config.cross_position1 = val['cross_position1']
+            row.circle_config.cross_k2 = val['cross_k2']
+            row.circle_config.cross_round_rect_r = val['cross_round_rect_r']
+            row.circle_config.cross_r2 = val['cross_r2']
+            row.circle_config.cross_r1 = val['cross_r1']
+            row.circle_config.slope_r1 = val['slope_r1']
+            row.circle_config.slope_r2 = val['slope_r2']
+            row.circle_config.slope_r3 = val['slope_r3']
+            row.circle_config.slope_r4 = val['slope_r4']
+            rows.append(row)
+            print(len(rows))
+        return rows

@@ -30,6 +30,7 @@ class HoleArrangeType:
     def get_hole_arrange_type():
         return ['顶头', '交错']
 
+
 class Dazhong_fill_holes:
     def __init__(self, upline, midline, downline, boundary, split_crv, edge_crv, horizontal, vertical, region, aligned = False):
         self.upline = upline
@@ -866,7 +867,6 @@ class HoleFrits:
     
     def bake(self):
         pass
-
     def dazhong_fill_dots(self):
         self.outer_crv = self.region.curves[0]
         if self.region.is_flip[0] == True:
@@ -914,7 +914,7 @@ class HoleFrits:
         blockborder = ghcomp.JoinCurves(edgelist)
         #self.display.AddCurve(blockborder, self.display_color, 1)
         boundary_crv = ghcomp.OffsetCurve(blockborder,  plane = rs.WorldXYPlane(),distance=-0.1, corners=1)
-        self.display.AddCurve(boundary_crv, self.display_color, 1)
+        #self.display.AddCurve(boundary_crv, self.display_color, 1)
         upline_crv = ghcomp.OffsetCurve(self.top_crv, plane = rs.WorldXYPlane(), distance=0.5, corners=1)
         #stepping
         dazhong_frit_generator = Dazhong_fill_holes(\
@@ -922,7 +922,6 @@ class HoleFrits:
                                     boundary = boundary_crv, split_crv = self.refer_crv, edge_crv = self.inner_crv, \
                                     horizontal = self.region.rows[0].stepping, vertical = self.region.rows[0].position, region = self.region,aligned = False)
         dazhong_frit_generator.run()
-    
     def fill_dots_88LFW(self):
         self.top_curve = self.region.curves[2]
         if self.region.is_flip[2] == True:

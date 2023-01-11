@@ -27,4 +27,3 @@ class dzBlockZone(Zone):
         self.is_flip = [False, False, False, False, False, False]
         self.block_dots = []
         self.dots = []
-    
