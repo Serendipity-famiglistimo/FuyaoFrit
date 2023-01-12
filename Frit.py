@@ -49,14 +49,14 @@ class SelectedDialog(forms.Dialog):
 
     def __init__(self):
         self.Title = "算法选择"
-        self.ClientSize = drawing.Size(200, 180)
+        self.ClientSize = drawing.Size(200, 200)
         self.Padding = drawing.Padding(5)
         self.Resizable = False
         con.type = '大众图纸'
         con.choose = 'false'
         self.pick_label = forms.Label(Text='选择填充算法:', Font=Font('Microsoft YaHei', 12.))
         self.list = forms.RadioButtonList()
-        self.list.DataStore = ['大众图纸', '88LF', '76720LFW00027','00215','00841LFW00001','00399LFW00012','00792LFW000023']
+        self.list.DataStore = ['大众图纸', '88LF', '76720LFW00027','00215','00841LFW00001','00399LFW00012','00792LFW000023','New_165']
         self.list.Orientation = forms.Orientation.Vertical
         self.list.SelectedIndex = self.list.DataStore.index(con.type)
         self.list.SelectedIndexChanged += self.typeselected
@@ -92,6 +92,8 @@ class SelectedDialog(forms.Dialog):
             self.type = '00399LFW00012'
         elif self.list.SelectedIndex == 6:
             self.type = '00792LFW000023'
+        elif self.list.SelectedIndex == 7:
+            self.type = 'New_165'
         con.type = self.type
         #self.create(self.type)
         print(con.type)
@@ -115,6 +117,329 @@ def XMLPATH():
         file_name = save_file_dialog.FileName
     print(file_name)
     return file_name
+
+
+class NewBlockPage(forms.TabPage):
+    
+    # .net 必须使用__new__显示调用构造函数！！！
+    def __new__(cls, *args):
+        return forms.TabPage.__new__(cls)    
+
+    def __init__(self, page_id):
+        self.page_id = page_id
+        self.Text = '第三遮阳区-165通用型'
+        self.panel = forms.Scrollable()
+        self.panel.Padding = drawing.Padding(10)
+        self.model = dzBlockZone()
+        self.row_panels = list()
+        self.hole_panels = list()
+        self.create_interface()
+        self.pick_event_btn = None
+        
+    def create_interface(self):
+        
+        self.panel.RemoveAll()
+        # Create a table layout and add all the controls
+        self.layout = forms.DynamicLayout()
+        self.pick_label = forms.Label(Text='- 拾取几何轮廓', Font = Font('Microsoft YaHei', 12.))
+        
+
+        self.outer_btn = forms.Button(Text='选取参考线1')
+        self.outer_btn.Size = Size(100, 30)
+        self.outer_btn.Click += self.PickReferCurve
+        self.outer_btn.Tag = 'outer_btn'
+        self.flip_check3 = forms.CheckBox()
+        self.flip_check3.Tag = 'is_outer_flip'
+        self.flip_check3.CheckedChanged += self.FlipCheckClick
+        self.flip_check3.Text = '是否反转该曲线'
+        self.is_pick_label3 = forms.Label()
+        if self.model.curves[0] is None:
+            self.is_pick_label3.Text = '未选择曲线'
+            self.is_pick_label3.TextColor = drawing.Color.FromArgb(255, 0, 0)
+        else:
+            self.is_pick_label3.Text = '选择了曲线{0}.'.format(self.model.curves[0])
+            self.is_pick_label3.TextColor = drawing.Color.FromArgb(44,162,95)
+        
+        
+        
+        
+        self.inner_btn = forms.Button(Text='选取参考线2')
+        self.inner_btn.Size = Size(100, 30)
+        self.inner_btn.Click += self.PickReferCurve
+        self.inner_btn.Tag = 'inner_btn'
+        self.flip_check2 = forms.CheckBox()
+        self.flip_check2.Tag = 'is_inner_flip'
+        self.flip_check2.CheckedChanged += self.FlipCheckClick
+        self.flip_check2.Text = '是否反转该曲线'
+        self.is_pick_label2 = forms.Label()
+        if self.model.curves[1] is None:
+            self.is_pick_label2.Text = '未选择曲线'
+            self.is_pick_label2.TextColor = drawing.Color.FromArgb(255, 0, 0)
+        else:
+            self.is_pick_label2.Text = '选择了曲线{0}.'.format(self.model.curves[1])
+            self.is_pick_label2.TextColor = drawing.Color.FromArgb(44,162,95)
+            
+            
+            
+        self.refer_btn = forms.Button(Text='选取参考线3')
+        self.refer_btn.Size = Size(100, 30)
+        self.refer_btn.Click += self.PickReferCurve
+        self.refer_btn.Tag = 'refer_btn'
+        self.flip_check = forms.CheckBox()
+        self.flip_check.Tag = 'is_refer_flip'
+        self.flip_check.CheckedChanged += self.FlipCheckClick
+        self.flip_check.Text = '是否反转该曲线'
+        self.is_pick_label = forms.Label()
+        if self.model.curves[2] is None:
+            self.is_pick_label.Text = '未选择曲线'
+            self.is_pick_label.TextColor = drawing.Color.FromArgb(255, 0, 0)
+        else:
+            self.is_pick_label.Text = '选择了曲线{0}.'.format(self.model.curves[2])
+            self.is_pick_label.TextColor = drawing.Color.FromArgb(44,162,95)
+            
+            
+        self.top_btn = forms.Button(Text='选取参考线4')
+        self.top_btn.Size = Size(100, 30)
+        self.top_btn.Click += self.PickReferCurve
+        self.top_btn.Tag = 'top_btn'
+        self.flip_check4 = forms.CheckBox()
+        self.flip_check4.Tag = 'is_top_flip'
+        self.flip_check4.CheckedChanged += self.FlipCheckClick
+        self.flip_check4.Text = '是否反转该曲线'
+        self.is_pick_label4 = forms.Label()
+        if self.model.curves[3] is None:
+            self.is_pick_label4.Text = '未选择曲线'
+            self.is_pick_label4.TextColor = drawing.Color.FromArgb(255, 0, 0)
+        else:
+            self.is_pick_label4.Text = '选择了曲线{0}.'.format(self.model.curves[3])
+            self.is_pick_label4.TextColor = drawing.Color.FromArgb(44,162,95)
+            
+            
+        self.bottom_btn = forms.Button(Text='选取参考线5')
+        self.bottom_btn.Size = Size(100, 30)
+        self.bottom_btn.Click += self.PickReferCurve
+        self.bottom_btn.Tag = 'bottom_btn'
+        self.flip_check5 = forms.CheckBox()
+        self.flip_check5.Tag = 'is_bottom_flip'
+        self.flip_check5.CheckedChanged += self.FlipCheckClick
+        self.flip_check5.Text = '是否反转该曲线'
+        self.is_pick_label5 = forms.Label()
+        if self.model.curves[4] is None:
+            self.is_pick_label5.Text = '未选择曲线'
+            self.is_pick_label5.TextColor = drawing.Color.FromArgb(255, 0, 0)
+        else:
+            self.is_pick_label5.Text = '选择了曲线{0}.'.format(self.model.curves[4])
+            self.is_pick_label5.TextColor = drawing.Color.FromArgb(44,162,95)
+            
+            
+        
+        self.fill_label = forms.Label(Text='- 设置或加载填充规则', Font = Font('Microsoft YaHei', 12.))
+        self.fill_btn = forms.Button(Text='手动添加新行')
+        self.fill_btn.Size = Size(100, 30)
+        self.fill_btn.Click += self.AddButtonClick
+        self.insert_btn = forms.Button(Text='一键填充')
+        self.insert_btn.Size = Size(100, 30)
+        self.insert_btn.Click += self.InsertButtonClick
+        self.xml_btn = forms.Button(Text='导出XML文件')
+        self.xml_btn.Size = Size(100, 30)
+        self.xml_btn.Click += self.XMLButtonClick
+        
+        #groupbox1
+        self.m_groupbox = forms.GroupBox(Text = '参考线示意图')
+        self.m_groupbox.Padding = drawing.Padding(5)
+ 
+        grouplayout = forms.DynamicLayout()
+        grouplayout.Spacing = Size(3, 3)
+        current_path1 = os.getcwd()
+ 
+        self.img = ImageView()
+        self.img.Image = Bitmap("C:\\ico\\New165.png")
+        grouplayout.AddRow(self.img.Image)
+        self.m_groupbox.Content = grouplayout
+        #groupbox2
+        self.m_groupbox2 = forms.GroupBox(Text = '参考线示意图')
+        self.m_groupbox2.Padding = drawing.Padding(5)
+ 
+        grouplayout = forms.DynamicLayout()
+        grouplayout.Spacing = Size(3, 3)
+        grouplayout.AddRow(self.pick_label)
+        grouplayout.AddRow(self.outer_btn)
+        grouplayout.AddRow(self.flip_check3)
+        grouplayout.AddRow(self.is_pick_label3)
+        
+        grouplayout.AddRow(self.inner_btn)
+        grouplayout.AddRow(self.flip_check2)
+        grouplayout.AddRow(self.is_pick_label2)
+        
+        grouplayout.AddRow(self.refer_btn)
+        grouplayout.AddRow(self.flip_check)
+        grouplayout.AddRow(self.is_pick_label)
+        
+        grouplayout.AddRow(self.top_btn)
+        grouplayout.AddRow(self.flip_check4)
+        grouplayout.AddRow(self.is_pick_label4)
+        
+        grouplayout.AddRow(self.bottom_btn)
+        grouplayout.AddRow(self.flip_check5)
+        grouplayout.AddRow(self.is_pick_label5)
+        
+        
+        
+        
+        self.m_groupbox2.Content = grouplayout
+        self.layout.DefaultSpacing = drawing.Size(8, 8)
+        #        self.layout.AddSeparateRow(self.pick_label, None)
+        self.layout.BeginVertical(padding=drawing.Padding(20, 0, 0, 0))
+        self.layout.AddRow(self.m_groupbox2, self.m_groupbox)
+        self.layout.EndVertical()
+        self.layout.AddSeparateRow(self.fill_label, None)
+        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,self.insert_btn,self.xml_btn,None])
+        #self.layout.AddRow(self.fill_btn,self.insert_btn,self.xml_btn, None)
+        #self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,self.insert_btn,self.xml_btn  None])
+        if len(self.model.rows) == 0:
+            try:
+                file_name = Save.path_data
+                rows = RowFrits.load_New_block_xml(file_name, self.model)
+                holes = HoleFrits.load_block_xml(file_name, self.model)
+                self.model.holes = holes
+                self.model.rows = rows
+            except:
+                pass
+            #DZ_ConfigPanel
+        del self.row_panels[:]
+        self.layout.BeginVertical()
+        for i in range(len(self.model.rows)):
+            rpanel = NewConfigPanel(self, self.model.rows[i])
+            self.layout.AddRow(rpanel)
+            self.row_panels.append(rpanel)
+        self.layout.EndVertical()
+
+        del self.hole_panels[:]
+        self.layout.BeginVertical()
+        for i in range(len(self.model.holes)):
+            rpanel = HoleConfigPanel(self, self.model.holes[i])
+            self.layout.AddRow(rpanel)
+            self.hole_panels.append(rpanel)
+        self.layout.EndVertical()
+            
+        self.layout.AddSpace()
+        self.panel.Content = self.layout
+        self.Content = self.panel
+
+
+    def AddButtonClick(self, sender, e):
+        self.row_num = len(self.model.rows)
+        self.row_num += 1
+        row_frits = RowFrits(len(self.model.rows), self.model)
+       
+        self.model.rows.append(row_frits)
+        
+        # row_frits.band_model = self.model  # type: ignore
+        self.create_interface()
+    
+    def InsertButtonClick(self, sender, e):
+        self.clear_dots()
+        HoleFrits(1,self.model).New165_fill_dots()
+        
+    def XMLButtonClick(self, sender, e):
+        xml = XML.XmlDocument()
+        xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
+        xml.AppendChild(xml_declaration)
+        set = xml.CreateElement('setting')
+        block = xml.CreateElement('block')
+        set.AppendChild(block)
+        xml.AppendChild(set)
+        for i in range(len(self.model.rows)):
+            print(i)
+            row = xml.CreateElement('row')
+            block.AppendChild(row)
+            row.SetAttribute('id',str(i))
+            
+            r1 = xml.CreateElement('New_cross_position3')
+            r1.InnerText = str(self.model.rows[i].circle_config.New_cross_position3)
+            row.AppendChild(r1)
+            
+            r2 = xml.CreateElement('New_cross_position2')
+            r2.InnerText = str(self.model.rows[i].circle_config.New_cross_position2)
+            row.AppendChild(r2)
+            
+            r3 = xml.CreateElement('New_cross_position1')
+            r3.InnerText = str(self.model.rows[i].circle_config.New_cross_position1)
+            row.AppendChild(r3)
+            
+            r4 = xml.CreateElement('New_cross_r1')
+            r4.InnerText = str(self.model.rows[i].circle_config.New_cross_r1)
+            row.AppendChild(r4)
+            
+            
+            r5 = xml.CreateElement('New_cross_r2')
+            r5.InnerText = str(self.model.rows[i].circle_config.New_cross_r2)
+            row.AppendChild(r5)
+            
+            r6 = xml.CreateElement('New_cross_r3')
+            r6.InnerText = str(self.model.rows[i].circle_config.New_cross_r3)
+            row.AppendChild(r6)
+            
+            
+            stepping = xml.CreateElement('horizontal')
+            stepping.InnerText = str(self.model.rows[i].stepping)
+            row.AppendChild(stepping)
+            
+            position = xml.CreateElement('vertical')
+            position.InnerText = str(self.model.rows[i].position)
+            row.AppendChild(position)
+        f_path = XMLPATH()
+        xml.Save(f_path)
+    
+    def FlipCheckClick(self, sender, e):
+        if sender.Tag == 'is_outer_flip':
+            self.model.is_flip[0] = self.flip_check3.Checked
+        elif sender.Tag == 'is_inner_flip':
+            self.model.is_flip[1] = self.flip_check2.Checked
+        elif sender.Tag == 'is_refer_flip':
+            self.model.is_flip[2] = self.flip_check.Checked
+        elif sender.Tag == 'is_top_flip':
+            self.model.is_flip[3] = self.flip_check.Checked
+        elif sender.Tag == 'is_bottom_flip':
+            self.model.is_flip[4] = self.flip_check.Checked
+    
+    def OnGetRhinoObjects(self, sender, e):
+        objectId = rs.GetCurveObject("Select curve:")
+        if objectId is None: 
+            print("Warning: No curve is selected")
+            return
+      
+        crv = objectId[0]
+        if self.pick_event_btn.Tag == 'outer_btn':
+            self.model.curves[0] = crv
+        elif self.pick_event_btn.Tag == 'inner_btn':
+            self.model.curves[1] = crv
+        elif self.pick_event_btn.Tag == 'refer_btn':
+            self.model.curves[2] = crv
+        elif self.pick_event_btn.Tag == 'top_btn':
+            self.model.curves[3] = crv
+        elif self.pick_event_btn.Tag == 'bottom_btn':
+            self.model.curves[4] = crv
+        self.create_interface()
+    
+    def PickReferCurve(self, sender, e):
+        self.pick_event_btn = sender
+        Rhino.UI.EtoExtensions.PushPickButton(self, self.OnGetRhinoObjects)
+    
+
+
+    def clear_dots(self):
+        for r in self.row_panels:
+            r.clear_dots()
+        for r in self.hole_panels:
+            r.clear_dots()
+        
+    def bake(self):
+        for r in self.row_panels:
+            r.bake()
+        
+        for r in self.hole_panels:
+            r.bake()
 
 
 #主程序UI
@@ -213,6 +538,10 @@ class FritDialog(forms.Dialog[bool]):
         if con.choose == 'true':
             if con.type == '大众图纸':
                 page = dzBlockPage(len(self.regions))
+                self.regions.append(page)
+                self.tab.Pages.Add(page)
+            elif con.type == 'New_165':
+                page = NewBlockPage(len(self.regions))
                 self.regions.append(page)
                 self.tab.Pages.Add(page)
             else:
@@ -1413,6 +1742,11 @@ class HoleFrits:
         self.top_curve = None
         self.bottom_curve = None
         self.border_curve = None
+    
+    def New165_fill_dots(self):
+        print("165算法调用")
+        pass
+    
     
     def bake(self):
         pass
@@ -2878,6 +3212,37 @@ class RowFrits:
             row.circle_config.slope_r4 = val['slope_r4']
             rows.append(row)
         return rows
+        
+    @staticmethod
+    def load_New_block_xml(file_path, region):
+        xmldoc = System.Xml.XmlDocument()
+        xmldoc.Load(file_path)
+        items = xmldoc.SelectNodes("setting/block/row")
+        rows = []
+        for item in items:
+            nid = int(item.GetAttributeNode('id').Value)
+            row = RowFrits(nid, region)
+            #dot_type = item.GetAttributeNode('type').Value
+            #row.dot_type = {'circle': FritType.CIRCLE_DOT, 'roundrect': FritType.ROUND_RECT, 'arcdot': FritType.ARC_CIRCLE, 'triarc': FritType.TRI_ARC}[dot_type]
+            #arrange_type = item.GetAttributeNode('arrange').Value
+            #row.arrange_type = {'heading': RowArrangeType.HEADING, 'cross': RowArrangeType.CROSS }[arrange_type]
+            val = dict()
+            for node in item.ChildNodes:
+                val[node.Name] = float(node.InnerText)
+            row.stepping = val['horizontal']
+            row.position = val['vertical']
+            #if row.dot_type == FritType.CIRCLE_DOT:
+            
+            row.circle_config.New_cross_position3 = val['New_cross_position3']
+            row.circle_config.New_cross_position2 = val['New_cross_position2']
+            row.circle_config.New_cross_position1 = val['New_cross_position1']
+            row.circle_config.New_cross_r1 = val['New_cross_r3']
+            row.circle_config.New_cross_r2 = val['New_cross_r2']
+            row.circle_config.New_cross_r1 = val['New_cross_r1']
+            
+            rows.append(row)
+            print(len(rows))
+        return rows
 
 #原Separatrix
 class Separatrix:
@@ -3573,6 +3938,14 @@ class CircleDotConfig:
         self.slope_r2 = 0
         self.slope_r3 = 0
         self.slope_r4 = 0
+        
+        self.New_cross_position3 = 0
+        self.New_cross_position2 = 0
+        self.New_cross_position1 = 0
+        self.New_cross_r3 = 0
+        self.New_cross_r1 = 0
+        self.New_cross_r2 = 0
+        
         self.r = 0
     
     def top(self):
@@ -4407,6 +4780,141 @@ class DZ_ConfigPanel(forms.GroupBox):
     def circle12_dot_radius_changed(self, sender, e):
         try:
             self.model.circle_config.slope_r4 = float(self.circle12_dot_radius.Text)
+        except:
+            pass
+    
+    def stepping_input_changed(self, sender, e):
+        try:
+            self.model.stepping = float(self.stepping_input.Text)
+        except:
+            pass
+    
+    def position_input_changed(self, sender, e):
+        try:
+            self.model.position = float(self.position_input.Text)
+        except:
+            pass
+    
+    def fill_row_frits(self, sender, e):
+        self.clear_dots()
+        self.model.fill_dots()
+        for d in self.model.dots:
+            d.draw(self.display, self.display_color)
+    
+    def clear_dots(self):
+        self.display.Clear()
+        #print(self.model.row_id)
+        #del self.model.dots[self.model.row_id]
+    
+    def bake(self):
+        layer_name = 'page_{0}_row_{1}'.format(self.parent.page_id, self.model.row_id)
+        rs.AddLayer(layer_name,get_color(self.model.row_id), parent='fuyao_frits')
+        for d in self.model.dots:
+            obj = d.bake()
+            rs.ObjectLayer(obj, layer_name)
+
+#New165 UI
+class NewConfigPanel(forms.GroupBox):
+    def __init__(self, parent, row_config):
+        self.parent = parent
+        self.model = row_config
+        self.Text = '第{}排'.format(row_config.row_id)
+        self.setup_view()
+        self.display = rc.Display.CustomDisplay(True)
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+
+    def setup_view(self):
+        self.RemoveAll()
+        self.basic_setting_label = forms.Label(Text='基础设置:', Font = Font('Microsoft YaHei', 12.))
+        
+        self.circle1_dot_radius_label = forms.Label(Text='3排相对参考线距离：')
+        self.circle1_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.New_cross_position3))
+        self.circle1_dot_radius.Size = drawing.Size(60, -1)
+        self.circle1_dot_radius.TextChanged += self.circle1_dot_radius_changed
+        
+        self.circle2_dot_radius_label = forms.Label(Text='2排相对参考线距离：')
+        self.circle2_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.New_cross_position2))
+        self.circle2_dot_radius.Size = drawing.Size(60, -1)
+        self.circle2_dot_radius.TextChanged += self.circle2_dot_radius_changed
+        
+        self.circle3_dot_radius_label = forms.Label(Text='1排相对参考线距离：')
+        self.circle3_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.New_cross_position1))
+        self.circle3_dot_radius.Size = drawing.Size(60, -1)
+        self.circle3_dot_radius.TextChanged += self.circle3_dot_radius_changed
+        
+        self.circle4_dot_radius_label = forms.Label(Text='1排直径：')
+        self.circle4_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.New_cross_r1))
+        self.circle4_dot_radius.Size = drawing.Size(60, -1)
+        self.circle4_dot_radius.TextChanged += self.circle4_dot_radius_changed
+        
+        self.circle5_dot_radius_label = forms.Label(Text='2排直径：')
+        self.circle5_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.New_cross_r2))
+        self.circle5_dot_radius.Size = drawing.Size(60, -1)
+        self.circle5_dot_radius.TextChanged += self.circle5_dot_radius_changed
+        
+        self.circle6_dot_radius_label = forms.Label(Text='3排直径：')
+        self.circle6_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.New_cross_r3))
+        self.circle6_dot_radius.Size = drawing.Size(60, -1)
+        self.circle6_dot_radius.TextChanged += self.circle6_dot_radius_changed
+        
+        
+        
+        
+        self.stepping_label = forms.Label(Text='花点水平间距：')
+        self.stepping_input = forms.TextBox(Text='{0}'.format(self.model.stepping))
+        self.stepping_input.Size = drawing.Size(60, -1)
+        self.stepping_input.TextChanged += self.stepping_input_changed
+        
+        self.position_label = forms.Label(Text='花点垂直间距：')
+        self.position_input = forms.TextBox(Text='{0}'.format(self.model.position))
+        self.position_input.Size = drawing.Size(60, -1)
+        self.position_input.TextChanged += self.position_input_changed
+        
+        self.layout = forms.DynamicLayout()
+        self.layout.DefaultSpacing = drawing.Size(10, 10)
+       
+        # default is circle dot
+        self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
+        self.layout.AddRow(self.basic_setting_label, None)
+        self.layout.EndVertical()
+        self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
+        self.layout.AddRow(self.circle1_dot_radius_label,self.circle1_dot_radius,self.circle2_dot_radius_label,self.circle2_dot_radius,None)
+        self.layout.AddRow(self.circle3_dot_radius_label,self.circle3_dot_radius,self.circle4_dot_radius_label,self.circle4_dot_radius,None)
+        self.layout.AddRow(self.circle5_dot_radius_label,self.circle5_dot_radius,self.circle6_dot_radius_label,self.circle6_dot_radius,None)
+        self.layout.AddRow(self.stepping_label,self.stepping_input,self.position_label,self.position_input,None)
+        self.layout.EndVertical()
+        self.Content = self.layout
+        
+        
+    def circle1_dot_radius_changed(self, sender, e):
+        try:
+            self.model.circle_config.New_cross_position3 = float(self.circle1_dot_radius.Text)
+        except:
+            pass
+    def circle2_dot_radius_changed(self, sender, e):
+        try:
+            self.model.circle_config.New_cross_position2 = float(self.circle2_dot_radius.Text)
+        except:
+            pass
+    def circle3_dot_radius_changed(self, sender, e):
+        try:
+            self.model.circle_config.New_cross_position1 = float(self.circle3_dot_radius.Text)
+        except:
+            pass
+    def circle4_dot_radius_changed(self, sender, e):
+        try:
+            self.model.circle_config.New_cross_r1 = float(self.circle4_dot_radius.Text)
+        except:
+            pass
+    def circle5_dot_radius_changed(self, sender, e):
+        try:
+            self.model.circle_config.New_cross_r2 = float(self.circle5_dot_radius.Text)
+        except:
+            pass
+            
+    def circle6_dot_radius_changed(self, sender, e):
+        try:
+            self.model.circle_config.New_cross_r3 = float(self.circle6_dot_radius.Text)
         except:
             pass
     
