@@ -1856,7 +1856,7 @@ class HoleFrits:
                 filter_pts.append(pt)
         
         for i in range(len(filter_pts)):
-            theta = utils.tgt_angle(v1[0])
+            theta = tgt_angle(v1[0])
             dot = None
             if self.dot_type == FritType.CIRCLE_DOT:
                 dot = CircleDot(filter_pts[i].X, filter_pts[i].Y, self.circle_config)
@@ -1970,7 +1970,7 @@ class HoleFrits:
                 filter_pts.append(pt)
         
         for i in range(len(filter_pts)):
-            theta = utils.tgt_angle(v1[0])
+            theta = tgt_angle(v1[0])
             dot = None
             if self.dot_type == FritType.CIRCLE_DOT:
                 dot = CircleDot(filter_pts[i].X, filter_pts[i].Y, self.circle_config)
@@ -2250,7 +2250,7 @@ class HoleFrits:
         inner_anchor = []
         while flag == True:
             temp = copy.deepcopy(verbose_pts)
-            inner_anchor1, inner_anchor2, flag = utils.remove_verbose(temp)
+            inner_anchor1, inner_anchor2, flag = remove_verbose(temp)
             #print("****check verbose****")
             #print(len(verbose_pts))
             #print(len(inner_anchor1))
