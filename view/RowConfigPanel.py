@@ -40,7 +40,24 @@ class RowConfigPanel(forms.GroupBox):
         self.circle_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.r))
         self.circle_dot_radius.Size = drawing.Size(60, -1)
         self.circle_dot_radius.TextChanged += self.circle_dot_radius_changed
+#弧形
+        self.arc_dot_large_radius1_label = forms.Label(Text='大弧半径：')
+        self.arc_dot_large_radius1 = forms.TextBox(Text='{0}'.format(self.model.arc_config.lr))
+        self.arc_dot_large_radius1.Size = drawing.Size(60, -1)
+        self.arc_dot_large_radius1.TextChanged += self.arc_dot_large_radius1_changed
 
+        self.arc_dot_small_radius1_label = forms.Label(Text='小弧半径：')
+        self.arc_dot_small_radius1 = forms.TextBox(Text='{0}'.format(self.model.arc_config.sr))
+        self.arc_dot_small_radius1.Size = drawing.Size(60, -1)
+        self.arc_dot_small_radius1.TextChanged += self.arc_dot_small_radius1_changed
+
+        self.arc_dot_angle1_label = forms.Label(Text='弧度：')
+        self.arc_dot_angle1 = forms.TextBox(Text='{0}'.format(self.model.arc_config.angle))
+        self.arc_dot_angle1.Size = drawing.Size(60, -1)
+        self.arc_dot_angle1.TextChanged += self.arc_dot_angle1_changed
+
+
+#三段弧形
         self.arc_dot_large_radius_label = forms.Label(Text='大弧半径：')
         self.arc_dot_large_radius = forms.TextBox(Text='{0}'.format(self.model.tri_arc_config.lr))
         self.arc_dot_large_radius.Size = drawing.Size(60, -1)
@@ -125,8 +142,8 @@ class RowConfigPanel(forms.GroupBox):
             self.layout.AddRow(self.dot_type_label, self.dot_type_combo, self.round_rect_edge_label, self.round_rect_edge, self.round_rect_radius_label,
                 self.round_rect_radius, self.stepping_label, self.stepping_input, self.position_label, self.position_input, None)
         elif self.model.dot_type == FritType.ARC_CIRCLE:
-            self.layout.AddRow(self.dot_type_label, self.dot_type_combo, self.arc_dot_large_radius_label, self.arc_dot_large_radius,
-                self.arc_dot_small_radius_label, self.arc_dot_small_radius, self.arc_dot_angle_label, self.arc_dot_angle)
+            self.layout.AddRow(self.dot_type_label, self.dot_type_combo, self.arc_dot_large_radius1_label, self.arc_dot_large_radius1,
+                self.arc_dot_small_radius1_label, self.arc_dot_small_radius1, self.arc_dot_angle1_label, self.arc_dot_angle1)
         elif self.model.dot_type == FritType.TRI_ARC:
             self.layout.AddRow(self.dot_type_label, self.dot_type_combo, self.arc_dot_large_radius_label, self.arc_dot_large_radius,
                 self.arc_dot_small_radius_label, self.arc_dot_small_radius, self.arc_dot_angle_label, self.arc_dot_angle)
@@ -148,6 +165,10 @@ class RowConfigPanel(forms.GroupBox):
             self.model.dot_type = FritType.CIRCLE_DOT
         elif self.dot_type_combo.SelectedIndex == 1:
             self.model.dot_type = FritType.ROUND_RECT
+        elif self.dot_type_combo.SelectedIndex == 2:
+            self.model.dot_type = FritType.ARC_CIRCLE
+        elif self.dot_type_combo.SelectedIndex == 3:
+            self.model.dot_type = FritType.TRI_ARC
         self.setup_view()
 
     def change_row_arrange_type(self, sender, e):
@@ -177,6 +198,24 @@ class RowConfigPanel(forms.GroupBox):
     def arc_dot_angle_changed(self, sender, e):
         try:
             self.model.tri_arc_config.angle = float(self.arc_dot_angle.Text)
+        except:
+            pass
+            
+    def arc_dot_large_radius1_changed(self, sender, e):
+        try:
+            self.model.arc_config.lr = float(self.arc_dot_large_radius.Text)
+        except:
+            pass
+    
+    def arc_dot_small_radius1_changed(self, sender, e):
+        try:
+            self.model.arc_config.sr = float(self.arc_dot_small_radius.Text)
+        except:
+            pass
+    
+    def arc_dot_angle1_changed(self, sender, e):
+        try:
+            self.model.arc_config.angle = float(self.arc_dot_angle.Text)
         except:
             pass
     
