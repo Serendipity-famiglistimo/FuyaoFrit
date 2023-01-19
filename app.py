@@ -14,11 +14,13 @@ import Eto.Drawing as drawing
 from Eto.Drawing import Size, Font, FontStyle
 import view.RowConfigPanel as RowConfigPanel
 import view.DefaultPage as DefaultPage
-from view.BandPage import BandPage
-import view.BlockPage
+import view.BandPage
+from view.BlockPage import BlockPage
 import model.RowFrits
 import model.HoleFrits
 import view.HoleConfigPanel
+from view.dzBlockPage import dzBlockPage
+from view.NewPage import NewBlockPage
 import model.BlockZone
 reload(model.BlockZone)
 reload(model.HoleFrits)
@@ -30,22 +32,82 @@ reload(RowConfigPanel)
 reload(DefaultPage)
 import os
 import clr
-#from RowControl import RowControl
+# from RowControl import RowControl
 from System.Drawing import Color
-from view.dzBlockPage import dzBlockPage
-from view.BlockPage import BlockPage
-from view.DefaultPage import con
+from model.ChooseZone import con
+
+#class control():
+#    def __init__(self):
+#        self.type = '大众图纸'
+#        self.choose = 'false'
+#con = control()
+
+class SelectedDialog(forms.Dialog):
+
+    def __init__(self):
+        self.Title = "算法选择"
+        self.ClientSize = drawing.Size(200, 200)
+        self.Padding = drawing.Padding(5)
+        self.Resizable = False
+        con.type = '大众图纸'
+        con.choose = 'false'
+        self.pick_label = forms.Label(Text='选择填充算法:', Font=Font('Microsoft YaHei', 12.))
+        self.list = forms.RadioButtonList()
+        self.list.DataStore = ['大众图纸', '88LF', '76720LFW00027','00841LFW00001','00399LFW00012','00792LFW000023','New_165']
+        self.list.Orientation = forms.Orientation.Vertical
+        self.list.SelectedIndex = self.list.DataStore.index(con.type)
+        self.list.SelectedIndexChanged += self.typeselected
+        self.CommitButton = forms.Button(Text = '确认')
+        self.CommitButton.Click += self.OnCommitButtonClick
+        layout = forms.DynamicLayout()
+        layout.Spacing = drawing.Size(5, 5)
+        layout.AddRow(self.pick_label,None)
+        layout.AddRow(self.list,None)
+        layout.AddRow(self.CommitButton,None)
+        self.Content = layout
+        
+    
+    def OnCommitButtonClick(self,sender,e):
+        con.choose = 'true'
+        self.Close()
+        
+    def typeselected(self, sender, e):
+        #print('typeselected被调用为'+con.type)
+        if self.list.SelectedIndex == 0:
+            self.type = '大众图纸'
+            
+        elif self.list.SelectedIndex == 1:
+            self.type = '88LF'
+            
+        elif self.list.SelectedIndex == 2:
+            self.type = '76720LFW00027'
+        elif self.list.SelectedIndex == 3:
+            self.type = '00841LFW00001'
+        elif self.list.SelectedIndex == 4:
+            self.type = '00399LFW00012'
+        elif self.list.SelectedIndex == 5:
+            self.type = '00792LFW000023'
+        elif self.list.SelectedIndex == 6:
+            self.type = 'New_165'
+        con.type = self.type
+        #self.create(self.type)
+        print(con.type)
+        
+        
+
+def selectedtoDialog():
+    dialog1 = SelectedDialog()
+    dialog1.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)
 
 class FritDialog(forms.Dialog[bool]):
     def __init__(self):
         current_path1 = os.getcwd()
         self.Title = '福耀印刷花点排布工具'
-        self.Icon = drawing.Icon("C:\\ico\\FY.ico")
+        self.Icon = drawing.Icon(current_path1+"\\ico\\FY.ico")
         self.Padding = drawing.Padding(10)
-        #self.type = type
         self.Resizable = False
         self.Closing += self.OnFormClosed
-        self.MinimumSize = Size(800, 600)
+        self.MinimumSize = Size(900, 600)
         # 菜单
         self.create_menu()
         self.create_toolbar()
@@ -54,15 +116,24 @@ class FritDialog(forms.Dialog[bool]):
         default_page = DefaultPage.DefaultPage()
         # default_page.create()
         self.tab.Pages.Add(default_page)
+        
         self.regions = []
+
+ 
+        # 标题
+        # self.heading_label = forms.Label(Text= '带状区域', Font = Font('Microsoft YaHei', 14., FontStyle.Bold))
+        # # self.m_headding.Color = drawing.Color.FromArgb(255, 0, 0)
+        # self.heading_label.TextAlignment = forms.TextAlignment.Center
+        # self.addButton = forms.Button(Text='添加行')
+        # self.addButton.Click += self.AddButtonClick
         self.layout = forms.DynamicLayout()
         # default is circle dot
         self.layout.AddRow(self.tab)
         self.Content = self.layout 
 
+    
+
     def create_menu(self):
-        
-        
         self.Menu = forms.MenuBar()
         current_path = os.getcwd()
         
@@ -71,24 +142,23 @@ class FritDialog(forms.Dialog[bool]):
         
         open_menu = forms.Command()
         open_menu.MenuText = "打开"
-        open_menu.Image = drawing.Bitmap('C:\\ico\\file-open.png')
+        open_menu.Image = drawing.Bitmap(current_path + '\\ico\\file-open.png')
         file_menu.Items.Add(open_menu, 0)
         
         add_region_menu = forms.Command(self.AddBandRegionCommand)
-        add_region_menu.MenuText = "添加带状区域"
-        add_region_menu.Image = drawing.Bitmap('C:\\ico\\line.png')
+        add_region_menu.MenuText = "添加黑花边"
+        add_region_menu.Image = drawing.Bitmap(current_path + '\\ico\\line.png')
         edit_menu.Items.Add(add_region_menu,0)
         
         add_region_menu1 = forms.Command(self.AddBlockRegionCommand)
-        add_region_menu1.MenuText = "添加块状区域"
-        add_region_menu1.Image = drawing.Bitmap('C:\\ico\\rect.png')
+        add_region_menu1.MenuText = "添加第三遮阳区"
+        add_region_menu1.Image = drawing.Bitmap(current_path + '\\ico\\rect.png')
         edit_menu.Items.Add(add_region_menu1,1)
 
         add_region_menu2 = forms.Command(self.AddBottomRegionCommand)
-        add_region_menu2.MenuText = "添加底部区域"
-        add_region_menu2.Image = drawing.Bitmap('C:\\ico\\rect.png')
+        add_region_menu2.MenuText = "添加底部黑花边"
+        add_region_menu2.Image = drawing.Bitmap(current_path + '\\ico\\rect.png')
         edit_menu.Items.Add(add_region_menu2,1)
-            
     
     def create_toolbar(self):
         current_path = os.getcwd()
@@ -97,12 +167,12 @@ class FritDialog(forms.Dialog[bool]):
         
         transit_curve = forms.Command(self.TransitCurveCommand)
         transit_curve.MenuText = '过渡曲线'
-        transit_curve.Image = drawing.Bitmap('C:\\ico\\cross.png')
+        transit_curve.Image = drawing.Bitmap(current_path + '\\ico\\cross.png')
         self.ToolBar.Items.Add(transit_curve)
 
         bake_dots = forms.Command(self.BakeDotsCommand)
         bake_dots.MenuText = '导出花点'
-        bake_dots.Image = drawing.Bitmap('C:\\ico\\bake.png')
+        bake_dots.Image = drawing.Bitmap(current_path + '\\ico\\bake.png')
         self.ToolBar.Items.Add(bake_dots)
 
         # self.ToolBar.Items.Add(bake_dots)
@@ -117,24 +187,33 @@ class FritDialog(forms.Dialog[bool]):
     
 
     def AddBandRegionCommand(self, sender, e):
-        page = BandPage(len(self.regions))
+        page = view.BandPage.BandPage(len(self.regions))
         self.regions.append(page)
         self.tab.Pages.Add(page)
     
     def AddBottomRegionCommand(self, sender, e):
-        page = BandPage(len(self.regions), 'bottom')
+        page = view.BandPage.BandPage(len(self.regions), 'bottom')
         self.regions.append(page)
         self.tab.Pages.Add(page)
 
     def AddBlockRegionCommand(self, sender, e):
-        if con.type == '大众算法':
-            page = dzBlockPage(len(self.regions))
-            self.regions.append(page)
-            self.tab.Pages.Add(page)
+        selectedtoDialog()
+        if con.choose == 'true':
+            if con.type == '大众图纸':
+                page = dzBlockPage(len(self.regions))
+                self.regions.append(page)
+                self.tab.Pages.Add(page)
+            elif con.type == 'New_165':
+                page = NewBlockPage(len(self.regions))
+                self.regions.append(page)
+                self.tab.Pages.Add(page)
+            else:
+                page = BlockPage(len(self.regions))
+                self.regions.append(page)
+                self.tab.Pages.Add(page)
         else:
-            page = BlockPage(len(self.regions))
-            self.regions.append(page)
-            self.tab.Pages.Add(page)
+            pass
+        
 
     def HandleTransitCurve(self, sender, e):
         objectId = rs.GetCurveObject("Select curve:")
@@ -176,6 +255,7 @@ class FritDialog(forms.Dialog[bool]):
         for page in self.regions:
             page.bake()
             page.clear_dots()
+        
 
 if __name__ == "__main__":
     dialog = FritDialog();
