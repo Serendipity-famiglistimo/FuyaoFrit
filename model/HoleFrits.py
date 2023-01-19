@@ -867,6 +867,13 @@ class HoleFrits:
     
     def bake(self):
         pass
+        
+        
+    def New165_fill_dots(self):
+        print("165算法调用")
+        pass
+        
+        
     def dazhong_fill_dots(self):
         self.outer_crv = self.region.curves[0]
         if self.region.is_flip[0] == True:
@@ -1516,8 +1523,8 @@ class HoleFrits:
             self.fill_dots_88LFW()
         elif con.type == '76720LFW00027':
             self.fill_dots_76720LFW00027()
-        elif con.type == '00215':
-            self.fill_angle()
+        #elif con.type == '00215':
+            #self.fill_angle()
         elif con.type == '00841LFW00001':
             self.fill_simple()
         elif con.type == '00399LFW00012':
