@@ -40,7 +40,7 @@ from Eto.Drawing import *
 from frits import FritType
 from model.HoleFrits import HoleArrangeType
 from model.RowFrits import RowArrangeType
-
+from model.ChooseZone import con
 
 class BlockPage(forms.TabPage):
     
@@ -138,7 +138,16 @@ class BlockPage(forms.TabPage):
         current_path1 = os.getcwd()
  
         self.img = ImageView()
-        self.img.Image = Bitmap("C:\\ico\\block.png")
+        if con.type == "88LF":
+            self.img.Image = Bitmap("C:\\ico\\0088.png")
+        elif con.type == "76720LFW00027": 
+            self.img.Image = Bitmap("C:\\ico\\76720.png")
+        elif con.type == "00841LFW00001": 
+            self.img.Image = Bitmap("C:\\ico\\00841.png")
+        elif con.type == "00399LFW00012": 
+            self.img.Image = Bitmap("C:\\ico\\00399.png")
+        elif con.type == "00792LFW000023": 
+            self.img.Image = Bitmap("C:\\ico\\00792.png")
         grouplayout.AddRow(self.img.Image)
         self.m_groupbox.Content = grouplayout
         #groupbox2
@@ -464,7 +473,7 @@ class BlockPage(forms.TabPage):
                 hole.AppendChild(vspace)
                 
                 fposition = xml.CreateElement('fposition')
-                fposition.InnerText = str(self.model.holes[i].fposition)
+                fposition.InnerText = str(self.model.holes[i].first_line_position)
                 hole.AppendChild(fposition)
                 
         f_path = XMLPATH()
