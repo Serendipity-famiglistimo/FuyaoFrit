@@ -49,14 +49,14 @@ class SelectedDialog(forms.Dialog):
 
     def __init__(self):
         self.Title = "算法选择"
-        self.ClientSize = drawing.Size(200, 180)
+        self.ClientSize = drawing.Size(200, 200)
         self.Padding = drawing.Padding(5)
         self.Resizable = False
         con.type = '大众图纸'
         con.choose = 'false'
         self.pick_label = forms.Label(Text='选择填充算法:', Font=Font('Microsoft YaHei', 12.))
         self.list = forms.RadioButtonList()
-        self.list.DataStore = ['大众图纸', '88LF', '76720LFW00027','00215','00841LFW00001','00399LFW00012','00792LFW000023']
+        self.list.DataStore = ['大众图纸', '斜向普通填法', '斜向等距填法','普通块状填法','斜向辅助线填法','三角块状填法','斜向贴边填法']
         self.list.Orientation = forms.Orientation.Vertical
         self.list.SelectedIndex = self.list.DataStore.index(con.type)
         self.list.SelectedIndexChanged += self.typeselected
@@ -85,13 +85,13 @@ class SelectedDialog(forms.Dialog):
         elif self.list.SelectedIndex == 2:
             self.type = '76720LFW00027'
         elif self.list.SelectedIndex == 3:
-            self.type = '00215'
-        elif self.list.SelectedIndex == 4:
             self.type = '00841LFW00001'
-        elif self.list.SelectedIndex == 5:
+        elif self.list.SelectedIndex == 4:
             self.type = '00399LFW00012'
-        elif self.list.SelectedIndex == 6:
+        elif self.list.SelectedIndex == 5:
             self.type = '00792LFW000023'
+        elif self.list.SelectedIndex == 6:
+            self.type = 'New_165'
         con.type = self.type
         #self.create(self.type)
         print(con.type)
@@ -115,6 +115,329 @@ def XMLPATH():
         file_name = save_file_dialog.FileName
     print(file_name)
     return file_name
+
+
+class NewBlockPage(forms.TabPage):
+    
+    # .net 必须使用__new__显示调用构造函数！！！
+    def __new__(cls, *args):
+        return forms.TabPage.__new__(cls)    
+
+    def __init__(self, page_id):
+        self.page_id = page_id
+        self.Text = '第三遮阳区-165通用型'
+        self.panel = forms.Scrollable()
+        self.panel.Padding = drawing.Padding(10)
+        self.model = dzBlockZone()
+        self.row_panels = list()
+        self.hole_panels = list()
+        self.create_interface()
+        self.pick_event_btn = None
+        
+    def create_interface(self):
+        
+        self.panel.RemoveAll()
+        # Create a table layout and add all the controls
+        self.layout = forms.DynamicLayout()
+        self.pick_label = forms.Label(Text='- 拾取几何轮廓', Font = Font('Microsoft YaHei', 12.))
+        
+
+        self.outer_btn = forms.Button(Text='选取参考线1')
+        self.outer_btn.Size = Size(100, 30)
+        self.outer_btn.Click += self.PickReferCurve
+        self.outer_btn.Tag = 'outer_btn'
+        self.flip_check3 = forms.CheckBox()
+        self.flip_check3.Tag = 'is_outer_flip'
+        self.flip_check3.CheckedChanged += self.FlipCheckClick
+        self.flip_check3.Text = '是否反转该曲线'
+        self.is_pick_label3 = forms.Label()
+        if self.model.curves[0] is None:
+            self.is_pick_label3.Text = '未选择曲线'
+            self.is_pick_label3.TextColor = drawing.Color.FromArgb(255, 0, 0)
+        else:
+            self.is_pick_label3.Text = '选择了曲线{0}.'.format(self.model.curves[0])
+            self.is_pick_label3.TextColor = drawing.Color.FromArgb(44,162,95)
+        
+        
+        
+        
+        self.inner_btn = forms.Button(Text='选取参考线2')
+        self.inner_btn.Size = Size(100, 30)
+        self.inner_btn.Click += self.PickReferCurve
+        self.inner_btn.Tag = 'inner_btn'
+        self.flip_check2 = forms.CheckBox()
+        self.flip_check2.Tag = 'is_inner_flip'
+        self.flip_check2.CheckedChanged += self.FlipCheckClick
+        self.flip_check2.Text = '是否反转该曲线'
+        self.is_pick_label2 = forms.Label()
+        if self.model.curves[1] is None:
+            self.is_pick_label2.Text = '未选择曲线'
+            self.is_pick_label2.TextColor = drawing.Color.FromArgb(255, 0, 0)
+        else:
+            self.is_pick_label2.Text = '选择了曲线{0}.'.format(self.model.curves[1])
+            self.is_pick_label2.TextColor = drawing.Color.FromArgb(44,162,95)
+            
+            
+            
+        self.refer_btn = forms.Button(Text='选取参考线3')
+        self.refer_btn.Size = Size(100, 30)
+        self.refer_btn.Click += self.PickReferCurve
+        self.refer_btn.Tag = 'refer_btn'
+        self.flip_check = forms.CheckBox()
+        self.flip_check.Tag = 'is_refer_flip'
+        self.flip_check.CheckedChanged += self.FlipCheckClick
+        self.flip_check.Text = '是否反转该曲线'
+        self.is_pick_label = forms.Label()
+        if self.model.curves[2] is None:
+            self.is_pick_label.Text = '未选择曲线'
+            self.is_pick_label.TextColor = drawing.Color.FromArgb(255, 0, 0)
+        else:
+            self.is_pick_label.Text = '选择了曲线{0}.'.format(self.model.curves[2])
+            self.is_pick_label.TextColor = drawing.Color.FromArgb(44,162,95)
+            
+            
+        self.top_btn = forms.Button(Text='选取参考线4')
+        self.top_btn.Size = Size(100, 30)
+        self.top_btn.Click += self.PickReferCurve
+        self.top_btn.Tag = 'top_btn'
+        self.flip_check4 = forms.CheckBox()
+        self.flip_check4.Tag = 'is_top_flip'
+        self.flip_check4.CheckedChanged += self.FlipCheckClick
+        self.flip_check4.Text = '是否反转该曲线'
+        self.is_pick_label4 = forms.Label()
+        if self.model.curves[3] is None:
+            self.is_pick_label4.Text = '未选择曲线'
+            self.is_pick_label4.TextColor = drawing.Color.FromArgb(255, 0, 0)
+        else:
+            self.is_pick_label4.Text = '选择了曲线{0}.'.format(self.model.curves[3])
+            self.is_pick_label4.TextColor = drawing.Color.FromArgb(44,162,95)
+            
+            
+        self.bottom_btn = forms.Button(Text='选取参考线5')
+        self.bottom_btn.Size = Size(100, 30)
+        self.bottom_btn.Click += self.PickReferCurve
+        self.bottom_btn.Tag = 'bottom_btn'
+        self.flip_check5 = forms.CheckBox()
+        self.flip_check5.Tag = 'is_bottom_flip'
+        self.flip_check5.CheckedChanged += self.FlipCheckClick
+        self.flip_check5.Text = '是否反转该曲线'
+        self.is_pick_label5 = forms.Label()
+        if self.model.curves[4] is None:
+            self.is_pick_label5.Text = '未选择曲线'
+            self.is_pick_label5.TextColor = drawing.Color.FromArgb(255, 0, 0)
+        else:
+            self.is_pick_label5.Text = '选择了曲线{0}.'.format(self.model.curves[4])
+            self.is_pick_label5.TextColor = drawing.Color.FromArgb(44,162,95)
+            
+            
+        
+        self.fill_label = forms.Label(Text='- 设置或加载填充规则', Font = Font('Microsoft YaHei', 12.))
+        self.fill_btn = forms.Button(Text='手动添加新行')
+        self.fill_btn.Size = Size(100, 30)
+        self.fill_btn.Click += self.AddButtonClick
+        self.insert_btn = forms.Button(Text='一键填充')
+        self.insert_btn.Size = Size(100, 30)
+        self.insert_btn.Click += self.InsertButtonClick
+        self.xml_btn = forms.Button(Text='导出XML文件')
+        self.xml_btn.Size = Size(100, 30)
+        self.xml_btn.Click += self.XMLButtonClick
+        
+        #groupbox1
+        self.m_groupbox = forms.GroupBox(Text = '参考线示意图')
+        self.m_groupbox.Padding = drawing.Padding(5)
+ 
+        grouplayout = forms.DynamicLayout()
+        grouplayout.Spacing = Size(3, 3)
+        current_path1 = os.getcwd()
+ 
+        self.img = ImageView()
+        self.img.Image = Bitmap("C:\\ico\\New165.png")
+        grouplayout.AddRow(self.img.Image)
+        self.m_groupbox.Content = grouplayout
+        #groupbox2
+        self.m_groupbox2 = forms.GroupBox(Text = '参考线示意图')
+        self.m_groupbox2.Padding = drawing.Padding(5)
+ 
+        grouplayout = forms.DynamicLayout()
+        grouplayout.Spacing = Size(3, 3)
+        grouplayout.AddRow(self.pick_label)
+        grouplayout.AddRow(self.outer_btn)
+        grouplayout.AddRow(self.flip_check3)
+        grouplayout.AddRow(self.is_pick_label3)
+        
+        grouplayout.AddRow(self.inner_btn)
+        grouplayout.AddRow(self.flip_check2)
+        grouplayout.AddRow(self.is_pick_label2)
+        
+        grouplayout.AddRow(self.refer_btn)
+        grouplayout.AddRow(self.flip_check)
+        grouplayout.AddRow(self.is_pick_label)
+        
+        grouplayout.AddRow(self.top_btn)
+        grouplayout.AddRow(self.flip_check4)
+        grouplayout.AddRow(self.is_pick_label4)
+        
+        grouplayout.AddRow(self.bottom_btn)
+        grouplayout.AddRow(self.flip_check5)
+        grouplayout.AddRow(self.is_pick_label5)
+        
+        
+        
+        
+        self.m_groupbox2.Content = grouplayout
+        self.layout.DefaultSpacing = drawing.Size(8, 8)
+        #        self.layout.AddSeparateRow(self.pick_label, None)
+        self.layout.BeginVertical(padding=drawing.Padding(20, 0, 0, 0))
+        self.layout.AddRow(self.m_groupbox2, self.m_groupbox)
+        self.layout.EndVertical()
+        self.layout.AddSeparateRow(self.fill_label, None)
+        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,self.insert_btn,self.xml_btn,None])
+        #self.layout.AddRow(self.fill_btn,self.insert_btn,self.xml_btn, None)
+        #self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,self.insert_btn,self.xml_btn  None])
+        if len(self.model.rows) == 0:
+            try:
+                file_name = Save.path_data
+                rows = RowFrits.load_New_block_xml(file_name, self.model)
+                holes = HoleFrits.load_block_xml(file_name, self.model)
+                self.model.holes = holes
+                self.model.rows = rows
+            except:
+                pass
+            #DZ_ConfigPanel
+        del self.row_panels[:]
+        self.layout.BeginVertical()
+        for i in range(len(self.model.rows)):
+            rpanel = NewConfigPanel(self, self.model.rows[i])
+            self.layout.AddRow(rpanel)
+            self.row_panels.append(rpanel)
+        self.layout.EndVertical()
+
+        del self.hole_panels[:]
+        self.layout.BeginVertical()
+        for i in range(len(self.model.holes)):
+            rpanel = HoleConfigPanel(self, self.model.holes[i])
+            self.layout.AddRow(rpanel)
+            self.hole_panels.append(rpanel)
+        self.layout.EndVertical()
+            
+        self.layout.AddSpace()
+        self.panel.Content = self.layout
+        self.Content = self.panel
+
+
+    def AddButtonClick(self, sender, e):
+        self.row_num = len(self.model.rows)
+        self.row_num += 1
+        row_frits = RowFrits(len(self.model.rows), self.model)
+       
+        self.model.rows.append(row_frits)
+        
+        # row_frits.band_model = self.model  # type: ignore
+        self.create_interface()
+    
+    def InsertButtonClick(self, sender, e):
+        self.clear_dots()
+        HoleFrits(1,self.model).New165_fill_dots()
+        
+    def XMLButtonClick(self, sender, e):
+        xml = XML.XmlDocument()
+        xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
+        xml.AppendChild(xml_declaration)
+        set = xml.CreateElement('setting')
+        block = xml.CreateElement('block')
+        set.AppendChild(block)
+        xml.AppendChild(set)
+        for i in range(len(self.model.rows)):
+            print(i)
+            row = xml.CreateElement('row')
+            block.AppendChild(row)
+            row.SetAttribute('id',str(i))
+            
+            r1 = xml.CreateElement('New_cross_position3')
+            r1.InnerText = str(self.model.rows[i].circle_config.New_cross_position3)
+            row.AppendChild(r1)
+            
+            r2 = xml.CreateElement('New_cross_position2')
+            r2.InnerText = str(self.model.rows[i].circle_config.New_cross_position2)
+            row.AppendChild(r2)
+            
+            r3 = xml.CreateElement('New_cross_position1')
+            r3.InnerText = str(self.model.rows[i].circle_config.New_cross_position1)
+            row.AppendChild(r3)
+            
+            r4 = xml.CreateElement('New_cross_r1')
+            r4.InnerText = str(self.model.rows[i].circle_config.New_cross_r1)
+            row.AppendChild(r4)
+            
+            
+            r5 = xml.CreateElement('New_cross_r2')
+            r5.InnerText = str(self.model.rows[i].circle_config.New_cross_r2)
+            row.AppendChild(r5)
+            
+            r6 = xml.CreateElement('New_cross_r3')
+            r6.InnerText = str(self.model.rows[i].circle_config.New_cross_r3)
+            row.AppendChild(r6)
+            
+            
+            stepping = xml.CreateElement('horizontal')
+            stepping.InnerText = str(self.model.rows[i].stepping)
+            row.AppendChild(stepping)
+            
+            position = xml.CreateElement('vertical')
+            position.InnerText = str(self.model.rows[i].position)
+            row.AppendChild(position)
+        f_path = XMLPATH()
+        xml.Save(f_path)
+    
+    def FlipCheckClick(self, sender, e):
+        if sender.Tag == 'is_outer_flip':
+            self.model.is_flip[0] = self.flip_check3.Checked
+        elif sender.Tag == 'is_inner_flip':
+            self.model.is_flip[1] = self.flip_check2.Checked
+        elif sender.Tag == 'is_refer_flip':
+            self.model.is_flip[2] = self.flip_check.Checked
+        elif sender.Tag == 'is_top_flip':
+            self.model.is_flip[3] = self.flip_check.Checked
+        elif sender.Tag == 'is_bottom_flip':
+            self.model.is_flip[4] = self.flip_check.Checked
+    
+    def OnGetRhinoObjects(self, sender, e):
+        objectId = rs.GetCurveObject("Select curve:")
+        if objectId is None: 
+            print("Warning: No curve is selected")
+            return
+      
+        crv = objectId[0]
+        if self.pick_event_btn.Tag == 'outer_btn':
+            self.model.curves[0] = crv
+        elif self.pick_event_btn.Tag == 'inner_btn':
+            self.model.curves[1] = crv
+        elif self.pick_event_btn.Tag == 'refer_btn':
+            self.model.curves[2] = crv
+        elif self.pick_event_btn.Tag == 'top_btn':
+            self.model.curves[3] = crv
+        elif self.pick_event_btn.Tag == 'bottom_btn':
+            self.model.curves[4] = crv
+        self.create_interface()
+    
+    def PickReferCurve(self, sender, e):
+        self.pick_event_btn = sender
+        Rhino.UI.EtoExtensions.PushPickButton(self, self.OnGetRhinoObjects)
+    
+
+
+    def clear_dots(self):
+        for r in self.row_panels:
+            r.clear_dots()
+        for r in self.hole_panels:
+            r.clear_dots()
+        
+    def bake(self):
+        for r in self.row_panels:
+            r.bake()
+        
+        for r in self.hole_panels:
+            r.bake()
 
 
 #主程序UI
@@ -213,6 +536,10 @@ class FritDialog(forms.Dialog[bool]):
         if con.choose == 'true':
             if con.type == '大众图纸':
                 page = dzBlockPage(len(self.regions))
+                self.regions.append(page)
+                self.tab.Pages.Add(page)
+            elif con.type == 'New_165':
+                page = NewBlockPage(len(self.regions))
                 self.regions.append(page)
                 self.tab.Pages.Add(page)
             else:
@@ -1394,6 +1721,483 @@ class Dazhong_fill_holes:
             #self.display.AddCircle(rc.Geometry.Circle(white_hole_frit[i],0.5),self.display_color,1)
         
         self.bake()
+        
+class New_165_fill_holes:
+    def __init__(self, upline, downline, boundary, slopeline, split_crv, edge_crv, horizontal, vertical, region, aligned = False):
+        self.upline = upline
+        self.downline = downline
+        self.boundary = boundary
+        self.slopeline = slopeline
+        self.split_crv, _ = ghcomp.FlipCurve(split_crv)
+        self.edge_crv = edge_crv
+        self.frit_black = []
+        
+        self.horizontal = horizontal
+        self.vertical = vertical
+        self.aligned = aligned
+        self.tolerance = 0.5
+        self.region = region
+        
+        self.display_color = rc.Display.ColorHSL(0, 1, 0)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        self.display.AddCurve(boundary, self.display_color, 1)
+    
+    def ifright(self, pt1, pt2):
+        right = False
+        x1, y1, z1 = ghcomp.Deconstruct(pt1)
+        x2, y2, z2 = ghcomp.Deconstruct(pt2)
+        #if ghcomp.Absolute(x2-x1-horizontal) < tolerance:
+        if ghcomp.Absolute(y1-y2) < self.tolerance:
+            right = True
+        return right
+    
+    def ifdown(self, pt1, pt2):
+        down = False
+        x1, y1, z1 = ghcomp.Deconstruct(pt1)
+        x2, y2, z2 = ghcomp.Deconstruct(pt2)
+        #if ghcomp.Absolute(y1-y2-vertical) < tolerance:
+        if ghcomp.Absolute(x1-x2) < self.tolerance:
+            down = True
+        return down
+        
+    def coverge_slope(self, pt, slopeline):
+        _, cur_y, cur_z = ghcomp.Deconstruct(pt)
+        left_vec = ghcomp.UnitX(-1)
+        left_line = ghcomp.LineSDL(pt, left_vec, 10)
+        l_pt, _, _ = ghcomp.CurveXCurve(left_line, slopeline)
+        if l_pt:
+            pt = l_pt
+        else:
+            right_vec = ghcomp.UnitX(1)
+            right_line = ghcomp.LineSDL(pt, right_vec, 10)
+            r_pt, _, _ = ghcomp.CurveXCurve(right_line, slopeline)
+            if r_pt:
+                pt = r_pt
+        return pt
+    
+    def align_slope(self, pts, slopeline):
+        slope_pts, _, dis = ghcomp.CurveClosestPoint(pts, slopeline)
+        min = 1000
+        anchor_r = -1
+        for i in range(len(dis)):
+            if dis[i] < min:
+                min = dis[i]
+                anchor_r = i
+        anchor_pt = pts[anchor_r]
+        anchor_pt = self.coverge_slope(anchor_pt, slopeline)
+        anchor_x, _, _ = ghcomp.Deconstruct(anchor_pt)
+    
+        for i in range(len(pts)):
+           _, cur_y, cur_z = ghcomp.Deconstruct(pts[i])
+           align_x = anchor_x + (i-anchor_r)*self.horizontal
+           align_pt = ghcomp.ConstructPoint(align_x, cur_y, cur_z)
+           pts[i] = align_pt
+            
+        return pts, anchor_pt
+
+    def generate_slope_grid_pts(self, base_pts, vertical, downline, slopeline):
+        pts = []
+        bound_pts = []
+        dest_pts = []
+        
+        dest_pts0, _, dis = ghcomp.CurveClosestPoint(base_pts, downline)
+        max = 0
+        for i in range(len(dis)):
+            if dis[i]>max:
+                max = dis[i]
+        
+        base_vec = ghcomp.UnitY(-1)
+        
+        for i in range(len(dis)):
+            base_line = ghcomp.LineSDL(base_pts[i], base_vec, 1.25*max)
+            dest_pt, _, _ = ghcomp.CurveXCurve(base_line, downline)
+            if dest_pt:
+                dest_pts.append(dest_pt)
+            else:
+                dest_pts.append(dest_pts0[i])
+        
+        v_dis = ghcomp.Distance(base_pts, dest_pts)
+        vlength = ghcomp.Average(v_dis)
+        v_num = int(math.floor(vlength/vertical))
+        if v_num%2 != 0:
+            v_num = v_num - 1
+        
+        relation, _ = ghcomp.PointInCurve(base_pts, self.boundary)
+        base_array_pts, _ = ghcomp.Dispatch(base_pts, relation)
+        if base_array_pts:
+            bound_pts.append(base_array_pts[0])
+    
+        for i in range(1, v_num):
+            cur_pts = []
+            for j in range(len(base_pts)):
+                cur_base = base_pts[j]
+                cur_dest = dest_pts[j]
+                cur_vec, _ = ghcomp.Vector2Pt(cur_base, cur_dest, True)
+                cur_dis = i*v_dis[j]/v_num
+                line = ghcomp.LineSDL(cur_base, cur_vec, cur_dis)
+                _, cur_pt = ghcomp.EndPoints(line)
+                cur_pts.append(cur_pt)
+            if self.aligned == False:
+                if i%2 == 1:
+                    shift_pts = []
+                    for k in range(len(cur_pts)-1):
+                        shift_pts.append(ghcomp.Division(ghcomp.Addition(cur_pts[k], cur_pts[k+1]),2))
+                    cur_pts = shift_pts
+            
+            cur_pts, anchor_pt = self.align_slope(cur_pts, slopeline)
+            #bug.append(anchor_pt)
+            
+            relation, _ = ghcomp.PointInCurve(cur_pts, self.boundary)
+            cur_pts, _ = ghcomp.Dispatch(cur_pts, relation)
+            if cur_pts:
+                cur_pts = construct_safe_pts_list(cur_pts)
+                pts += cur_pts
+                bound_pts.append(cur_pts[0])
+        return dest_pts, pts, bound_pts
+    
+    def generate_grid_pts(self):
+        pts = []
+        bound_pts = []
+        uplength = ghcomp.Length(self.upline)
+        num = int(math.floor(uplength/self.horizontal)+1)
+        up_pts, _, _ = ghcomp.DivideCurve(self.upline, num, False)
+        up_pts, _ = self.align_slope(up_pts, self.slopeline)
+        mid_pts, um_pts, um_bound = self.generate_slope_grid_pts(up_pts, self.vertical, self.downline, self.slopeline)
+        
+        bound_pts += um_bound
+        bound_pts, _ = ghcomp.DeleteConsecutive(bound_pts, False)
+        #relation, _ = ghcomp.PointInCurve(bound_pts, boundary)
+        #bound_pts, _ = ghcomp.Dispatch(bound_pts, relation)
+        
+        pts += up_pts
+        pts += mid_pts
+        relation, _ = ghcomp.PointInCurve(pts, self.boundary)
+        pts, _ = ghcomp.Dispatch(pts, relation)
+        
+        if pts == None:
+            pts = []
+        pts += um_pts
+        
+        return pts, bound_pts
+    
+    def generate_bound_pts(self, head_pts, pts):
+        tolerance = 0.1
+        
+        unit_length = 1
+        if self.aligned == False:
+            unit_length = math.sqrt(0.25*self.horizontal*self.horizontal+self.vertical*self.vertical)
+        else:
+            unit_length = math.sqrt(self.horizontal*self.horizontal+self.vertical*self.vertical)
+       
+        num = int(math.floor(ghcomp.Length(self.split_crv)/unit_length)+1)
+        aux_pts, _, _ = ghcomp.DivideCurve(self.split_crv, 3*num, False)
+        aux_bound_pts, _, _ = ghcomp.ClosestPoint(aux_pts, pts)
+        aux_bound_pts, _ = ghcomp.DeleteConsecutive(aux_bound_pts, False)
+        
+        _, anchor, _ = ghcomp.Deconstruct(aux_bound_pts[0])
+        bound_pts = []
+        for i in range(len(head_pts)):
+            cur_pt = head_pts[i]
+            _, cur_y, _ = ghcomp.Deconstruct(cur_pt)
+            if cur_y <= anchor:
+                bound_pts.append(cur_pt)
+        
+        head_pts = bound_pts
+        bound_pts = []
+        i=0
+        j=0
+        pre_pt = head_pts[0]
+        while i<len(head_pts) and j<len(aux_bound_pts):
+            cur_head = head_pts[i]
+            cur_aux = aux_bound_pts[j]
+            if ghcomp.Distance(cur_head, cur_aux)<tolerance:
+                bound_pts.append(cur_head)
+                pre_pt = cur_head
+                i += 1
+                j += 1
+            else:
+                dis_head = ghcomp.Distance(cur_head, pre_pt)
+                dis_aux = ghcomp.Distance(cur_aux, pre_pt)
+                if dis_head < dis_aux:
+                    bound_pts.append(cur_head)
+                    i += 1
+                    pre_pt = cur_head
+                else:
+                    bound_pts.append(cur_aux)
+                    j += 1
+                    pre_pt = cur_aux
+                    
+        if i!=len(head_pts):
+            for k in range(i, len(head_pts)):
+                bound_pts.append(head_pts[k])
+        if j!=len(aux_pts):
+            for k in range(j, len(aux_bound_pts)):
+                bound_pts.append(aux_bound_pts[k])
+            
+        i=1
+        count = len(bound_pts)
+        while i<count-1:
+            pre_pt = bound_pts[i-1]
+            cur_pt = bound_pts[i]
+            suc_pt = bound_pts[i+1]
+            _, pre_y, _ = ghcomp.Deconstruct(pre_pt)
+            _, cur_y, _ = ghcomp.Deconstruct(cur_pt)
+            _, suc_y, _ = ghcomp.Deconstruct(suc_pt)
+            if cur_y>pre_y and cur_y>suc_y:
+                bound_pts.pop(i)
+                count -= 1
+                continue
+            i += 1
+        return bound_pts
+        
+    def generate_white_direc(self, white_pts):
+        white_direc = []
+        for i in range(len(white_pts)):
+            cur_pt = white_pts[i]
+            _, t1, d1 = ghcomp.CurveClosestPoint(cur_pt, self.upline)
+            _, t2, d2 = ghcomp.CurveClosestPoint(cur_pt, self.downline)
+            cur_direc = ghcomp.VectorXYZ(-1, 0, 0)
+            _, tgt1, _ = ghcomp.EvaluateCurve(self.upline, t1)
+            _, tgt2, _ = ghcomp.EvaluateCurve(self.downline, t2)
+            cur_direc = ghcomp.Addition(ghcomp.Multiplication(tgt1, d2/(d1+d2)),ghcomp.Multiplication(tgt2, d1/(d1+d2)))
+            white_direc.append(cur_direc)
+        return white_direc
+    
+    def separate_pts(self, seq_pts, seq_direc):
+        #data structure: 类似 dictionary
+        #list[0]为当前类型的tag
+        """ e.g. 
+        [['slope', pts],
+        ['cross', pts],
+        ['slope', pts]]
+        """
+        
+        slope_pts = []
+        cross_pts = []
+        slope_direcs = []
+        cross_direcs = []
+        
+        pts = []
+        direcs = []
+        
+        pre_type = None
+        temp_head = None
+        
+        for i in range(len(seq_pts)):
+            cur_pt = seq_pts[i]
+            
+            if i!=0:
+                pre_pt = seq_pts[i-1]
+                if self.ifright(pre_pt, cur_pt):
+                    cross_pts.append(cur_pt)
+                    cross_direcs.append(seq_direc[i])
+                    if len(cross_pts) > 3:
+                        if len(slope_pts) != 0:
+                            temp_head = (cross_pts[0], cross_direcs[0])
+                            #slope_pts.append(cross_pts[0])
+                            #slope_direcs.append(cross_direcs[0])
+                            cross_pts.insert(0, slope_pts[-1])
+                            cross_direcs.insert(0, slope_direcs[-1])
+                            slope_pts.append(temp_head[0])
+                            slope_direcs.append(temp_head[1])
+                            temp_head = None
+                            pre_seq = ['slope', slope_pts]
+                            pts.append(pre_seq)
+                            direcs.append(slope_direcs)
+                            slope_pts = []
+                            slope_direcs = []
+                            pre_type = 'slope'
+                    
+                else:
+                    if len(cross_pts) > 10:
+                        if pre_type == 'cross' and temp_head!=None:
+                            cross_pts.insert(0, temp_head[0])
+                            cross_direcs.insert(0, temp_head[1])
+                            temp_head = None
+                        pre_seq = ['cross', cross_pts]
+                        pts.append(pre_seq)
+                        direcs.append(cross_direcs)
+                        pre_type = 'cross'
+                        #slope_pts.pop()
+                        #slope_direcs.pop()
+                        temp_head = (cur_pt, seq_direc[i])
+                    else:
+                        slope_pts += cross_pts
+                        slope_direcs += cross_direcs
+                        slope_pts.append(cur_pt)
+                        slope_direcs.append(seq_direc[i])
+                    cross_pts = []
+                    cross_direcs = []
+            
+            if i==len(seq_pts)-1:
+                if len(slope_pts) != 0:
+                    cur_seq = ['slope', slope_pts]
+                    pts.append(cur_seq)
+                    direcs.append(slope_direcs)
+                    slope_pts = []
+                    slope_direcs = []
+                if len(cross_pts) != 0:
+                    if pre_type == 'cross' and temp_head!=None:
+                        cross_pts.insert(0, temp_head[0])
+                        cross_direcs.insert(0, temp_head[1])
+                        temp_head = None
+                    cur_seq = ['cross', cross_pts]
+                    pts.append(cur_seq)
+                    direcs.append(cross_direcs)
+                    cross_pts = []
+                    cross_direcs = []
+                
+        return pts, direcs
+    
+    def generate_cross_band(self, cross_pts, edge_crv):
+        #todo：用tweencrv进行offset
+        cross_band = []
+        shift_pts = []
+        for i in range(len(cross_pts)-1):
+            shift_pts.append(ghcomp.Division(ghcomp.Addition(cross_pts[i] + cross_pts[i+1]), 2))
+        
+        r1 = self.region.rows[0].circle_config.New_cross_r1
+        h1 = self.region.rows[0].circle_config.New_cross_position1
+        r2 = self.region.rows[0].circle_config.New_cross_r2
+        h2 = self.region.rows[0].circle_config.New_cross_position2
+        
+        print("h1")
+        print(h1)
+        print("h2")
+        print(h2)
+        
+        std_crv = ghcomp.PolyLine(cross_pts, False)
+        real_pts, _, dis = ghcomp.CurveClosestPoint(cross_pts, edge_crv)
+        real_dis = ghcomp.Average(dis)
+        #factor = real_dis/(h1+r1)
+        real_factor = ghcomp.Division(dis, h1+r1)
+        des_crv = ghcomp.PolyLine(real_pts, False)
+        
+        crv21 = ghcomp.OffsetCurve(std_crv, h2, ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), 1)
+        band_pts21, _, _ = ghcomp.CurveClosestPoint(shift_pts, crv21)
+        crv22 = ghcomp.TweenCurve(std_crv, des_crv, h2/(h1+r1))
+        band_pts22, _, _ = ghcomp.CurveClosestPoint(shift_pts, crv22)
+        num = len(band_pts21)
+        band_pts2 = []
+        for i in range(num):
+            cur_pt = ghcomp.Addition(ghcomp.Multiplication(band_pts21[i], 1.0*(num-i)/num), ghcomp.Multiplication(band_pts22[i], 1.0*i/num))
+            band_pts2.append(cur_pt)
+
+        crv1 = ghcomp.TweenCurve(std_crv, des_crv, h1/(h1+r1))
+        band_pts1, _, _ = ghcomp.CurveClosestPoint(cross_pts, crv1)
+
+        circle_band = []
+        circle_band += ghcomp.Circle(band_pts2, ghcomp.Multiplication(real_factor, r2))
+        circle_band += ghcomp.Circle(band_pts1, ghcomp.Multiplication(real_factor, r1))
+        
+        for i in range(len(circle_band)): 
+            circle_band[i] = rg.NurbsCurve.CreateFromCircle(circle_band[i])
+        
+        cross_band += circle_band    
+        return cross_band
+    
+    def generate_slope_band(self, slope_pts, h_direcs, edge_crv):
+        slope_band = []
+        
+        r1 = self.region.rows[0].circle_config.New_cross_r1
+        h1 = self.region.rows[0].circle_config.New_cross_position1
+        r2 = self.region.rows[0].circle_config.New_cross_r2
+        h2 = self.region.rows[0].circle_config.New_cross_position2
+        r3 = self.region.rows[0].circle_config.New_cross_r3
+        
+        horizontal = self.horizontal
+        if self.aligned == False:
+            horizontal = horizontal/2
+        
+        unit_length = math.sqrt(horizontal*horizontal + self.vertical*self.vertical)
+        threshold = 0.2
+        
+        for i in range(len(h_direcs)):
+            cur_pt = slope_pts[i]
+            #逆时针旋转45°
+            unit_vec, _ = ghcomp.VectorXYZ(horizontal, self.vertical, 0)
+            angle, _ = ghcomp.Angle(ghcomp.UnitX(1), unit_vec, ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)))
+            
+            line, _ = ghcomp.Rotate(ghcomp.LineSDL(cur_pt, h_direcs[i], 10), ghcomp.Pi(1.05)+angle, ghcomp.XYPlane(cur_pt))
+            end_pt, _, _ = ghcomp.CurveXCurve(line, edge_crv)
+            if end_pt:
+                cur_direc, _ = ghcomp.Vector2Pt(cur_pt, end_pt, False)
+                dist = ghcomp.Distance(cur_pt, end_pt)
+                dist_fac = (dist*ghcomp.Cosine(angle/2))/(h1+r1)
+                
+                if dist_fac > (1+threshold):
+                    line0 = ghcomp.Rotate(ghcomp.LineSDL(cur_pt, h_direcs[i], unit_length*0.9), ghcomp.Pi(1)+angle, ghcomp.XYPlane(cur_pt))
+                    _, end_pt0 = ghcomp.EndPoints(line0)
+                    slope_band.append(ghcomp.Circle(end_pt0, r2))
+                    cur_pt = end_pt0
+                    dist = ghcomp.Distance(cur_pt, end_pt)
+                    dist_fac = (dist*ghcomp.Cosine(angle/2))/(h1+r1)
+                
+                _, band_pt2 = ghcomp.EndPoints(ghcomp.LineSDL(cur_pt, cur_direc, dist*h2/(h1+r1)))
+                slope_band.append(ghcomp.Circle(band_pt2, r2*dist_fac))
+            
+            line, _ = ghcomp.Rotate(ghcomp.LineSDL(cur_pt, h_direcs[i], 10), ghcomp.Pi(1.06)+angle, ghcomp.XYPlane(cur_pt))
+            end_pt, _, _ = ghcomp.CurveXCurve(line, edge_crv)
+            if end_pt:
+                cur_direc, _ = ghcomp.Vector2Pt(cur_pt, end_pt, False)
+                dist = ghcomp.Distance(cur_pt, end_pt)
+                
+                _, band_pt1 = ghcomp.EndPoints(ghcomp.LineSDL(cur_pt, cur_direc, dist*h1/(h1+r1)))
+                slope_band.append(ghcomp.Circle(band_pt1, r1*dist_fac))
+        
+        for i in range(len(slope_band)):
+            slope_band[i] = rg.NurbsCurve.CreateFromCircle(slope_band[i])
+        
+        return slope_band
+    
+    def generate_black_band(self, bound_pts, bound_direcs):
+        edge_crv = self.edge_crv
+        
+        black_band = []
+        bug1 = []
+        bug2 = []
+        for i in range(len(bound_pts)):
+            cur_seq = bound_pts[i]
+            cur_type = cur_seq[0]
+            if cur_type == "slope":
+                cur_seq_pts = cur_seq[1]
+                bug1 += cur_seq_pts
+                cur_direcs = bound_direcs[i]
+                black_band += self.generate_slope_band(cur_seq_pts, cur_direcs, edge_crv)
+            elif cur_type == "cross":
+                cur_seq_pts = cur_seq[1]
+                bug2 += cur_seq_pts
+                black_band += self.generate_cross_band(cur_seq_pts, edge_crv)
+                
+        #两部分点：斜向阵列和贴边装饰点
+        #横向点直接遵照规则做offset和shift
+        return black_band
+        
+    def bake(self):
+        layer_name = 'fuyao_black'
+        rs.AddLayer(layer_name, self.display_color)
+        for i in range(len(self.frit_black)):
+            obj = scriptcontext.doc.Objects.AddCurve(self.frit_black[i])
+            rs.ObjectLayer(obj, layer_name)
+    
+    def run(self):
+        pts, bound_pts = self.generate_grid_pts()
+        seq_pts = self.generate_bound_pts(head_pts = bound_pts, pts = pts)
+        seq_direc = self.generate_white_direc(seq_pts)
+        bound_pts, bound_direcs = self.separate_pts(seq_pts, seq_direc)
+        black_band = self.generate_black_band(bound_pts, bound_direcs)
+        
+        for i in range(len(pts)):
+            cur_crv = rg.NurbsCurve.CreateFromCircle(rc.Geometry.Circle(pts[i], self.region.rows[0].circle_config.New_cross_r3))
+            self.frit_black.append(cur_crv)
+            #self.display.AddCurve(cur_crv, self.display_color, 1)
+            
+        for i in range(len(black_band)):
+            self.frit_black.append(black_band[i])
+            #self.display.AddCurve(black_band[i], self.display_color, 1)
+       
+        self.bake()
 
 #原HoleFrits 块状填充算法
 class HoleFrits:
@@ -1413,6 +2217,89 @@ class HoleFrits:
         self.top_curve = None
         self.bottom_curve = None
         self.border_curve = None
+    
+    def New165_fill_dots(self):
+        
+        print("165算法调用")
+        self.outer_crv = self.region.curves[0]
+        if self.region.is_flip[0] == True:
+            self.outer_crv, _ = ghcomp.FlipCurve(self.outer_crv)
+        
+        self.inner_crv = self.region.curves[1]
+        self.inner_crv, _ = ghcomp.FlipCurve(self.inner_crv)
+        if self.region.is_flip[1] == True:
+            self.inner_crv, _ = ghcomp.FlipCurve(self.inner_crv)
+            
+        self.top_crv = self.region.curves[2]
+        if self.region.is_flip[2] == True:
+            self.top_crv, _ = ghcomp.FlipCurve(self.top_crv)
+            
+        self.bottom_crv = self.region.curves[3]
+        if self.region.is_flip[3] == True:
+            self.bottom_crv, _ = ghcomp.FlipCurve(self.bottom_crv)
+        
+        self.refer_crv = self.region.curves[4]
+        if self.region.is_flip[4] == True:
+            self.refer_crv, _ = ghcomp.FlipCurve(self.refer_crv)
+            
+        #offset outer_crv
+        self.display_color = rc.Display.ColorHSL(0, 1, 0)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        #crv1 = ghcomp.OffsetCurve(self.outer_crv, distance= 2.4, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        
+        horizontal = self.region.rows[0].stepping
+        crv1 = ghcomp.OffsetCurve(self.outer_crv, distance = horizontal, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        endpt0, _ = ghcomp.EndPoints(self.outer_crv)
+        endpt1, _ = ghcomp.EndPoints(crv1)
+        _, y0, _ = ghcomp.Deconstruct(endpt0)
+        _, y1, _ = ghcomp.Deconstruct(endpt1)
+        if y0>y1:
+            crv1 = ghcomp.OffsetCurve(self.outer_crv, distance= -horizontal, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        
+        band_config = self.region.rows[0].circle_config
+        band_offset = band_config.New_cross_position1
+        
+        split_crv = ghcomp.OffsetCurve(self.inner_crv, distance = band_offset, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        endpt0, _ = ghcomp.EndPoints(self.inner_crv)
+        endpt1, _ = ghcomp.EndPoints(split_crv)
+        _, y0, _ = ghcomp.Deconstruct(endpt0)
+        _, y1, _ = ghcomp.Deconstruct(endpt1)
+        if y0>y1:
+            split_crv = ghcomp.OffsetCurve(self.inner_crv, distance= -band_offset, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+            
+        blocksrf = ghcomp.RuledSurface(crv1, split_crv)
+        edgelist = []
+        
+        for i in range(blocksrf.Edges.Count):
+            edgelist.append(blocksrf.Edges[i].EdgeCurve)
+        blockborder = ghcomp.JoinCurves(edgelist)
+        #self.display.AddCurve(blockborder, self.display_color, 1)
+        
+        vertical = self.region.rows[0].position
+        unit_length = math.sqrt(0.25*horizontal*horizontal+vertical*vertical)
+        offset_fac = 0.2*unit_length
+        area0, _ = ghcomp.Area(blockborder)
+        boundary_crv = ghcomp.OffsetCurve(blockborder, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), distance = offset_fac, corners=1)
+        area1, _ = ghcomp.Area(boundary_crv)
+        print("compare!!")
+        print(area1)
+        print(area0)
+        if area1 < area0:
+            boundary_crv = ghcomp.OffsetCurve(blockborder, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), distance = -offset_fac, corners=1)
+        #self.display.AddCurve(boundary_crv, self.display_color, 1)
+        
+        upline_crv = ghcomp.OffsetCurve(self.top_crv, plane = rs.WorldXYPlane(), distance=0.5, corners=1)
+        #stepping
+        New_165_frit_generator = New_165_fill_holes(\
+                                upline = self.top_crv, downline = self.bottom_crv, \
+                                boundary = boundary_crv, slopeline = self.refer_crv, \
+                                split_crv = split_crv, edge_crv = self.inner_crv, \
+                                horizontal = horizontal, vertical = vertical, \
+                                region = self.region, aligned = False)
+        New_165_frit_generator.run()
+        
+    
     
     def bake(self):
         pass
@@ -1603,8 +2490,9 @@ class HoleFrits:
             pts_num = int(crv_length / unit_length)
             # offset curve
             line_pts, _, t = ghcomp.DivideCurve(l, pts_num, False)
-            line_pts.reverse()
+            #line_pts.reverse()
             if line_pts:
+                line_pts.reverse()
                 # line_pts = line_pts[1:]
                 if line_pts:
                     for i in range(len(line_pts) - 1): 
@@ -1856,7 +2744,7 @@ class HoleFrits:
                 filter_pts.append(pt)
         
         for i in range(len(filter_pts)):
-            theta = utils.tgt_angle(v1[0])
+            theta = tgt_angle(v1[0])
             dot = None
             if self.dot_type == FritType.CIRCLE_DOT:
                 dot = CircleDot(filter_pts[i].X, filter_pts[i].Y, self.circle_config)
@@ -1970,7 +2858,7 @@ class HoleFrits:
                 filter_pts.append(pt)
         
         for i in range(len(filter_pts)):
-            theta = utils.tgt_angle(v1[0])
+            theta = tgt_angle(v1[0])
             dot = None
             if self.dot_type == FritType.CIRCLE_DOT:
                 dot = CircleDot(filter_pts[i].X, filter_pts[i].Y, self.circle_config)
@@ -2068,8 +2956,8 @@ class HoleFrits:
             self.fill_dots_88LFW()
         elif con.type == '76720LFW00027':
             self.fill_dots_76720LFW00027()
-        elif con.type == '00215':
-            self.fill_angle()
+        #elif con.type == '00215':
+            #self.fill_angle()
         elif con.type == '00841LFW00001':
             self.fill_simple()
         elif con.type == '00399LFW00012':
@@ -2250,7 +3138,7 @@ class HoleFrits:
         inner_anchor = []
         while flag == True:
             temp = copy.deepcopy(verbose_pts)
-            inner_anchor1, inner_anchor2, flag = utils.remove_verbose(temp)
+            inner_anchor1, inner_anchor2, flag = remove_verbose(temp)
             #print("****check verbose****")
             #print(len(verbose_pts))
             #print(len(inner_anchor1))
@@ -2877,6 +3765,37 @@ class RowFrits:
             row.circle_config.slope_r3 = val['slope_r3']
             row.circle_config.slope_r4 = val['slope_r4']
             rows.append(row)
+        return rows
+        
+    @staticmethod
+    def load_New_block_xml(file_path, region):
+        xmldoc = System.Xml.XmlDocument()
+        xmldoc.Load(file_path)
+        items = xmldoc.SelectNodes("setting/block/row")
+        rows = []
+        for item in items:
+            nid = int(item.GetAttributeNode('id').Value)
+            row = RowFrits(nid, region)
+            #dot_type = item.GetAttributeNode('type').Value
+            #row.dot_type = {'circle': FritType.CIRCLE_DOT, 'roundrect': FritType.ROUND_RECT, 'arcdot': FritType.ARC_CIRCLE, 'triarc': FritType.TRI_ARC}[dot_type]
+            #arrange_type = item.GetAttributeNode('arrange').Value
+            #row.arrange_type = {'heading': RowArrangeType.HEADING, 'cross': RowArrangeType.CROSS }[arrange_type]
+            val = dict()
+            for node in item.ChildNodes:
+                val[node.Name] = float(node.InnerText)
+            row.stepping = val['horizontal']
+            row.position = val['vertical']
+            #if row.dot_type == FritType.CIRCLE_DOT:
+            
+            row.circle_config.New_cross_position3 = val['New_cross_position3']
+            row.circle_config.New_cross_position2 = val['New_cross_position2']
+            row.circle_config.New_cross_position1 = val['New_cross_position1']
+            row.circle_config.New_cross_r3 = val['New_cross_r3']
+            row.circle_config.New_cross_r2 = val['New_cross_r2']
+            row.circle_config.New_cross_r1 = val['New_cross_r1']
+            
+            rows.append(row)
+            print(len(rows))
         return rows
 
 #原Separatrix
@@ -3573,6 +4492,14 @@ class CircleDotConfig:
         self.slope_r2 = 0
         self.slope_r3 = 0
         self.slope_r4 = 0
+        
+        self.New_cross_position3 = 0
+        self.New_cross_position2 = 0
+        self.New_cross_position1 = 0
+        self.New_cross_r3 = 0
+        self.New_cross_r1 = 0
+        self.New_cross_r2 = 0
+        
         self.r = 0
     
     def top(self):
@@ -4300,22 +5227,22 @@ class DZ_ConfigPanel(forms.GroupBox):
         self.circle8_dot_radius.Size = drawing.Size(60, -1)
         self.circle8_dot_radius.TextChanged += self.circle8_dot_radius_changed
         
-        self.circle9_dot_radius_label = forms.Label(Text='圆点半径1：')
+        self.circle9_dot_radius_label = forms.Label(Text='圆点直径1：')
         self.circle9_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.slope_r1))
         self.circle9_dot_radius.Size = drawing.Size(60, -1)
         self.circle9_dot_radius.TextChanged += self.circle9_dot_radius_changed
         
-        self.circle10_dot_radius_label = forms.Label(Text='圆点半径2：')
+        self.circle10_dot_radius_label = forms.Label(Text='圆点直径2：')
         self.circle10_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.slope_r2))
         self.circle10_dot_radius.Size = drawing.Size(60, -1)
         self.circle10_dot_radius.TextChanged += self.circle10_dot_radius_changed
         
-        self.circle11_dot_radius_label = forms.Label(Text='圆点半径3：')
+        self.circle11_dot_radius_label = forms.Label(Text='圆点直径3：')
         self.circle11_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.slope_r3))
         self.circle11_dot_radius.Size = drawing.Size(60, -1)
         self.circle11_dot_radius.TextChanged += self.circle11_dot_radius_changed
         
-        self.circle12_dot_radius_label = forms.Label(Text='圆点半径4：')
+        self.circle12_dot_radius_label = forms.Label(Text='圆点直径4：')
         self.circle12_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.slope_r4))
         self.circle12_dot_radius.Size = drawing.Size(60, -1)
         self.circle12_dot_radius.TextChanged += self.circle12_dot_radius_changed
@@ -4407,6 +5334,141 @@ class DZ_ConfigPanel(forms.GroupBox):
     def circle12_dot_radius_changed(self, sender, e):
         try:
             self.model.circle_config.slope_r4 = float(self.circle12_dot_radius.Text)
+        except:
+            pass
+    
+    def stepping_input_changed(self, sender, e):
+        try:
+            self.model.stepping = float(self.stepping_input.Text)
+        except:
+            pass
+    
+    def position_input_changed(self, sender, e):
+        try:
+            self.model.position = float(self.position_input.Text)
+        except:
+            pass
+    
+    def fill_row_frits(self, sender, e):
+        self.clear_dots()
+        self.model.fill_dots()
+        for d in self.model.dots:
+            d.draw(self.display, self.display_color)
+    
+    def clear_dots(self):
+        self.display.Clear()
+        #print(self.model.row_id)
+        #del self.model.dots[self.model.row_id]
+    
+    def bake(self):
+        layer_name = 'page_{0}_row_{1}'.format(self.parent.page_id, self.model.row_id)
+        rs.AddLayer(layer_name,get_color(self.model.row_id), parent='fuyao_frits')
+        for d in self.model.dots:
+            obj = d.bake()
+            rs.ObjectLayer(obj, layer_name)
+
+#New165 UI
+class NewConfigPanel(forms.GroupBox):
+    def __init__(self, parent, row_config):
+        self.parent = parent
+        self.model = row_config
+        self.Text = '第{}排'.format(row_config.row_id)
+        self.setup_view()
+        self.display = rc.Display.CustomDisplay(True)
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+
+    def setup_view(self):
+        self.RemoveAll()
+        self.basic_setting_label = forms.Label(Text='基础设置:', Font = Font('Microsoft YaHei', 12.))
+        
+        self.circle1_dot_radius_label = forms.Label(Text='3排相对参考线距离：')
+        self.circle1_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.New_cross_position3))
+        self.circle1_dot_radius.Size = drawing.Size(60, -1)
+        self.circle1_dot_radius.TextChanged += self.circle1_dot_radius_changed
+        
+        self.circle2_dot_radius_label = forms.Label(Text='2排相对参考线距离：')
+        self.circle2_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.New_cross_position2))
+        self.circle2_dot_radius.Size = drawing.Size(60, -1)
+        self.circle2_dot_radius.TextChanged += self.circle2_dot_radius_changed
+        
+        self.circle3_dot_radius_label = forms.Label(Text='1排相对参考线距离：')
+        self.circle3_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.New_cross_position1))
+        self.circle3_dot_radius.Size = drawing.Size(60, -1)
+        self.circle3_dot_radius.TextChanged += self.circle3_dot_radius_changed
+        
+        self.circle4_dot_radius_label = forms.Label(Text='1排半径：')
+        self.circle4_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.New_cross_r1))
+        self.circle4_dot_radius.Size = drawing.Size(60, -1)
+        self.circle4_dot_radius.TextChanged += self.circle4_dot_radius_changed
+        
+        self.circle5_dot_radius_label = forms.Label(Text='2排半径：')
+        self.circle5_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.New_cross_r2))
+        self.circle5_dot_radius.Size = drawing.Size(60, -1)
+        self.circle5_dot_radius.TextChanged += self.circle5_dot_radius_changed
+        
+        self.circle6_dot_radius_label = forms.Label(Text='3排半径：')
+        self.circle6_dot_radius = forms.TextBox(Text='{0}'.format(self.model.circle_config.New_cross_r3))
+        self.circle6_dot_radius.Size = drawing.Size(60, -1)
+        self.circle6_dot_radius.TextChanged += self.circle6_dot_radius_changed
+        
+        
+        
+        
+        self.stepping_label = forms.Label(Text='花点水平间距：')
+        self.stepping_input = forms.TextBox(Text='{0}'.format(self.model.stepping))
+        self.stepping_input.Size = drawing.Size(60, -1)
+        self.stepping_input.TextChanged += self.stepping_input_changed
+        
+        self.position_label = forms.Label(Text='花点垂直间距：')
+        self.position_input = forms.TextBox(Text='{0}'.format(self.model.position))
+        self.position_input.Size = drawing.Size(60, -1)
+        self.position_input.TextChanged += self.position_input_changed
+        
+        self.layout = forms.DynamicLayout()
+        self.layout.DefaultSpacing = drawing.Size(10, 10)
+       
+        # default is circle dot
+        self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
+        self.layout.AddRow(self.basic_setting_label, None)
+        self.layout.EndVertical()
+        self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
+        self.layout.AddRow(self.circle1_dot_radius_label,self.circle1_dot_radius,self.circle2_dot_radius_label,self.circle2_dot_radius,None)
+        self.layout.AddRow(self.circle3_dot_radius_label,self.circle3_dot_radius,self.circle4_dot_radius_label,self.circle4_dot_radius,None)
+        self.layout.AddRow(self.circle5_dot_radius_label,self.circle5_dot_radius,self.circle6_dot_radius_label,self.circle6_dot_radius,None)
+        self.layout.AddRow(self.stepping_label,self.stepping_input,self.position_label,self.position_input,None)
+        self.layout.EndVertical()
+        self.Content = self.layout
+        
+        
+    def circle1_dot_radius_changed(self, sender, e):
+        try:
+            self.model.circle_config.New_cross_position3 = float(self.circle1_dot_radius.Text)
+        except:
+            pass
+    def circle2_dot_radius_changed(self, sender, e):
+        try:
+            self.model.circle_config.New_cross_position2 = float(self.circle2_dot_radius.Text)
+        except:
+            pass
+    def circle3_dot_radius_changed(self, sender, e):
+        try:
+            self.model.circle_config.New_cross_position1 = float(self.circle3_dot_radius.Text)
+        except:
+            pass
+    def circle4_dot_radius_changed(self, sender, e):
+        try:
+            self.model.circle_config.New_cross_r1 = float(self.circle4_dot_radius.Text)
+        except:
+            pass
+    def circle5_dot_radius_changed(self, sender, e):
+        try:
+            self.model.circle_config.New_cross_r2 = float(self.circle5_dot_radius.Text)
+        except:
+            pass
+            
+    def circle6_dot_radius_changed(self, sender, e):
+        try:
+            self.model.circle_config.New_cross_r3 = float(self.circle6_dot_radius.Text)
         except:
             pass
     
@@ -5085,7 +6147,16 @@ class BlockPage(forms.TabPage):
         current_path1 = os.getcwd()
  
         self.img = ImageView()
-        self.img.Image = Bitmap("C:\\ico\\block.png")
+        if con.type == "88LF":
+            self.img.Image = Bitmap("C:\\ico\\0088.png")
+        elif con.type == "76720LFW00027": 
+            self.img.Image = Bitmap("C:\\ico\\76720.png")
+        elif con.type == "00841LFW00001": 
+            self.img.Image = Bitmap("C:\\ico\\00841.png")
+        elif con.type == "00399LFW00012": 
+            self.img.Image = Bitmap("C:\\ico\\00399.png")
+        elif con.type == "00792LFW000023": 
+            self.img.Image = Bitmap("C:\\ico\\00792.png")
         grouplayout.AddRow(self.img.Image)
         self.m_groupbox.Content = grouplayout
         #groupbox2
@@ -5411,7 +6482,7 @@ class BlockPage(forms.TabPage):
                 hole.AppendChild(vspace)
                 
                 fposition = xml.CreateElement('fposition')
-                fposition.InnerText = str(self.model.holes[i].fposition)
+                fposition.InnerText = str(self.model.holes[i].first_line_position)
                 hole.AppendChild(fposition)
                 
         f_path = XMLPATH()
