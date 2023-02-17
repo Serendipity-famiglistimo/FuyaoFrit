@@ -5038,10 +5038,12 @@ class RowConfigPanel(forms.GroupBox):
                 self.round_rect_radius, self.stepping_label, self.stepping_input, self.position_label, self.position_input, None)
         elif self.model.dot_type == FritType.ARC_CIRCLE:
             self.layout.AddRow(self.dot_type_label, self.dot_type_combo, self.arc_dot_large_radius_label, self.arc_dot_large_radius,
-                self.arc_dot_small_radius_label, self.arc_dot_small_radius, self.arc_dot_angle_label, self.arc_dot_angle)
+                self.arc_dot_small_radius_label, self.arc_dot_small_radius, self.arc_dot_angle_label, self.arc_dot_angle,self.stepping_label,self.stepping_input,
+                self.position_label,self.position_input)
         elif self.model.dot_type == FritType.TRI_ARC:
             self.layout.AddRow(self.dot_type_label, self.dot_type_combo, self.tri_arc_dot_large_radius_label, self.tri_arc_dot_large_radius,
-                self.tri_arc_dot_small_radius_label, self.tri_arc_dot_small_radius, self.tri_arc_dot_angle_label, self.tri_arc_dot_angle)
+                self.tri_arc_dot_small_radius_label, self.tri_arc_dot_small_radius, self.tri_arc_dot_angle_label, self.tri_arc_dot_angle,self.stepping_label,self.stepping_input,
+                self.position_label,self.position_input)
 
         self.layout.EndVertical()
         self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
@@ -5786,11 +5788,11 @@ class BandPage(forms.TabPage):
                     row.AppendChild(angle)
                     
                     step = xml.CreateElement('stepping')
-                    step.InnerText = str('2.2')
+                    step.InnerText = str(self.model.rows[i].stepping)
                     row.AppendChild(step)
                     
                     position = xml.CreateElement('position')
-                    position.InnerText = str('0.2')
+                    position.InnerText = str(self.model.rows[i].position)
                     row.AppendChild(position)
                     if self.model.rows[i].is_transit:
                         
@@ -5827,11 +5829,11 @@ class BandPage(forms.TabPage):
                     row.AppendChild(angle)
                     
                     step = xml.CreateElement('stepping')
-                    step.InnerText = str('2.2')
+                    step.InnerText = str(self.model.rows[i].stepping)
                     row.AppendChild(step)
                     
                     position = xml.CreateElement('position')
-                    position.InnerText = str('0.2')
+                    position.InnerText = str(self.model.rows[i].position)
                     row.AppendChild(position)
                     
                     if self.model.rows[i].is_transit:
