@@ -20,6 +20,7 @@ import rhinoscriptsyntax as rs
 import clr
 import copy
 from model.ChooseZone import con
+from utils import construct_safe_pts_list
 clr.AddReference("System.Xml")
 import System.Xml
 
@@ -29,7 +30,6 @@ class HoleArrangeType:
     @staticmethod
     def get_hole_arrange_type():
         return ['顶头', '交错']
-
 
 class Dazhong_fill_holes:
     def __init__(self, upline, midline, downline, boundary, split_crv, edge_crv, horizontal, vertical, region, aligned = False):
@@ -846,6 +846,994 @@ class Dazhong_fill_holes:
         self.bake()
 
 
+class New_165_fill_holes:
+    def __init__(self, upline, downline, boundary, slopeline, split_crv, edge_crv, horizontal, vertical, region, aligned = False):
+        self.upline = upline
+        self.downline = downline
+        self.boundary = boundary
+        self.slopeline = slopeline
+        self.split_crv, _ = ghcomp.FlipCurve(split_crv)
+        self.edge_crv = edge_crv
+        self.frit_black = []
+        
+        self.horizontal = horizontal
+        self.vertical = vertical
+        self.aligned = aligned
+        self.tolerance = 0.5
+        self.region = region
+        
+        self.display_color = rc.Display.ColorHSL(0, 1, 0)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        self.display.AddCurve(boundary, self.display_color, 1)
+    
+    def ifright(self, pt1, pt2):
+        right = False
+        x1, y1, z1 = ghcomp.Deconstruct(pt1)
+        x2, y2, z2 = ghcomp.Deconstruct(pt2)
+        #if ghcomp.Absolute(x2-x1-horizontal) < tolerance:
+        if ghcomp.Absolute(y1-y2) < self.tolerance:
+            right = True
+        return right
+    
+    def ifdown(self, pt1, pt2):
+        down = False
+        x1, y1, z1 = ghcomp.Deconstruct(pt1)
+        x2, y2, z2 = ghcomp.Deconstruct(pt2)
+        #if ghcomp.Absolute(y1-y2-vertical) < tolerance:
+        if ghcomp.Absolute(x1-x2) < self.tolerance:
+            down = True
+        return down
+        
+    def coverge_slope(self, pt, slopeline):
+        _, cur_y, cur_z = ghcomp.Deconstruct(pt)
+        left_vec = ghcomp.UnitX(-1)
+        left_line = ghcomp.LineSDL(pt, left_vec, 10)
+        l_pt, _, _ = ghcomp.CurveXCurve(left_line, slopeline)
+        if l_pt:
+            pt = l_pt
+        else:
+            right_vec = ghcomp.UnitX(1)
+            right_line = ghcomp.LineSDL(pt, right_vec, 10)
+            r_pt, _, _ = ghcomp.CurveXCurve(right_line, slopeline)
+            if r_pt:
+                pt = r_pt
+        return pt
+    
+    def align_slope(self, pts, slopeline):
+        slope_pts, _, dis = ghcomp.CurveClosestPoint(pts, slopeline)
+        min = 1000
+        anchor_r = -1
+        for i in range(len(dis)):
+            if dis[i] < min:
+                min = dis[i]
+                anchor_r = i
+        anchor_pt = pts[anchor_r]
+        anchor_pt = self.coverge_slope(anchor_pt, slopeline)
+        anchor_x, _, _ = ghcomp.Deconstruct(anchor_pt)
+    
+        for i in range(len(pts)):
+           _, cur_y, cur_z = ghcomp.Deconstruct(pts[i])
+           align_x = anchor_x + (i-anchor_r)*self.horizontal
+           align_pt = ghcomp.ConstructPoint(align_x, cur_y, cur_z)
+           pts[i] = align_pt
+            
+        return pts, anchor_pt
+
+    def generate_slope_grid_pts(self, base_pts, vertical, downline, slopeline):
+        pts = []
+        bound_pts = []
+        dest_pts = []
+        
+        dest_pts0, _, dis = ghcomp.CurveClosestPoint(base_pts, downline)
+        max = 0
+        for i in range(len(dis)):
+            if dis[i]>max:
+                max = dis[i]
+        
+        base_vec = ghcomp.UnitY(-1)
+        
+        for i in range(len(dis)):
+            base_line = ghcomp.LineSDL(base_pts[i], base_vec, 1.25*max)
+            dest_pt, _, _ = ghcomp.CurveXCurve(base_line, downline)
+            if dest_pt:
+                dest_pts.append(dest_pt)
+            else:
+                dest_pts.append(dest_pts0[i])
+        
+        v_dis = ghcomp.Distance(base_pts, dest_pts)
+        vlength = ghcomp.Average(v_dis)
+        v_num = int(math.floor(vlength/vertical))
+        if v_num%2 != 0:
+            v_num = v_num - 1
+        
+        relation, _ = ghcomp.PointInCurve(base_pts, self.boundary)
+        base_array_pts, _ = ghcomp.Dispatch(base_pts, relation)
+        if base_array_pts:
+            bound_pts.append(base_array_pts[0])
+    
+        for i in range(1, v_num):
+            cur_pts = []
+            for j in range(len(base_pts)):
+                cur_base = base_pts[j]
+                cur_dest = dest_pts[j]
+                cur_vec, _ = ghcomp.Vector2Pt(cur_base, cur_dest, True)
+                cur_dis = i*v_dis[j]/v_num
+                line = ghcomp.LineSDL(cur_base, cur_vec, cur_dis)
+                _, cur_pt = ghcomp.EndPoints(line)
+                cur_pts.append(cur_pt)
+            if self.aligned == False:
+                if i%2 == 1:
+                    shift_pts = []
+                    for k in range(len(cur_pts)-1):
+                        shift_pts.append(ghcomp.Division(ghcomp.Addition(cur_pts[k], cur_pts[k+1]),2))
+                    cur_pts = shift_pts
+            
+            cur_pts, anchor_pt = self.align_slope(cur_pts, slopeline)
+            #bug.append(anchor_pt)
+            
+            relation, _ = ghcomp.PointInCurve(cur_pts, self.boundary)
+            cur_pts, _ = ghcomp.Dispatch(cur_pts, relation)
+            if cur_pts:
+                cur_pts = utils.construct_safe_pts_list(cur_pts)
+                pts += cur_pts
+                bound_pts.append(cur_pts[0])
+        return dest_pts, pts, bound_pts
+    
+    def generate_grid_pts(self):
+        pts = []
+        bound_pts = []
+        uplength = ghcomp.Length(self.upline)
+        num = int(math.floor(uplength/self.horizontal)+1)
+        up_pts, _, _ = ghcomp.DivideCurve(self.upline, num, False)
+        up_pts, _ = self.align_slope(up_pts, self.slopeline)
+        mid_pts, um_pts, um_bound = self.generate_slope_grid_pts(up_pts, self.vertical, self.downline, self.slopeline)
+        
+        bound_pts += um_bound
+        bound_pts, _ = ghcomp.DeleteConsecutive(bound_pts, False)
+        #relation, _ = ghcomp.PointInCurve(bound_pts, boundary)
+        #bound_pts, _ = ghcomp.Dispatch(bound_pts, relation)
+        
+        pts += up_pts
+        pts += mid_pts
+        relation, _ = ghcomp.PointInCurve(pts, self.boundary)
+        pts, _ = ghcomp.Dispatch(pts, relation)
+        
+        if pts == None:
+            pts = []
+        pts += um_pts
+        
+        return pts, bound_pts
+    
+    def generate_bound_pts(self, head_pts, pts):
+        tolerance = 0.1
+        
+        unit_length = 1
+        if self.aligned == False:
+            unit_length = math.sqrt(0.25*self.horizontal*self.horizontal+self.vertical*self.vertical)
+        else:
+            unit_length = math.sqrt(self.horizontal*self.horizontal+self.vertical*self.vertical)
+       
+        num = int(math.floor(ghcomp.Length(self.split_crv)/unit_length)+1)
+        aux_pts, _, _ = ghcomp.DivideCurve(self.split_crv, 3*num, False)
+        aux_bound_pts, _, _ = ghcomp.ClosestPoint(aux_pts, pts)
+        aux_bound_pts, _ = ghcomp.DeleteConsecutive(aux_bound_pts, False)
+        
+        _, anchor, _ = ghcomp.Deconstruct(aux_bound_pts[0])
+        bound_pts = []
+        for i in range(len(head_pts)):
+            cur_pt = head_pts[i]
+            _, cur_y, _ = ghcomp.Deconstruct(cur_pt)
+            if cur_y <= anchor:
+                bound_pts.append(cur_pt)
+        
+        head_pts = bound_pts
+        bound_pts = []
+        i=0
+        j=0
+        pre_pt = head_pts[0]
+        while i<len(head_pts) and j<len(aux_bound_pts):
+            cur_head = head_pts[i]
+            cur_aux = aux_bound_pts[j]
+            if ghcomp.Distance(cur_head, cur_aux)<tolerance:
+                bound_pts.append(cur_head)
+                pre_pt = cur_head
+                i += 1
+                j += 1
+            else:
+                dis_head = ghcomp.Distance(cur_head, pre_pt)
+                dis_aux = ghcomp.Distance(cur_aux, pre_pt)
+                if dis_head < dis_aux:
+                    bound_pts.append(cur_head)
+                    i += 1
+                    pre_pt = cur_head
+                else:
+                    bound_pts.append(cur_aux)
+                    j += 1
+                    pre_pt = cur_aux
+                    
+        if i!=len(head_pts):
+            for k in range(i, len(head_pts)):
+                bound_pts.append(head_pts[k])
+        if j!=len(aux_pts):
+            for k in range(j, len(aux_bound_pts)):
+                bound_pts.append(aux_bound_pts[k])
+            
+        i=1
+        count = len(bound_pts)
+        while i<count-1:
+            pre_pt = bound_pts[i-1]
+            cur_pt = bound_pts[i]
+            suc_pt = bound_pts[i+1]
+            _, pre_y, _ = ghcomp.Deconstruct(pre_pt)
+            _, cur_y, _ = ghcomp.Deconstruct(cur_pt)
+            _, suc_y, _ = ghcomp.Deconstruct(suc_pt)
+            if cur_y>pre_y and cur_y>suc_y:
+                bound_pts.pop(i)
+                count -= 1
+                continue
+            i += 1
+        return bound_pts
+        
+    def generate_white_direc(self, white_pts):
+        white_direc = []
+        for i in range(len(white_pts)):
+            cur_pt = white_pts[i]
+            _, t1, d1 = ghcomp.CurveClosestPoint(cur_pt, self.upline)
+            _, t2, d2 = ghcomp.CurveClosestPoint(cur_pt, self.downline)
+            cur_direc = ghcomp.VectorXYZ(-1, 0, 0)
+            _, tgt1, _ = ghcomp.EvaluateCurve(self.upline, t1)
+            _, tgt2, _ = ghcomp.EvaluateCurve(self.downline, t2)
+            cur_direc = ghcomp.Addition(ghcomp.Multiplication(tgt1, d2/(d1+d2)),ghcomp.Multiplication(tgt2, d1/(d1+d2)))
+            white_direc.append(cur_direc)
+        return white_direc
+    
+    def separate_pts(self, seq_pts, seq_direc):
+        #data structure: 类似 dictionary
+        #list[0]为当前类型的tag
+        """ e.g. 
+        [['slope', pts],
+        ['cross', pts],
+        ['slope', pts]]
+        """
+        
+        slope_pts = []
+        cross_pts = []
+        slope_direcs = []
+        cross_direcs = []
+        
+        pts = []
+        direcs = []
+        
+        pre_type = None
+        temp_head = None
+        
+        for i in range(len(seq_pts)):
+            cur_pt = seq_pts[i]
+            
+            if i!=0:
+                pre_pt = seq_pts[i-1]
+                if self.ifright(pre_pt, cur_pt):
+                    cross_pts.append(cur_pt)
+                    cross_direcs.append(seq_direc[i])
+                    if len(cross_pts) > 3:
+                        if len(slope_pts) != 0:
+                            temp_head = (cross_pts[0], cross_direcs[0])
+                            #slope_pts.append(cross_pts[0])
+                            #slope_direcs.append(cross_direcs[0])
+                            cross_pts.insert(0, slope_pts[-1])
+                            cross_direcs.insert(0, slope_direcs[-1])
+                            slope_pts.append(temp_head[0])
+                            slope_direcs.append(temp_head[1])
+                            temp_head = None
+                            pre_seq = ['slope', slope_pts]
+                            pts.append(pre_seq)
+                            direcs.append(slope_direcs)
+                            slope_pts = []
+                            slope_direcs = []
+                            pre_type = 'slope'
+                    
+                else:
+                    if len(cross_pts) > 10:
+                        if pre_type == 'cross' and temp_head!=None:
+                            cross_pts.insert(0, temp_head[0])
+                            cross_direcs.insert(0, temp_head[1])
+                            temp_head = None
+                        pre_seq = ['cross', cross_pts]
+                        pts.append(pre_seq)
+                        direcs.append(cross_direcs)
+                        pre_type = 'cross'
+                        #slope_pts.pop()
+                        #slope_direcs.pop()
+                        temp_head = (cur_pt, seq_direc[i])
+                    else:
+                        slope_pts += cross_pts
+                        slope_direcs += cross_direcs
+                        slope_pts.append(cur_pt)
+                        slope_direcs.append(seq_direc[i])
+                    cross_pts = []
+                    cross_direcs = []
+            
+            if i==len(seq_pts)-1:
+                if len(slope_pts) != 0:
+                    cur_seq = ['slope', slope_pts]
+                    pts.append(cur_seq)
+                    direcs.append(slope_direcs)
+                    slope_pts = []
+                    slope_direcs = []
+                if len(cross_pts) != 0:
+                    if pre_type == 'cross' and temp_head!=None:
+                        cross_pts.insert(0, temp_head[0])
+                        cross_direcs.insert(0, temp_head[1])
+                        temp_head = None
+                    cur_seq = ['cross', cross_pts]
+                    pts.append(cur_seq)
+                    direcs.append(cross_direcs)
+                    cross_pts = []
+                    cross_direcs = []
+                
+        return pts, direcs
+    
+    def generate_cross_band(self, cross_pts, edge_crv):
+        #todo：用tweencrv进行offset
+        cross_band = []
+        shift_pts = []
+        for i in range(len(cross_pts)-1):
+            shift_pts.append(ghcomp.Division(ghcomp.Addition(cross_pts[i] + cross_pts[i+1]), 2))
+        
+        r1 = self.region.rows[0].circle_config.New_cross_r1
+        h1 = self.region.rows[0].circle_config.New_cross_position1
+        r2 = self.region.rows[0].circle_config.New_cross_r2
+        h2 = self.region.rows[0].circle_config.New_cross_position2
+        
+        print("h1")
+        print(h1)
+        print("h2")
+        print(h2)
+        
+        std_crv = ghcomp.PolyLine(cross_pts, False)
+        real_pts, _, dis = ghcomp.CurveClosestPoint(cross_pts, edge_crv)
+        real_dis = ghcomp.Average(dis)
+        #factor = real_dis/(h1+r1)
+        real_factor = ghcomp.Division(dis, h1+r1)
+        des_crv = ghcomp.PolyLine(real_pts, False)
+        
+        crv21 = ghcomp.OffsetCurve(std_crv, h2, ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), 1)
+        band_pts21, _, _ = ghcomp.CurveClosestPoint(shift_pts, crv21)
+        crv22 = ghcomp.TweenCurve(std_crv, des_crv, h2/(h1+r1))
+        band_pts22, _, _ = ghcomp.CurveClosestPoint(shift_pts, crv22)
+        num = len(band_pts21)
+        band_pts2 = []
+        for i in range(num):
+            cur_pt = ghcomp.Addition(ghcomp.Multiplication(band_pts21[i], 1.0*(num-i)/num), ghcomp.Multiplication(band_pts22[i], 1.0*i/num))
+            band_pts2.append(cur_pt)
+
+        crv1 = ghcomp.TweenCurve(std_crv, des_crv, h1/(h1+r1))
+        band_pts1, _, _ = ghcomp.CurveClosestPoint(cross_pts, crv1)
+
+        circle_band = []
+        circle_band += ghcomp.Circle(band_pts2, ghcomp.Multiplication(real_factor, r2))
+        circle_band += ghcomp.Circle(band_pts1, ghcomp.Multiplication(real_factor, r1))
+        
+        for i in range(len(circle_band)): 
+            circle_band[i] = rg.NurbsCurve.CreateFromCircle(circle_band[i])
+        
+        cross_band += circle_band    
+        return cross_band
+    
+    def generate_slope_band(self, slope_pts, h_direcs, edge_crv):
+        slope_band = []
+        
+        r1 = self.region.rows[0].circle_config.New_cross_r1
+        h1 = self.region.rows[0].circle_config.New_cross_position1
+        r2 = self.region.rows[0].circle_config.New_cross_r2
+        h2 = self.region.rows[0].circle_config.New_cross_position2
+        r3 = self.region.rows[0].circle_config.New_cross_r3
+        
+        horizontal = self.horizontal
+        if self.aligned == False:
+            horizontal = horizontal/2
+        
+        unit_length = math.sqrt(horizontal*horizontal + self.vertical*self.vertical)
+        threshold = 0.2
+        
+        for i in range(len(h_direcs)):
+            cur_pt = slope_pts[i]
+            #逆时针旋转45°
+            unit_vec, _ = ghcomp.VectorXYZ(horizontal, self.vertical, 0)
+            angle, _ = ghcomp.Angle(ghcomp.UnitX(1), unit_vec, ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)))
+            
+            line, _ = ghcomp.Rotate(ghcomp.LineSDL(cur_pt, h_direcs[i], 10), ghcomp.Pi(1.05)+angle, ghcomp.XYPlane(cur_pt))
+            end_pt, _, _ = ghcomp.CurveXCurve(line, edge_crv)
+            if end_pt:
+                cur_direc, _ = ghcomp.Vector2Pt(cur_pt, end_pt, False)
+                dist = ghcomp.Distance(cur_pt, end_pt)
+                dist_fac = (dist*ghcomp.Cosine(angle/2))/(h1+r1)
+                
+                if dist_fac > (1+threshold):
+                    line0 = ghcomp.Rotate(ghcomp.LineSDL(cur_pt, h_direcs[i], unit_length*0.9), ghcomp.Pi(1)+angle, ghcomp.XYPlane(cur_pt))
+                    _, end_pt0 = ghcomp.EndPoints(line0)
+                    slope_band.append(ghcomp.Circle(end_pt0, r2))
+                    cur_pt = end_pt0
+                    dist = ghcomp.Distance(cur_pt, end_pt)
+                    dist_fac = (dist*ghcomp.Cosine(angle/2))/(h1+r1)
+                
+                _, band_pt2 = ghcomp.EndPoints(ghcomp.LineSDL(cur_pt, cur_direc, dist*h2/(h1+r1)))
+                slope_band.append(ghcomp.Circle(band_pt2, r2*dist_fac))
+            
+            line, _ = ghcomp.Rotate(ghcomp.LineSDL(cur_pt, h_direcs[i], 10), ghcomp.Pi(1.06)+angle, ghcomp.XYPlane(cur_pt))
+            end_pt, _, _ = ghcomp.CurveXCurve(line, edge_crv)
+            if end_pt:
+                cur_direc, _ = ghcomp.Vector2Pt(cur_pt, end_pt, False)
+                dist = ghcomp.Distance(cur_pt, end_pt)
+                
+                _, band_pt1 = ghcomp.EndPoints(ghcomp.LineSDL(cur_pt, cur_direc, dist*h1/(h1+r1)))
+                slope_band.append(ghcomp.Circle(band_pt1, r1*dist_fac))
+        
+        for i in range(len(slope_band)):
+            slope_band[i] = rg.NurbsCurve.CreateFromCircle(slope_band[i])
+        
+        return slope_band
+    
+    def generate_black_band(self, bound_pts, bound_direcs):
+        edge_crv = self.edge_crv
+        
+        black_band = []
+        bug1 = []
+        bug2 = []
+        for i in range(len(bound_pts)):
+            cur_seq = bound_pts[i]
+            cur_type = cur_seq[0]
+            if cur_type == "slope":
+                cur_seq_pts = cur_seq[1]
+                bug1 += cur_seq_pts
+                cur_direcs = bound_direcs[i]
+                black_band += self.generate_slope_band(cur_seq_pts, cur_direcs, edge_crv)
+            elif cur_type == "cross":
+                cur_seq_pts = cur_seq[1]
+                bug2 += cur_seq_pts
+                black_band += self.generate_cross_band(cur_seq_pts, edge_crv)
+                
+        #两部分点：斜向阵列和贴边装饰点
+        #横向点直接遵照规则做offset和shift
+        return black_band
+        
+    def bake(self):
+        layer_name = 'fuyao_black'
+        rs.AddLayer(layer_name, self.display_color)
+        for i in range(len(self.frit_black)):
+            obj = scriptcontext.doc.Objects.AddCurve(self.frit_black[i])
+            rs.ObjectLayer(obj, layer_name)
+    
+    def run(self):
+        pts, bound_pts = self.generate_grid_pts()
+        seq_pts = self.generate_bound_pts(head_pts = bound_pts, pts = pts)
+        seq_direc = self.generate_white_direc(seq_pts)
+        bound_pts, bound_direcs = self.separate_pts(seq_pts, seq_direc)
+        black_band = self.generate_black_band(bound_pts, bound_direcs)
+        
+        for i in range(len(pts)):
+            cur_crv = rg.NurbsCurve.CreateFromCircle(rc.Geometry.Circle(pts[i], self.region.rows[0].circle_config.New_cross_r3))
+            self.frit_black.append(cur_crv)
+            #self.display.AddCurve(cur_crv, self.display_color, 1)
+            
+        for i in range(len(black_band)):
+            self.frit_black.append(black_band[i])
+            #self.display.AddCurve(black_band[i], self.display_color, 1)
+       
+        self.bake()
+
+class AoDi_fill_holes:
+    def __init__(self, up_outer_line, up_inner_line, up_boundary_crv,down_boundary_crv, up_bottom_line,down_inner_line,horizontal,vertical,region, aligned = False):
+        self.up_outer_line = up_outer_line
+        self.up_inner_line = up_inner_line
+        self.up_boundary_crv = up_boundary_crv
+        self.down_boundary_crv = down_boundary_crv
+        self.up_bottom_line = up_bottom_line
+        self.down_inner_line = down_inner_line
+        self.horizontal = horizontal
+        self.vertical = vertical
+        self.region = region
+        self.aligned = aligned
+        
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        #self.display.AddCurve(boundary, self.display_color, 1)
+        #rc.Display.CustomDisplay.AddPoint()
+    def down_frit_fill(self,base_crv,edge_crv):
+        h = [-2.65, -1.65, -0.5, 0.51, 1.71]
+        k = [0.55, 0.775, 1, 0.9, 0.9]
+        
+        horizontal = 2
+        vertical = 1.22
+        
+        white_crv = []
+        black_crv = []
+        print(ghcomp.Length(base_crv))
+        
+        num = int(math.floor(ghcomp.Length(base_crv)/self.horizontal))
+        base_pts, _, _ = ghcomp.DivideCurve(base_crv, num, False)
+        shift_pts = []
+        for i in range(len(base_pts)-1):
+            shift_pts.append(ghcomp.Division(ghcomp.Addition(base_pts[i]+base_pts[i+1]),2))
+        
+        for i in range(len(h)):
+            cur_base_pts = []
+            if i==1 or i==4:
+                cur_base_pts = shift_pts
+            else:
+                cur_base_pts = base_pts
+            crv = ghcomp.OffsetCurve(base_crv, h[i], ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), 1)
+            cur_k = k[i]
+            pts, ts, _ = ghcomp.CurveClosestPoint(cur_base_pts, crv)
+            _, tgts, _ = ghcomp.EvaluateCurve(crv, ts)
+            domain = ghcomp.ConstructDomain(-cur_k/2, cur_k/2)
+            rect, _ = ghcomp.Rectangle(pts, domain, domain, cur_k/4)
+            rect, _ = ghcomp.RotateDirection(rect, pts, ghcomp.UnitY(1), tgts)
+            if i<3:
+                black_crv += rect
+            else:
+                white_crv += rect
+            
+            if i==3:
+                base_pts = pts
+            if i==4:
+                shift_pts = pts
+        
+        base_crv = ghcomp.PolyLine(shift_pts, False)
+        
+        cur_k = k[-1]
+        for i in range(35):
+            cur_base_pts = []
+            if i%2 == 0:
+                cur_base_pts = base_pts
+            else:
+                cur_base_pts = shift_pts
+            
+            crv = ghcomp.OffsetCurve(base_crv, self.vertical, ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), 1)
+            pts, ts, _ = ghcomp.CurveClosestPoint(cur_base_pts, crv)
+            _, tgts, _ = ghcomp.EvaluateCurve(crv, ts)
+            
+            relation, _ = ghcomp.PointInCurve(pts, edge_crv)
+            pts, _ = ghcomp.Dispatch(pts, relation)
+            tgts, _ = ghcomp.Dispatch(tgts, relation)
+            
+            if pts == None:
+                break
+            
+            pts = construct_safe_pts_list(pts)
+            if len(pts)>1:
+                base_crv = ghcomp.PolyLine(pts, False)
+            else:
+                base_crv = crv
+                
+            
+            domain = ghcomp.ConstructDomain(-cur_k/2, cur_k/2)
+            rect, _ = ghcomp.Rectangle(pts, domain, domain, cur_k/4)
+            rect, _ = ghcomp.RotateDirection(rect, pts, ghcomp.UnitY(1), tgts)
+            white_crv += rect
+            
+            if i%2 == 0:
+                base_pts = pts
+            else:
+                shift_pts = pts
+        return black_crv,white_crv
+    
+    def pt_construct(self,center_pt,d_vec):
+        centerx, centery, centerz = ghcomp.Deconstruct(center_pt)
+        x,y,z = ghcomp.DeconstructVector(d_vec)
+        left_up = ghcomp.ConstructPoint(centerx - x/2, centery + y/2, z)
+        left_down = ghcomp.ConstructPoint(centerx - x/2, centery - y/2, z)
+        right_up = ghcomp.ConstructPoint(centerx + x/2, centery + y/2, z)
+        right_down = ghcomp.ConstructPoint(centerx + x/2, centery - y/2, z)
+        return left_up,left_down,right_up,right_down
+        
+    def generate_rect(self,center_pts, k, r, n, pattern = None):
+        sr = r
+        lr = sr
+        #默认圆角矩形的边方向为逆时针（黑），白色则为顺时针
+        bound_crv = []
+        rect_crv = []
+        #TODO: modify line to nurbscurve
+        k = k/2
+        #k = k/2
+        #ang, _ = ghcomp.Angle(ghcomp.UnitY(-1), n)
+        
+        for i in range(len(center_pts)):
+            cur_rect = {}
+            cur_pt = center_pts[i]
+            x = cur_pt.X
+            y = cur_pt.Y
+            z = cur_pt.Z
+            cur_n = n
+            #cur_ang = ang[i]
+            #if n[i].X < 0:
+            #    cur_ang = -cur_ang
+            
+            std_vec = ghcomp.UnitX(1)
+            
+            luarc_ct = ghcomp.ConstructPoint(x-k+r, y+k-r, 0)
+            lu_angle = ghcomp.ConstructDomain(ghcomp.Pi(1/2), ghcomp.Pi(1))
+            luarc, _ = ghcomp.Arc(ghcomp.XYPlane(luarc_ct), r, lu_angle)
+            luarc = rg.NurbsCurve.CreateFromArc(luarc)
+            luarc, _ = ghcomp.RotateDirection(luarc, cur_pt, std_vec, cur_n)
+            #luarc, _ = ghcomp.Rotate(luarc, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                luarc, _ = ghcomp.FlipCurve(luarc)
+            bound_crv.append(luarc)
+            cur_rect['lu'] = luarc
+            
+            up_l = ghcomp.ConstructPoint(x-k+r, y+k, 0)
+            up_r = ghcomp.ConstructPoint(x+k-r, y+k, 0)
+            up_crv = ghcomp.Line(up_r, up_l)
+            up_crv = rg.NurbsCurve.CreateFromLine(up_crv)
+            up_crv, _ = ghcomp.RotateDirection(up_crv, cur_pt, std_vec, cur_n)
+            #up_crv, _ = ghcomp.Rotate(up_crv, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                up_crv, _ = ghcomp.FlipCurve(up_crv)
+            bound_crv.append(up_crv)
+            cur_rect['up'] = up_crv
+            rec_crv = ghcomp.JoinCurves(ghcomp.Merge(up_crv, luarc), True)
+            
+            ruarc_ct = ghcomp.ConstructPoint(x+k-r, y+k-r, 0)
+            ru_angle = ghcomp.ConstructDomain(ghcomp.Pi(0), ghcomp.Pi(1/2))
+            ruarc, _ = ghcomp.Arc(ghcomp.XYPlane(ruarc_ct), r, ru_angle)
+            ruarc = rg.NurbsCurve.CreateFromArc(ruarc)
+            ruarc, _ = ghcomp.RotateDirection(ruarc, cur_pt, std_vec, cur_n)
+            #ruarc, _ = ghcomp.Rotate(ruarc, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                ruarc, _ = ghcomp.FlipCurve(ruarc)
+            bound_crv.append(ruarc)
+            cur_rect['ru'] = ruarc
+            rec_crv = ghcomp.JoinCurves(ghcomp.Merge(ruarc, rec_crv), True)
+            
+            right_u = ghcomp.ConstructPoint(x+k, y+k-r, 0)
+            r = sr
+            right_b = ghcomp.ConstructPoint(x+k, y-k+r, 0)
+            right_crv = ghcomp.Line(right_b, right_u)
+            right_crv = rg.NurbsCurve.CreateFromLine(right_crv)
+            right_crv, _ = ghcomp.RotateDirection(right_crv, cur_pt, std_vec, cur_n)
+            #right_crv, _ = ghcomp.Rotate(right_crv, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                right_crv, _ = ghcomp.FlipCurve(right_crv)
+            bound_crv.append(right_crv)
+            cur_rect['right'] = right_crv
+            rec_crv = ghcomp.JoinCurves(ghcomp.Merge(right_crv, rec_crv), True)
+            
+            rbarc_ct = ghcomp.ConstructPoint(x+k-r, y-k+r, 0)
+            rb_angle = ghcomp.ConstructDomain(ghcomp.Pi(-1/2), ghcomp.Pi(0))
+            rbarc, _ = ghcomp.Arc(ghcomp.XYPlane(rbarc_ct), r, rb_angle)
+            rbarc = rg.NurbsCurve.CreateFromArc(rbarc)
+            rbarc, _ = ghcomp.RotateDirection(rbarc, cur_pt, std_vec, cur_n)
+            #rbarc, _ = ghcomp.Rotate(rbarc, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                rbarc, _ = ghcomp.FlipCurve(rbarc)
+            bound_crv.append(rbarc)
+            cur_rect['rb'] = rbarc
+            rec_crv = ghcomp.JoinCurves(ghcomp.Merge(rbarc, rec_crv), True)
+            
+            bottom_r = ghcomp.ConstructPoint(x+k-r, y-k, 0)
+            bottom_l = ghcomp.ConstructPoint(x-k+r, y-k, 0)
+            bottom_crv = ghcomp.Line(bottom_l, bottom_r)
+            bottom_crv = rg.NurbsCurve.CreateFromLine(bottom_crv)
+            bottom_crv, _ = ghcomp.RotateDirection(bottom_crv, cur_pt, std_vec, cur_n)
+            #bottom_crv, _ = ghcomp.Rotate(bottom_crv, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                bottom_crv, _ = ghcomp.FlipCurve(bottom_crv)
+            bound_crv.append(bottom_crv)
+            cur_rect['bottom'] = bottom_crv
+            rec_crv = ghcomp.JoinCurves(ghcomp.Merge(bottom_crv, rec_crv), True)
+            
+            lbarc_ct = ghcomp.ConstructPoint(x-k+r, y-k+r, 0)
+            lb_angle = ghcomp.ConstructDomain(ghcomp.Pi(-1), ghcomp.Pi(-1/2))
+            lbarc, _ = ghcomp.Arc(ghcomp.XYPlane(lbarc_ct), r, lb_angle)
+            lbarc = rg.NurbsCurve.CreateFromArc(lbarc)
+            lbarc, _ = ghcomp.RotateDirection(lbarc, cur_pt, std_vec, cur_n)
+            #lbarc, _ = ghcomp.Rotate(lbarc, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                lbarc, _ = ghcomp.FlipCurve(lbarc)
+            bound_crv.append(lbarc)
+            cur_rect['lb'] = lbarc
+            rec_crv = ghcomp.JoinCurves(ghcomp.Merge(lbarc, rec_crv), True)
+            
+            left_b = ghcomp.ConstructPoint(x-k, y-k+r, 0)
+            left_u = ghcomp.ConstructPoint(x-k, y+k-r, 0)
+            left_crv = ghcomp.Line(left_u, left_b)
+            left_crv = rg.NurbsCurve.CreateFromLine(left_crv)
+            left_crv, _ = ghcomp.RotateDirection(left_crv, cur_pt, std_vec, cur_n)
+            #left_crv, _ = ghcomp.Rotate(left_crv, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                left_crv, _ = ghcomp.FlipCurve(left_crv)
+            bound_crv.append(left_crv)
+            cur_rect['left'] = left_crv
+            rec_crv = ghcomp.JoinCurves(ghcomp.Merge(left_crv, rec_crv), True)
+            
+            seamptl, seamptr = ghcomp.EndPoints(bottom_crv)
+            #seampt = ghcomp.Division(ghcomp.Addition(seamptl, seamptr), 2)
+            _, seamt, _ = ghcomp.CurveClosestPoint(seamptl, rec_crv)
+            rec_crvl = ghcomp.Seam(rec_crv, seamt)
+            cur_rect['rect'] = rec_crvl
+            _, seamt, _ = ghcomp.CurveClosestPoint(seamptr, rec_crv)
+            rec_crvr = ghcomp.Seam(rec_crv, seamt)
+            cur_rect['rect2'] = rec_crvr
+            
+            rect_crv.append(cur_rect)
+        
+        return bound_crv, rect_crv
+        
+    def generate_slope_band(self,slope_pts, h_direc, edge_crv):
+        slope_band = []
+        
+        k1 = 0.55
+        k2 = 0.775
+        k3 = 1
+        
+        rect_1 = []
+        rect_2 = []
+        rect_3 = []
+        
+        h1 = 1.5
+        h2 = 2.725
+        h3 = 2.725+0.55/2
+        
+        threshold = 0.4
+        
+        for i in range(len(slope_pts)):
+            cur_pt = slope_pts[i]
+            line = ghcomp.LineSDL(cur_pt, h_direc, 10)
+            end_pt, _, _ = ghcomp.CurveXCurve(line, edge_crv)
+            flag = False
+            if end_pt:
+                cur_direc, _ = ghcomp.Vector2Pt(cur_pt, end_pt, False)
+                dist = ghcomp.Distance(cur_pt, end_pt)
+                factor = dist/h3
+                unit_length = 1.7*factor
+                count = int(math.floor(dist/unit_length))
+                cpst = dist - count * unit_length
+                if cpst > (1-threshold) * unit_length:
+                    count += 1
+                    flag = True
+                else:
+                    flag = False
+                    
+                for j in range(count):
+                    _, cpst_pt = ghcomp.EndPoints(ghcomp.LineSDL(cur_pt, cur_direc, dist))
+                    
+                    if j==count-1:
+                        _, band_pt = ghcomp.EndPoints(ghcomp.LineSDL(cur_pt, cur_direc, factor*h2))
+                        if flag == False:
+                            if cpst < threshold * unit_length:
+                                rect_1.append(cpst_pt)
+                            else:
+                                rect_1.append(band_pt)
+                        else:
+                            rect_1.append(cpst_pt)
+                    elif j==count-2:
+                        _, band_pt = ghcomp.EndPoints(ghcomp.LineSDL(cur_pt, cur_direc, factor*h1))
+                        rect_2.append(band_pt)
+                    else:
+                        _, band_pt = ghcomp.EndPoints(ghcomp.LineSDL(cur_pt, cur_direc, unit_length*(j+1)))
+                        rect_3.append(band_pt)
+                
+        
+        n, _ = ghcomp.VectorXYZ(-1, -1, 0)
+        bound_crv1, _ = generate_rect(rect_1, k1, 0.25*k1, n, pattern = None)
+        bound_crv2, _ = generate_rect(rect_2, k2, 0.25*k2, n, pattern = None)
+        bound_crv3, _ = generate_rect(rect_3, k3, 0.25*k3, n, pattern = None)
+        
+        slope_band += bound_crv1
+        slope_band += bound_crv2
+        slope_band += bound_crv3
+        
+        return slope_band
+        
+    def construct_safe_pts_list(self,pts):
+        #[x,y,z]to[pt]
+        if len(pts)==3:
+            try:
+                if pts[2]==0:
+                    new_pts = []
+                    pt = ghcomp.ConstructPoint(pts[0], pts[1], pts[2])
+                    new_pts.append(pt)
+                    return new_pts
+            except:
+                return pts
+        return pts
+        
+        
+    def black_band_frit_fill(self,bound_pts,edge_crv):
+        direc, _ = ghcomp.VectorXYZ(-1, -1, 0)
+        black_band = generate_slope_band(bound_pts, direc, edge_crv)
+        return black_band
+        
+    def block_inner_frit_fill(self,grid_crv,horizontal,vertical,aligned,fit_ends):
+        pts = []
+        unit_length = 1
+        pts_array = []
+        
+        top_pts = []
+        bottom_pts = []
+        limbo_pts = []
+        
+        if aligned == False:
+            unit_length = math.sqrt(0.25 * horizontal*horizontal + vertical*vertical)
+        else:
+            unit_length = math.sqrt(horizontal*horizontal + vertical*vertical)
+        
+        print(unit_length)
+        
+        for i in range(len(fit_ends)):
+            cur_crv = fit_ends[i]
+            start_pt, end_pt = ghcomp.EndPoints(cur_crv)
+            x = start_pt.X
+            y = start_pt.Y
+            z = start_pt.Z
+            x_domain = end_pt.X - x
+            y_domain = end_pt.Y - y
+            z_domain = end_pt.Z - z
+            num = int(math.floor(ghcomp.Length(cur_crv)/unit_length)+1)
+            cur_pts = []
+            for k in range(num+1):
+                cur_fac = k/num
+                cur_x = x + cur_fac*x_domain
+                cur_y = y + cur_fac*y_domain
+                cur_z = z + cur_fac*z_domain
+                cur_pt = ghcomp.ConstructPoint(cur_x, cur_y, cur_z)
+                cur_pts.append(cur_pt)
+            for k in range(1, num-1):
+                pts.append(cur_pts[k])
+            if num>1:
+                top_pts.append(cur_pts[0])
+            bottom_pts.append(cur_pts[-1])
+            limbo_pts.append(cur_pts[-2])
+        return pts,top_pts,bottom_pts,limbo_pts
+        
+        
+    
+    def run(self):
+        up_outer_pre = ghcomp.OffsetCurve(self.up_outer_line, distance = -0.423, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        #self.display.AddCurve(up_outer_pre,self.display_color,1)
+        up_outer = ghcomp.OffsetCurve(up_outer_pre, distance = -1, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
+        #self.display.AddCurve(up_outer,self.display_color,1)
+        up_outer_closed_crv,_ = ghcomp.Pufferfish.CloseCurve(up_outer_pre, 0, 0.5, 0)
+        #self.display.AddCurve(up_outer_closed_crv,self.display_color,1)
+        box,_ = ghcomp.BoundingBox(up_outer_closed_crv,plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)))
+        #print(box)
+        box_center_point,box_diagonal_vector,_,_,_ = ghcomp.BoxProperties(box)
+        #print(box_center_point)
+        #print(box_diagonal_vector)
+        left_up,left_down,right_up,right_down = self.pt_construct(box_center_point,box_diagonal_vector)
+        #print(left_up)
+        #print(left_down)
+        #print(right_up)
+        #print(right_down)
+        V_length = ghcomp.VectorLength(box_diagonal_vector)
+        #print(V_length)
+        line = ghcomp.LineSDL(box_center_point,box_diagonal_vector,V_length)
+        ##self.display.AddLine(line,self.display_color,1)
+        
+        subtraction_result = ghcomp.Subtraction(right_up,left_down)
+        #print(subtraction_result)
+        line_segment = ghcomp.LineSDL(right_down,subtraction_result,V_length)
+        _,end_pt = ghcomp.EndPoints(line_segment)
+        #print(end_pt)
+        new_line = ghcomp.Line(left_up,end_pt)
+        length_newLine = ghcomp.Length(new_line)
+        newline_division = ghcomp.Division(length_newLine,2.397)
+        division_pts,_,_ = ghcomp.DivideCurve(new_line,newline_division,False)
+        #print(len(division_pts))
+        #for i in range(len(division_pts)):
+            #print(division_pts[i])
+        
+        all_refer_vector,_ = ghcomp.VectorXYZ(-1.2,-1.2,0)
+        #print(len(all_refer_vector))
+        #print(all_refer_vector)
+        all_refer_line = ghcomp.LineSDL(division_pts,all_refer_vector,V_length)
+        #print(len(all_refer_line))
+        #for i in range(len(all_refer_line)):
+            #self.display.AddLine(all_refer_line[i],self.display_color,1)
+        outer_crv_pts,_,_ = ghcomp.CurveXCurve(all_refer_line,up_outer_pre)#块状最外侧花点 OK 
+        Outer_Xsize = ghcomp.ConstructDomain(-0.3,0.3)
+        Outer_Ysize = ghcomp.ConstructDomain(-0.3,0.3)
+        original_outerer_frit,_ = ghcomp.Rectangle(outer_crv_pts,Outer_Xsize,Outer_Ysize,0.15)
+        final_inner_frit,_ = ghcomp.RotateDirection(original_outerer_frit,outer_crv_pts,ghcomp.UnitY(1),all_refer_vector)#旋转后的内部花点
+        #print(len(final_inner_frit))
+        #for i in range(len(final_inner_frit)):
+            #self.display.AddCurve(final_inner_frit[i],self.display_color,1) #OK 
+        
+        outer_second_pts = []
+        for i in range(len(all_refer_line)):
+            result = ghcomp.CurveXCurve(all_refer_line[i],up_outer)
+            null = 'none'
+            if result:
+                outer_second_pts.append(result)
+            else:
+                outer_second_pts.append(null)
+        #print(len(outer_second_pts))
+        ##for i in range(len(outer_second_pts)):
+            #print(outer_second_pts[i][0])
+            
+        inner_crv_pts = []
+        for i in range(len(all_refer_line)):
+            Result = ghcomp.CurveXCurve(all_refer_line[i],self.up_inner_line)
+            Null = 'none'
+            if result:
+                inner_crv_pts.append(Result)
+            else:
+                inner_crv_pts.append(Null)
+        #print(len(inner_crv_pts))
+        ##for i in range(len(inner_crv_pts)):
+            #print(inner_crv_pts[i][0])
+        
+        
+        inner_ray_line = []
+        for i in range(len(inner_crv_pts)):
+            Ruselt = inner_crv_pts[i][0]
+            
+            apd = 'none'
+            if Ruselt != 'none':
+                data = ghcomp.LineSDL(inner_crv_pts[i][0],all_refer_vector,-1.25)
+                inner_ray_line.append(data)
+            else:
+                inner_ray_line.append(apd)
+        #print(len(inner_ray_line))
+        #for i in range(len(inner_ray_line)):
+            #print(inner_ray_line[i])
+        inner_ray_line_end = []
+        for i in range(len(inner_ray_line)):
+            apd1 = 'none'
+            if inner_ray_line[i] != 'none':
+                _,results = ghcomp.EndPoints(inner_ray_line[i])
+                inner_ray_line_end.append(results)
+            else:
+                inner_ray_line_end.append(apd1)
+        print(len(inner_ray_line_end))
+        for i in range(len(inner_ray_line_end)):
+            print(inner_ray_line_end[i])
+        
+        block_inner_refer_line = []
+        for i in range(len(outer_second_pts)):
+            #print(inner_ray_line_end[i][0])
+            #if outer_second_pts[i][0] != None and inner_ray_line_end[i][0] != None:
+            block_inner_refer_line.append(ghcomp.Line(outer_second_pts[i][0],inner_ray_line_end[i]))
+        
+        New_block_inner_refer_line = []
+        for i in range(len(block_inner_refer_line)):
+            print(block_inner_refer_line[i])
+            if block_inner_refer_line[i] != None:
+                New_block_inner_refer_line.append(block_inner_refer_line[i])
+        #print(len(New_block_inner_refer_line))
+        for i in range(len(New_block_inner_refer_line)):
+            self.display.AddLine(New_block_inner_refer_line[i],self.display_color,1) #OK 
+        
+        fit_end = rg.NurbsCurve.CreateFromLine(block_inner_refer_line)
+        grid_crv = rg.NurbsCurve.CreateFromLine(all_refer_line)
+        pts,top_pts,bottom_pts,limbo_pts = self.block_inner_frit_fill(grid_crv,self.horizontal,self.vertical,self.aligned,fit_end)
+        block_inner_frits = ghcomp.Merge(pts,top_pts,bottom_pts,limbo_pts)#self.up_boundary_crv
+        pts_in_boundarycrv = ghcomp.PointInCurve(block_inner_frits,self.up_boundary_crv)
+        pts_dispch,_ = ghcomp.Dispatch(block_inner_frits,pts_in_boundarycrv)
+        
+        
+        inner_Xsize = ghcomp.ConstructDomain(-0.45,0.45)
+        inner_Ysize = ghcomp.ConstructDomain(-0.45,0.45)
+        original_inner_frit,_ = ghcomp.Rectangle(pts_dispch,inner_Xsize,inner_Ysize,0.225)
+        final_inner_frit,_ = ghcomp.Rotate(original_inner_frit,pts_dispch,ghcomp.UnitY(1),all_refer_vector)#旋转后的内部花点
+        #bottom_ofst = ghcomp.OffsetCurve(self.up_bottom_line, distance = -0.423, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        short_refer_line = ghcomp.LineSDL(bottom_pts,all_refer_vector,2)
+        border_pts,_,_ = ghcomp.CurveXCurve(short_refer_line,self.up_inner_line)
+        black_band = self.black_band_frit_fill(border_pts,self.up_bottom_line)
+        
+        
+        border_Xsize = ghcomp.ConstructDomain(-0.5,0.5)
+        border_Ysize = ghcomp.ConstructDomain(-0.5,0.5)
+        original_border_frit,_ = ghcomp.Rectangle(border_pts,border_Xsize,border_Ysize,0.25)
+        final_border_frit,_ = ghcomp.Rotate(original_border_frit,border_pts,ghcomp.UnitY(1),all_refer_vector)
+        
+        black_crv,white_crv = self.down_frit_fill(self.down_inner_line,self.down_boundary_crv)
+        
+        
+
 class HoleFrits:
     def __init__(self, hole_id, region):
         self.hole_id = hole_id
@@ -869,9 +1857,143 @@ class HoleFrits:
         pass
         
         
+    def AoDi_fill(self):
+        print('奥迪调用')
+        self.up_outer_crv = self.region.curves[0]
+        if self.region.is_flip[0] == True:
+            self.up_outer_crv, _ = ghcomp.FlipCurve(self.up_outer_crv)
+        
+        self.up_inner_crv = self.region.curves[1]
+        if self.region.is_flip[1] == True:
+            self.up_inner_crv, _ = ghcomp.FlipCurve(self.up_inner_crv)
+        
+        self.up_bottom_crv = self.region.curves[2]
+        if self.region.is_flip[2] == True:
+            self.up_bottom_crv, _ = ghcomp.FlipCurve(self.up_bottom_crv)
+        
+        self.down_inner_crv = self.region.curves[3]
+        if self.region.is_flip[3] == True:
+            self.down_inner_crv, _ = ghcomp.FlipCurve(self.down_inner_crv)
+        
+        self.down_outer_crv = self.region.curves[4]
+        if self.region.is_flip[4] == True:
+            self.down_outer_crv, _ = ghcomp.FlipCurve(self.down_outer_crv)
+        
+        #预处理函数变量
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        
+        #up_outer_pre = ghcomp.OffsetCurve(self.up_outer_crv, distance = -0.423, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        #up_outer = ghcomp.OffsetCurve(up_outer_pre, distance = -1, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
+        up_bottom = ghcomp.OffsetCurve(self.up_bottom_crv, distance = -0.275, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
+        #self.display.AddCurve(up_bottom,self.display_color,1)
+        
+        blocksrf_up = ghcomp.RuledSurface(self.up_outer_crv, self.up_inner_crv)
+        edgelist_up = []
+        for i in range(blocksrf_up.Edges.Count):
+            edgelist_up.append(blocksrf_up.Edges[i].EdgeCurve)
+        blockborder_up = ghcomp.JoinCurves(edgelist_up)
+        #self.display.AddCurve(blockborder_up,self.display_color,1)
+        
+        blocksrf_down = ghcomp.RuledSurface(self.down_inner_crv, self.down_outer_crv)
+        edgelist_down = []
+        for i in range(blocksrf_down.Edges.Count):
+            edgelist_down.append(blocksrf_down.Edges[i].EdgeCurve)
+        blockborder_down = ghcomp.JoinCurves(edgelist_down)
+        #self.display.AddCurve(blockborder_down,self.display_color,1)
+        
+        blockborder = ghcomp.OffsetCurve(blockborder_down, distance = -2, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
+        #self.display.AddCurve(blockborder,self.display_color,1)
+        horizontal = 2
+        vertical = 1.22
+        
+        AoDi_frit_generator = AoDi_fill_holes(\
+                                up_outer_line = self.up_outer_crv, up_inner_line = self.up_inner_crv, \
+                                up_boundary_crv = blockborder_up,down_boundary_crv = blockborder, up_bottom_line = up_bottom, \
+                                down_inner_line = self.down_inner_crv,horizontal = horizontal, vertical = vertical,\
+                                region = self.region, aligned = False)
+        AoDi_frit_generator.run()
+        
     def New165_fill_dots(self):
         print("165算法调用")
-        pass
+        self.outer_crv = self.region.curves[0]
+        if self.region.is_flip[0] == True:
+            self.outer_crv, _ = ghcomp.FlipCurve(self.outer_crv)
+        
+        self.inner_crv = self.region.curves[1]
+        self.inner_crv, _ = ghcomp.FlipCurve(self.inner_crv)
+        if self.region.is_flip[1] == True:
+            self.inner_crv, _ = ghcomp.FlipCurve(self.inner_crv)
+            
+        self.top_crv = self.region.curves[2]
+        if self.region.is_flip[2] == True:
+            self.top_crv, _ = ghcomp.FlipCurve(self.top_crv)
+            
+        self.bottom_crv = self.region.curves[3]
+        if self.region.is_flip[3] == True:
+            self.bottom_crv, _ = ghcomp.FlipCurve(self.bottom_crv)
+        
+        self.refer_crv = self.region.curves[4]
+        if self.region.is_flip[4] == True:
+            self.refer_crv, _ = ghcomp.FlipCurve(self.refer_crv)
+            
+        #offset outer_crv
+        self.display_color = rc.Display.ColorHSL(0, 1, 0)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        #crv1 = ghcomp.OffsetCurve(self.outer_crv, distance= 2.4, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        
+        horizontal = self.region.rows[0].stepping
+        crv1 = ghcomp.OffsetCurve(self.outer_crv, distance = horizontal, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        endpt0, _ = ghcomp.EndPoints(self.outer_crv)
+        endpt1, _ = ghcomp.EndPoints(crv1)
+        _, y0, _ = ghcomp.Deconstruct(endpt0)
+        _, y1, _ = ghcomp.Deconstruct(endpt1)
+        if y0>y1:
+            crv1 = ghcomp.OffsetCurve(self.outer_crv, distance= -horizontal, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        
+        band_config = self.region.rows[0].circle_config
+        band_offset = band_config.New_cross_position1
+        
+        split_crv = ghcomp.OffsetCurve(self.inner_crv, distance = band_offset, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        endpt0, _ = ghcomp.EndPoints(self.inner_crv)
+        endpt1, _ = ghcomp.EndPoints(split_crv)
+        _, y0, _ = ghcomp.Deconstruct(endpt0)
+        _, y1, _ = ghcomp.Deconstruct(endpt1)
+        if y0>y1:
+            split_crv = ghcomp.OffsetCurve(self.inner_crv, distance= -band_offset, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+            
+        blocksrf = ghcomp.RuledSurface(crv1, split_crv)
+        edgelist = []
+        
+        for i in range(blocksrf.Edges.Count):
+            edgelist.append(blocksrf.Edges[i].EdgeCurve)
+        blockborder = ghcomp.JoinCurves(edgelist)
+        #self.display.AddCurve(blockborder, self.display_color, 1)
+        
+        vertical = self.region.rows[0].position
+        unit_length = math.sqrt(0.25*horizontal*horizontal+vertical*vertical)
+        offset_fac = 0.2*unit_length
+        area0, _ = ghcomp.Area(blockborder)
+        boundary_crv = ghcomp.OffsetCurve(blockborder, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), distance = offset_fac, corners=1)
+        area1, _ = ghcomp.Area(boundary_crv)
+        print("compare!!")
+        print(area1)
+        print(area0)
+        if area1 < area0:
+            boundary_crv = ghcomp.OffsetCurve(blockborder, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), distance = -offset_fac, corners=1)
+        #self.display.AddCurve(boundary_crv, self.display_color, 1)
+        
+        upline_crv = ghcomp.OffsetCurve(self.top_crv, plane = rs.WorldXYPlane(), distance=0.5, corners=1)
+        #stepping
+        New_165_frit_generator = New_165_fill_holes(\
+                                upline = self.top_crv, downline = self.bottom_crv, \
+                                boundary = boundary_crv, slopeline = self.refer_crv, \
+                                split_crv = split_crv, edge_crv = self.inner_crv, \
+                                horizontal = horizontal, vertical = vertical, \
+                                region = self.region, aligned = False)
+        New_165_frit_generator.run()
         
         
     def dazhong_fill_dots(self):
@@ -1322,19 +2444,19 @@ class HoleFrits:
 
     # 针对00841LFW00001 设计填充算法
     def fill_simple(self):
-        self.top_curve = self.region.curves[2]
+        self.top_curve = self.region.curves[2]#上边界
         if self.region.is_flip[2] == True:
             self.top_curve, _ = ghcomp.FlipCurve(self.top_curve)
         self.bottom_curve = self.region.curves[0]
         if self.region.is_flip[0] == True:
             self.bottom_curve, _ = ghcomp.FlipCurve(self.bottom_curve)
         
-        first_line_curve = ghcomp.OffsetCurve(self.top_curve, plane = rs.WorldXYPlane(), distance=self.first_line_position, corners=1)
+        first_line_curve = ghcomp.OffsetCurve(self.top_curve, plane = rs.WorldXYPlane(), distance=self.first_line_position, corners=1)#偏移上边界
         crv_length = ghcomp.Length(first_line_curve)   
         pts_num = int(crv_length / self.stepping)
-        line_pts, _, t = ghcomp.DivideCurve(first_line_curve, pts_num, False)
+        line_pts, _, t = ghcomp.DivideCurve(first_line_curve, pts_num, False)#按规定间距等分上边界线
         new_t = []
-        for i in range(len(t) - 1):
+        for i in range(len(t) - 1):#取中点
             new_t.append((t[i] + t[i + 1]) / 2)
         
         cross_pts, vec, _ = ghcomp.EvaluateCurve(first_line_curve, new_t)
@@ -1967,6 +3089,3 @@ class HoleFrits:
                 row.round_rect_config.r = val['r']
             rows.append(row)
         return rows
-       
-
-    
