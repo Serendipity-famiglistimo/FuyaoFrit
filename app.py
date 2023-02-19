@@ -53,7 +53,7 @@ class SelectedDialog(forms.Dialog):
         con.choose = 'false'
         self.pick_label = forms.Label(Text='选择填充算法:', Font=Font('Microsoft YaHei', 12.))
         self.list = forms.RadioButtonList()
-        self.list.DataStore = ['大众图纸', '88LF', '76720LFW00027','00841LFW00001','00399LFW00012','00792LFW000023','New_165']
+        self.list.DataStore = ['大众图纸', '斜向普通填法', '斜向等距填法','普通块状填法','斜向辅助线填法','三角块状填法','斜向贴边填法','复杂奥迪算法']
         self.list.Orientation = forms.Orientation.Vertical
         self.list.SelectedIndex = self.list.DataStore.index(con.type)
         self.list.SelectedIndexChanged += self.typeselected
@@ -89,6 +89,8 @@ class SelectedDialog(forms.Dialog):
             self.type = '00792LFW000023'
         elif self.list.SelectedIndex == 6:
             self.type = 'New_165'
+        elif self.list.SelectedIndex == 7:
+            self.type = '复杂奥迪算法'
         con.type = self.type
         #self.create(self.type)
         print(con.type)
@@ -99,10 +101,42 @@ def selectedtoDialog():
     dialog1 = SelectedDialog()
     dialog1.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)
 
+
+class AboutUsDialog(forms.Dialog):
+
+    def __init__(self):
+        self.Title = "关于我们"
+        self.ClientSize = drawing.Size(200, 60)
+        self.Padding = drawing.Padding(5)
+        self.Resizable = False
+        #self.text = 
+        #con.type = '关于我们'
+        #con.choose = 'false'
+        self.version_label = forms.Label(Text='版本号：2.1版', Font=Font('Microsoft YaHei', 12.))
+        self.CommitButton1 = forms.Button(Text = '确认')
+        self.CommitButton1.Click += self.OnCommitButtonClick1
+        layout = forms.DynamicLayout()
+        layout.Spacing = drawing.Size(5, 5)
+        layout.AddRow(None,self.version_label,None)
+        layout.AddRow(None,self.CommitButton1,None)
+        self.Content = layout
+        
+    
+    def OnCommitButtonClick1(self,sender,e):
+        self.Close()
+        
+        
+        
+
+def AboutUsToDialog():
+    dialog2 = AboutUsDialog()
+    dialog2.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)
+
+
 class FritDialog(forms.Dialog[bool]):
     def __init__(self):
         current_path1 = os.getcwd()
-        self.Title = '福耀印刷花点排布工具'
+        self.Title = '福耀印刷花点排布工具_V2.1'
         self.Icon = drawing.Icon(current_path1+"\\ico\\FY.ico")
         self.Padding = drawing.Padding(10)
         self.Resizable = False
@@ -139,6 +173,8 @@ class FritDialog(forms.Dialog[bool]):
         
         file_menu = self.Menu.Items.GetSubmenu("文件")
         edit_menu = self.Menu.Items.GetSubmenu("编辑")
+        about_us_menu = self.Menu.Items.GetSubmenu("关于我们")
+        
         
         open_menu = forms.Command()
         open_menu.MenuText = "打开"
@@ -160,6 +196,12 @@ class FritDialog(forms.Dialog[bool]):
         add_region_menu2.Image = drawing.Bitmap(current_path + '\\ico\\rect.png')
         edit_menu.Items.Add(add_region_menu2,1)
     
+        add_about_menu = forms.Command(self.AboutUsCommand)
+        add_about_menu.MenuText = "关于我们"
+        #add_about_menu.Image = drawing.Bitmap(current_path + '\\ico\\line.png')
+        about_us_menu.Items.Add(add_about_menu,0)
+        
+        
     def create_toolbar(self):
         current_path = os.getcwd()
         self.ToolBar = forms.ToolBar()
@@ -186,6 +228,9 @@ class FritDialog(forms.Dialog[bool]):
         # self.display.Clear()
     
 
+    def AboutUsCommand(self, sender, e):
+        AboutUsToDialog()
+
     def AddBandRegionCommand(self, sender, e):
         page = view.BandPage.BandPage(len(self.regions))
         self.regions.append(page)
@@ -203,7 +248,7 @@ class FritDialog(forms.Dialog[bool]):
                 page = dzBlockPage(len(self.regions))
                 self.regions.append(page)
                 self.tab.Pages.Add(page)
-            elif con.type == 'New_165':
+            elif con.type == 'New_165' or con.type == '复杂奥迪算法':
                 page = NewBlockPage(len(self.regions))
                 self.regions.append(page)
                 self.tab.Pages.Add(page)
