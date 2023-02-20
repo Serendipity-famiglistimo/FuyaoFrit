@@ -1324,35 +1324,32 @@ class New_165_fill_holes:
         self.bake()
 
 class AoDi_fill_holes:
-    def __init__(self, up_outer_line, up_inner_line, up_boundary_crv,down_boundary_crv, up_bottom_line,down_inner_line,horizontal,vertical,region, aligned = False):
+    def __init__(self, up_outer_line, up_inner_line, up_boundary_crv,down_boundary_crv, up_bottom_line,down_inner_line,horizontal_up,vertical_up,horizontal_down,vertical_down,region, aligned = False):
         self.up_outer_line = up_outer_line
         self.up_inner_line = up_inner_line
         self.up_boundary_crv = up_boundary_crv
         self.down_boundary_crv = down_boundary_crv
         self.up_bottom_line = up_bottom_line
-        self.down_inner_line = down_inner_line
-        self.horizontal = horizontal
-        self.vertical = vertical
+        self.down_inner = down_inner_line
+        self.horizontal_up = horizontal_up
+        self.vertical_up = vertical_up
+        self.horizontal_down = horizontal_down
+        self.vertical_down = vertical_down
         self.region = region
         self.aligned = aligned
-        
         self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
         self.display = rc.Display.CustomDisplay(True)
         self.display.Clear()
-        #self.display.AddCurve(boundary, self.display_color, 1)
-        #rc.Display.CustomDisplay.AddPoint()
     def down_frit_fill(self,base_crv,edge_crv):
         h = [-2.65, -1.65, -0.5, 0.51, 1.71]
         k = [0.55, 0.775, 1, 0.9, 0.9]
         
-        horizontal = 2
-        vertical = 1.22
         
         white_crv = []
         black_crv = []
-        print(ghcomp.Length(base_crv))
+        ##print(ghcomp.Length(base_crv))
         
-        num = int(math.floor(ghcomp.Length(base_crv)/self.horizontal))
+        num = int(math.floor(1.0*(ghcomp.Length(base_crv))/self.horizontal_down))
         base_pts, _, _ = ghcomp.DivideCurve(base_crv, num, False)
         shift_pts = []
         for i in range(len(base_pts)-1):
@@ -1368,8 +1365,8 @@ class AoDi_fill_holes:
             cur_k = k[i]
             pts, ts, _ = ghcomp.CurveClosestPoint(cur_base_pts, crv)
             _, tgts, _ = ghcomp.EvaluateCurve(crv, ts)
-            domain = ghcomp.ConstructDomain(-cur_k/2, cur_k/2)
-            rect, _ = ghcomp.Rectangle(pts, domain, domain, cur_k/4)
+            domain = ghcomp.ConstructDomain((-1.0*cur_k/2), (1.0*cur_k/2))
+            rect, _ = ghcomp.Rectangle(pts, domain, domain,1.0*cur_k/4)
             rect, _ = ghcomp.RotateDirection(rect, pts, ghcomp.UnitY(1), tgts)
             if i<3:
                 black_crv += rect
@@ -1391,7 +1388,7 @@ class AoDi_fill_holes:
             else:
                 cur_base_pts = shift_pts
             
-            crv = ghcomp.OffsetCurve(base_crv, self.vertical, ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), 1)
+            crv = ghcomp.OffsetCurve(base_crv, self.vertical_down, ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), 1)
             pts, ts, _ = ghcomp.CurveClosestPoint(cur_base_pts, crv)
             _, tgts, _ = ghcomp.EvaluateCurve(crv, ts)
             
@@ -1402,15 +1399,15 @@ class AoDi_fill_holes:
             if pts == None:
                 break
             
-            pts = construct_safe_pts_list(pts)
+            pts = self.construct_safe_pts_list(pts)
             if len(pts)>1:
                 base_crv = ghcomp.PolyLine(pts, False)
             else:
                 base_crv = crv
                 
             
-            domain = ghcomp.ConstructDomain(-cur_k/2, cur_k/2)
-            rect, _ = ghcomp.Rectangle(pts, domain, domain, cur_k/4)
+            domain = ghcomp.ConstructDomain((-1.0*cur_k/2), (1.0*cur_k/2))
+            rect, _ = ghcomp.Rectangle(pts, domain, domain, 1.0*cur_k/4)
             rect, _ = ghcomp.RotateDirection(rect, pts, ghcomp.UnitY(1), tgts)
             white_crv += rect
             
@@ -1436,7 +1433,7 @@ class AoDi_fill_holes:
         bound_crv = []
         rect_crv = []
         #TODO: modify line to nurbscurve
-        k = k/2
+        k = 1.0*k/2
         #k = k/2
         #ang, _ = ghcomp.Angle(ghcomp.UnitY(-1), n)
         
@@ -1454,7 +1451,7 @@ class AoDi_fill_holes:
             std_vec = ghcomp.UnitX(1)
             
             luarc_ct = ghcomp.ConstructPoint(x-k+r, y+k-r, 0)
-            lu_angle = ghcomp.ConstructDomain(ghcomp.Pi(1/2), ghcomp.Pi(1))
+            lu_angle = ghcomp.ConstructDomain(ghcomp.Pi(0.5), ghcomp.Pi(1))
             luarc, _ = ghcomp.Arc(ghcomp.XYPlane(luarc_ct), r, lu_angle)
             luarc = rg.NurbsCurve.CreateFromArc(luarc)
             luarc, _ = ghcomp.RotateDirection(luarc, cur_pt, std_vec, cur_n)
@@ -1477,7 +1474,7 @@ class AoDi_fill_holes:
             rec_crv = ghcomp.JoinCurves(ghcomp.Merge(up_crv, luarc), True)
             
             ruarc_ct = ghcomp.ConstructPoint(x+k-r, y+k-r, 0)
-            ru_angle = ghcomp.ConstructDomain(ghcomp.Pi(0), ghcomp.Pi(1/2))
+            ru_angle = ghcomp.ConstructDomain(ghcomp.Pi(0), ghcomp.Pi(0.5))
             ruarc, _ = ghcomp.Arc(ghcomp.XYPlane(ruarc_ct), r, ru_angle)
             ruarc = rg.NurbsCurve.CreateFromArc(ruarc)
             ruarc, _ = ghcomp.RotateDirection(ruarc, cur_pt, std_vec, cur_n)
@@ -1502,7 +1499,7 @@ class AoDi_fill_holes:
             rec_crv = ghcomp.JoinCurves(ghcomp.Merge(right_crv, rec_crv), True)
             
             rbarc_ct = ghcomp.ConstructPoint(x+k-r, y-k+r, 0)
-            rb_angle = ghcomp.ConstructDomain(ghcomp.Pi(-1/2), ghcomp.Pi(0))
+            rb_angle = ghcomp.ConstructDomain(ghcomp.Pi(-0.5), ghcomp.Pi(0))
             rbarc, _ = ghcomp.Arc(ghcomp.XYPlane(rbarc_ct), r, rb_angle)
             rbarc = rg.NurbsCurve.CreateFromArc(rbarc)
             rbarc, _ = ghcomp.RotateDirection(rbarc, cur_pt, std_vec, cur_n)
@@ -1526,7 +1523,7 @@ class AoDi_fill_holes:
             rec_crv = ghcomp.JoinCurves(ghcomp.Merge(bottom_crv, rec_crv), True)
             
             lbarc_ct = ghcomp.ConstructPoint(x-k+r, y-k+r, 0)
-            lb_angle = ghcomp.ConstructDomain(ghcomp.Pi(-1), ghcomp.Pi(-1/2))
+            lb_angle = ghcomp.ConstructDomain(ghcomp.Pi(-1), ghcomp.Pi(-0.5))
             lbarc, _ = ghcomp.Arc(ghcomp.XYPlane(lbarc_ct), r, lb_angle)
             lbarc = rg.NurbsCurve.CreateFromArc(lbarc)
             lbarc, _ = ghcomp.RotateDirection(lbarc, cur_pt, std_vec, cur_n)
@@ -1575,7 +1572,7 @@ class AoDi_fill_holes:
         
         h1 = 1.5
         h2 = 2.725
-        h3 = 2.725+0.55/2
+        h3 = 2.725+1.0*(0.55/2)
         
         threshold = 0.4
         
@@ -1587,9 +1584,9 @@ class AoDi_fill_holes:
             if end_pt:
                 cur_direc, _ = ghcomp.Vector2Pt(cur_pt, end_pt, False)
                 dist = ghcomp.Distance(cur_pt, end_pt)
-                factor = dist/h3
+                factor = 1.0*dist/h3
                 unit_length = 1.7*factor
-                count = int(math.floor(dist/unit_length))
+                count = int(math.floor(1.0*dist/unit_length))
                 cpst = dist - count * unit_length
                 if cpst > (1-threshold) * unit_length:
                     count += 1
@@ -1618,9 +1615,9 @@ class AoDi_fill_holes:
                 
         
         n, _ = ghcomp.VectorXYZ(-1, -1, 0)
-        bound_crv1, _ = generate_rect(rect_1, k1, 0.25*k1, n, pattern = None)
-        bound_crv2, _ = generate_rect(rect_2, k2, 0.25*k2, n, pattern = None)
-        bound_crv3, _ = generate_rect(rect_3, k3, 0.25*k3, n, pattern = None)
+        bound_crv1, _ = self.generate_rect(rect_1, k1, 0.25*k1, n, pattern = None)
+        bound_crv2, _ = self.generate_rect(rect_2, k2, 0.25*k2, n, pattern = None)
+        bound_crv3, _ = self.generate_rect(rect_3, k3, 0.25*k3, n, pattern = None)
         
         slope_band += bound_crv1
         slope_band += bound_crv2
@@ -1644,7 +1641,7 @@ class AoDi_fill_holes:
         
     def black_band_frit_fill(self,bound_pts,edge_crv):
         direc, _ = ghcomp.VectorXYZ(-1, -1, 0)
-        black_band = generate_slope_band(bound_pts, direc, edge_crv)
+        black_band = self.generate_slope_band(bound_pts, direc, edge_crv)
         return black_band
         
     def block_inner_frit_fill(self,grid_crv,horizontal,vertical,aligned,fit_ends):
@@ -1673,9 +1670,11 @@ class AoDi_fill_holes:
             y_domain = end_pt.Y - y
             z_domain = end_pt.Z - z
             num = int(math.floor(ghcomp.Length(cur_crv)/unit_length)+1)
+            #print(num)
             cur_pts = []
             for k in range(num+1):
-                cur_fac = k/num
+                cur_fac = 1.0*k/num
+                #cur_fac = k/num
                 cur_x = x + cur_fac*x_domain
                 cur_y = y + cur_fac*y_domain
                 cur_z = z + cur_fac*z_domain
@@ -1736,11 +1735,11 @@ class AoDi_fill_holes:
         outer_crv_pts,_,_ = ghcomp.CurveXCurve(all_refer_line,up_outer_pre)#块状最外侧花点 OK 
         Outer_Xsize = ghcomp.ConstructDomain(-0.3,0.3)
         Outer_Ysize = ghcomp.ConstructDomain(-0.3,0.3)
-        original_outerer_frit,_ = ghcomp.Rectangle(outer_crv_pts,Outer_Xsize,Outer_Ysize,0.15)
-        final_inner_frit,_ = ghcomp.RotateDirection(original_outerer_frit,outer_crv_pts,ghcomp.UnitY(1),all_refer_vector)#旋转后的内部花点
-        #print(len(final_inner_frit))
-        #for i in range(len(final_inner_frit)):
-            #self.display.AddCurve(final_inner_frit[i],self.display_color,1) #OK 
+        original_outer_frit,_ = ghcomp.Rectangle(outer_crv_pts,Outer_Xsize,Outer_Ysize,0.15)
+        final_outer_frit,_ = ghcomp.RotateDirection(original_outer_frit,outer_crv_pts,ghcomp.UnitY(1),all_refer_vector)#旋转后的内部花点
+        #print(len(final_outer_frit))
+        for i in range(len(final_outer_frit)):
+            self.display.AddCurve(final_outer_frit[i],self.display_color,1) #OK 
         
         outer_second_pts = []
         for i in range(len(all_refer_line)):
@@ -1788,9 +1787,9 @@ class AoDi_fill_holes:
                 inner_ray_line_end.append(results)
             else:
                 inner_ray_line_end.append(apd1)
-        print(len(inner_ray_line_end))
-        for i in range(len(inner_ray_line_end)):
-            print(inner_ray_line_end[i])
+        ##print(len(inner_ray_line_end))
+        #for i in range(len(inner_ray_line_end)):
+            #print(inner_ray_line_end[i])
         
         block_inner_refer_line = []
         for i in range(len(outer_second_pts)):
@@ -1800,38 +1799,76 @@ class AoDi_fill_holes:
         
         New_block_inner_refer_line = []
         for i in range(len(block_inner_refer_line)):
-            print(block_inner_refer_line[i])
+            ##print(block_inner_refer_line[i])
             if block_inner_refer_line[i] != None:
                 New_block_inner_refer_line.append(block_inner_refer_line[i])
-        #print(len(New_block_inner_refer_line))
-        for i in range(len(New_block_inner_refer_line)):
-            self.display.AddLine(New_block_inner_refer_line[i],self.display_color,1) #OK 
+        ##print(len(New_block_inner_refer_line))
+        #for i in range(len(New_block_inner_refer_line)):
+            ##self.display.AddLine(New_block_inner_refer_line[i],self.display_color,1) #OK 
+            #print(New_block_inner_refer_line[i])
+            
         
-        fit_end = rg.NurbsCurve.CreateFromLine(block_inner_refer_line)
-        grid_crv = rg.NurbsCurve.CreateFromLine(all_refer_line)
-        pts,top_pts,bottom_pts,limbo_pts = self.block_inner_frit_fill(grid_crv,self.horizontal,self.vertical,self.aligned,fit_end)
-        block_inner_frits = ghcomp.Merge(pts,top_pts,bottom_pts,limbo_pts)#self.up_boundary_crv
-        pts_in_boundarycrv = ghcomp.PointInCurve(block_inner_frits,self.up_boundary_crv)
+        fit_end = []
+        for i in range(len(New_block_inner_refer_line)):
+            fit_end.append(rg.NurbsCurve.CreateFromLine(New_block_inner_refer_line[i]))
+        #print(len(fit_end))
+        #for i in range(len(fit_end)):
+            #self.display.AddCurve(fit_end[i],self.display_color,1)
+        
+        grid_crv = []
+        for i in range(len(all_refer_line)):
+            grid_crv.append(rg.NurbsCurve.CreateFromLine(all_refer_line[i]))
+        #print(len(grid_crv))
+        #for i in range(len(grid_crv)):
+            #self.display.AddCurve(grid_crv[i],self.display_color,1)
+        
+        pts,top_pts,bottom_pts,limbo_pts = self.block_inner_frit_fill(grid_crv,self.horizontal_up,self.vertical_up,self.aligned,fit_end)
+        
+        frits_one = ghcomp.Merge(pts,top_pts)#self.up_boundary_crv
+        frits_two = ghcomp.Merge(bottom_pts,limbo_pts)
+        block_inner_frits = ghcomp.Merge(frits_one,frits_two)
+        #print(len(block_inner_frits))
+        pts_in_boundarycrv,_ = ghcomp.PointInCurve(block_inner_frits,self.up_boundary_crv)
+        
         pts_dispch,_ = ghcomp.Dispatch(block_inner_frits,pts_in_boundarycrv)
         
         
         inner_Xsize = ghcomp.ConstructDomain(-0.45,0.45)
         inner_Ysize = ghcomp.ConstructDomain(-0.45,0.45)
         original_inner_frit,_ = ghcomp.Rectangle(pts_dispch,inner_Xsize,inner_Ysize,0.225)
-        final_inner_frit,_ = ghcomp.Rotate(original_inner_frit,pts_dispch,ghcomp.UnitY(1),all_refer_vector)#旋转后的内部花点
+        final_inner_frit,_ = ghcomp.RotateDirection(original_inner_frit,pts_dispch,ghcomp.UnitY(1),all_refer_vector)#旋转后的内部花点
+        #print(len(final_inner_frit))
+        for i in range(len(final_inner_frit)):
+            #for i in range(len(final_inner_frit)):
+            self.display.AddCurve(final_inner_frit[i],self.display_color,1)
         #bottom_ofst = ghcomp.OffsetCurve(self.up_bottom_line, distance = -0.423, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
         short_refer_line = ghcomp.LineSDL(bottom_pts,all_refer_vector,2)
         border_pts,_,_ = ghcomp.CurveXCurve(short_refer_line,self.up_inner_line)
-        black_band = self.black_band_frit_fill(border_pts,self.up_bottom_line)
         
+        black_band = self.black_band_frit_fill(border_pts,self.up_bottom_line)
+        #print(len(black_band))
+        for i in range(len(black_band)):
+            self.display.AddCurve(black_band[i],self.display_color,1)
         
         border_Xsize = ghcomp.ConstructDomain(-0.5,0.5)
         border_Ysize = ghcomp.ConstructDomain(-0.5,0.5)
         original_border_frit,_ = ghcomp.Rectangle(border_pts,border_Xsize,border_Ysize,0.25)
-        final_border_frit,_ = ghcomp.Rotate(original_border_frit,border_pts,ghcomp.UnitY(1),all_refer_vector)
+        final_border_frit,_ = ghcomp.RotateDirection(original_border_frit,border_pts,ghcomp.UnitY(1),all_refer_vector)
+        #print(len(final_border_frit))
+        for i in range(len(final_border_frit)):
+            self.display.AddCurve(final_border_frit[i],self.display_color,1)
         
-        black_crv,white_crv = self.down_frit_fill(self.down_inner_line,self.down_boundary_crv)
-        
+        #down_inner_crv_pre = ghcomp.OffsetCurve(self.down_inner_crv, distance = 0, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        #self.display.AddCurve(down_inner_crv_pre, self.display_color, 1)
+        black_crv,white_crv = self.down_frit_fill(self.down_inner,self.down_boundary_crv)
+        print(len(black_crv))
+        print(len(white_crv))
+        for i in range(len(black_crv)):
+            print(black_crv[i])
+            self.display.AddCurve(black_crv[i],self.display_color,1)
+        for i in range(len(white_crv)):
+            print(white_crv[i])
+            self.display.AddCurve(white_crv[i],self.display_color,1)
         
 
 class HoleFrits:
@@ -1901,18 +1938,19 @@ class HoleFrits:
         for i in range(blocksrf_down.Edges.Count):
             edgelist_down.append(blocksrf_down.Edges[i].EdgeCurve)
         blockborder_down = ghcomp.JoinCurves(edgelist_down)
-        #self.display.AddCurve(blockborder_down,self.display_color,1)
+        #self.display.AddCurve(self.down_inner_crv,self.display_color,1)
         
         blockborder = ghcomp.OffsetCurve(blockborder_down, distance = -2, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
         #self.display.AddCurve(blockborder,self.display_color,1)
-        horizontal = 2
-        vertical = 1.22
-        
+        horizontal_up = 2.4
+        vertical_up = 1.2
+        horizontal_down = 2
+        vertical_down = 1.22
         AoDi_frit_generator = AoDi_fill_holes(\
                                 up_outer_line = self.up_outer_crv, up_inner_line = self.up_inner_crv, \
                                 up_boundary_crv = blockborder_up,down_boundary_crv = blockborder, up_bottom_line = up_bottom, \
-                                down_inner_line = self.down_inner_crv,horizontal = horizontal, vertical = vertical,\
-                                region = self.region, aligned = False)
+                                down_inner_line = self.down_inner_crv,horizontal_up = horizontal_up, vertical_up = vertical_up,\
+                                horizontal_down = horizontal_down,vertical_down = vertical_down,region = self.region, aligned = False)
         AoDi_frit_generator.run()
         
     def New165_fill_dots(self):
