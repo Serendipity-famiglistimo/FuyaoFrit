@@ -65,6 +65,7 @@ from RowConfigPanel import RowConfigPanel
 from dzConfigPanel import DZ_ConfigPanel
 from NewConfigPanel import NewConfigPanel
 from HoleConfigPanel import HoleConfigPanel
+from AodiConfigPanel import AODIConfigPanel
 from Rhino.UI import * 
 from Eto.Forms import * 
 from Eto.Drawing import * 
@@ -268,10 +269,16 @@ class NewBlockPage(forms.TabPage):
             #DZ_ConfigPanel
         del self.row_panels[:]
         self.layout.BeginVertical()
-        for i in range(len(self.model.rows)):
-            rpanel = NewConfigPanel(self, self.model.rows[i])
-            self.layout.AddRow(rpanel)
-            self.row_panels.append(rpanel)
+        if con.type == 'New_165':
+            for i in range(len(self.model.rows)):
+                rpanel = NewConfigPanel(self, self.model.rows[i])
+                self.layout.AddRow(rpanel)
+                self.row_panels.append(rpanel)
+        elif con.type == '复杂奥迪算法':
+            for i in range(len(self.model.rows)):
+                rpanel = AODIConfigPanel(self, self.model.rows[i])
+                self.layout.AddRow(rpanel)
+                self.row_panels.append(rpanel)
         self.layout.EndVertical()
 
         del self.hole_panels[:]
