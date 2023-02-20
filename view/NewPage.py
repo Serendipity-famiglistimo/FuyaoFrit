@@ -88,7 +88,7 @@ class NewBlockPage(forms.TabPage):
 
     def __init__(self, page_id):
         self.page_id = page_id
-        self.Text = '第三遮阳区-165通用型'
+        self.Text = '第三遮阳区-复杂型号'
         self.panel = forms.Scrollable()
         self.panel.Padding = drawing.Padding(10)
         self.model = dzBlockZone()
@@ -260,7 +260,10 @@ class NewBlockPage(forms.TabPage):
         if len(self.model.rows) == 0:
             try:
                 file_name = Save.path_data
-                rows = RowFrits.load_New_block_xml(file_name, self.model)
+                if con.type == 'New_165':
+                    rows = RowFrits.load_New_block_xml(file_name, self.model)
+                elif con.type == '复杂奥迪算法':
+                    rows = RowFrits.load_AoDi_block_xml(file_name, self.model)
                 holes = HoleFrits.load_block_xml(file_name, self.model)
                 self.model.holes = holes
                 self.model.rows = rows
@@ -316,54 +319,168 @@ class NewBlockPage(forms.TabPage):
             print("复杂奥迪")
         
     def XMLButtonClick(self, sender, e):
-        xml = XML.XmlDocument()
-        xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
-        xml.AppendChild(xml_declaration)
-        set = xml.CreateElement('setting')
-        block = xml.CreateElement('block')
-        set.AppendChild(block)
-        xml.AppendChild(set)
-        for i in range(len(self.model.rows)):
-            print(i)
-            row = xml.CreateElement('row')
-            block.AppendChild(row)
-            row.SetAttribute('id',str(i))
-            
-            r1 = xml.CreateElement('New_cross_position3')
-            r1.InnerText = str(self.model.rows[i].circle_config.New_cross_position3)
-            row.AppendChild(r1)
-            
-            r2 = xml.CreateElement('New_cross_position2')
-            r2.InnerText = str(self.model.rows[i].circle_config.New_cross_position2)
-            row.AppendChild(r2)
-            
-            r3 = xml.CreateElement('New_cross_position1')
-            r3.InnerText = str(self.model.rows[i].circle_config.New_cross_position1)
-            row.AppendChild(r3)
-            
-            r4 = xml.CreateElement('New_cross_r1')
-            r4.InnerText = str(self.model.rows[i].circle_config.New_cross_r1)
-            row.AppendChild(r4)
-            
-            
-            r5 = xml.CreateElement('New_cross_r2')
-            r5.InnerText = str(self.model.rows[i].circle_config.New_cross_r2)
-            row.AppendChild(r5)
-            
-            r6 = xml.CreateElement('New_cross_r3')
-            r6.InnerText = str(self.model.rows[i].circle_config.New_cross_r3)
-            row.AppendChild(r6)
-            
-            
-            stepping = xml.CreateElement('horizontal')
-            stepping.InnerText = str(self.model.rows[i].stepping)
-            row.AppendChild(stepping)
-            
-            position = xml.CreateElement('vertical')
-            position.InnerText = str(self.model.rows[i].position)
-            row.AppendChild(position)
-        f_path = XMLPATH()
-        xml.Save(f_path)
+        try:
+            if con.type == 'New_165':
+                xml = XML.XmlDocument()
+                xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
+                xml.AppendChild(xml_declaration)
+                set = xml.CreateElement('setting')
+                block = xml.CreateElement('block')
+                set.AppendChild(block)
+                xml.AppendChild(set)
+                for i in range(len(self.model.rows)):
+                    print(i)
+                    row = xml.CreateElement('row')
+                    block.AppendChild(row)
+                    row.SetAttribute('id',str(i))
+                    
+                    r1 = xml.CreateElement('New_cross_position3')
+                    r1.InnerText = str(self.model.rows[i].circle_config.New_cross_position3)
+                    row.AppendChild(r1)
+                    
+                    r2 = xml.CreateElement('New_cross_position2')
+                    r2.InnerText = str(self.model.rows[i].circle_config.New_cross_position2)
+                    row.AppendChild(r2)
+                    
+                    r3 = xml.CreateElement('New_cross_position1')
+                    r3.InnerText = str(self.model.rows[i].circle_config.New_cross_position1)
+                    row.AppendChild(r3)
+                    
+                    r4 = xml.CreateElement('New_cross_r1')
+                    r4.InnerText = str(self.model.rows[i].circle_config.New_cross_r1)
+                    row.AppendChild(r4)
+                    
+                    
+                    r5 = xml.CreateElement('New_cross_r2')
+                    r5.InnerText = str(self.model.rows[i].circle_config.New_cross_r2)
+                    row.AppendChild(r5)
+                    
+                    r6 = xml.CreateElement('New_cross_r3')
+                    r6.InnerText = str(self.model.rows[i].circle_config.New_cross_r3)
+                    row.AppendChild(r6)
+                    
+                    
+                    stepping = xml.CreateElement('horizontal')
+                    stepping.InnerText = str(self.model.rows[i].stepping)
+                    row.AppendChild(stepping)
+                    
+                    position = xml.CreateElement('vertical')
+                    position.InnerText = str(self.model.rows[i].position)
+                    row.AppendChild(position)
+            elif con.type == '复杂奥迪算法':
+                xml = XML.XmlDocument()
+                xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
+                xml.AppendChild(xml_declaration)
+                set = xml.CreateElement('setting')
+                block = xml.CreateElement('block')
+                set.AppendChild(block)
+                xml.AppendChild(set)
+                for i in range(len(self.model.rows)):
+                    print(i)
+                    row = xml.CreateElement('row')
+                    block.AppendChild(row)
+                    row.SetAttribute('id',str(i))
+                    
+                    r1 = xml.CreateElement('outer_block_k')
+                    r1.InnerText = str(self.model.rows[i].round_rect_config.outer_block_k)
+                    row.AppendChild(r1)
+                    
+                    r2 = xml.CreateElement('outer_block_r')
+                    r2.InnerText = str(self.model.rows[i].round_rect_config.outer_block_r)
+                    row.AppendChild(r2)
+                    
+                    r3 = xml.CreateElement('inner_block_k')
+                    r3.InnerText = str(self.model.rows[i].round_rect_config.inner_block_k)
+                    row.AppendChild(r3)
+                    
+                    r4 = xml.CreateElement('inner_block_r')
+                    r4.InnerText = str(self.model.rows[i].round_rect_config.inner_block_r)
+                    row.AppendChild(r4)
+                    
+                    r5 = xml.CreateElement('border_k')
+                    r5.InnerText = str(self.model.rows[i].round_rect_config.border_k)
+                    row.AppendChild(r5)
+                    
+                    r6 = xml.CreateElement('border_r')
+                    r6.InnerText = str(self.model.rows[i].round_rect_config.border_r)
+                    row.AppendChild(r6)
+                    
+                    r7 = xml.CreateElement('black_band_k1')
+                    r7.InnerText = str(self.model.rows[i].round_rect_config.black_band_k1)
+                    row.AppendChild(r7)
+                    
+                    r8 = xml.CreateElement('black_band_h1')
+                    r8.InnerText = str(self.model.rows[i].round_rect_config.black_band_h1)
+                    row.AppendChild(r8)
+                    
+                    r9 = xml.CreateElement('black_band_k2')
+                    r9.InnerText = str(self.model.rows[i].round_rect_config.black_band_k2)
+                    row.AppendChild(r9)
+                    
+                    r10 = xml.CreateElement('black_band_h2')
+                    r10.InnerText = str(self.model.rows[i].round_rect_config.black_band_h2)
+                    row.AppendChild(r10)
+                    
+                    r11 = xml.CreateElement('down_block_area_k1')
+                    r11.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_k1)
+                    row.AppendChild(r11)
+                    
+                    r12 = xml.CreateElement('down_block_area_k2')
+                    r12.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_k2)
+                    row.AppendChild(r12)
+                    
+                    r13 = xml.CreateElement('down_block_area_k3')
+                    r13.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_k3)
+                    row.AppendChild(r13)
+                    
+                    r14 = xml.CreateElement('down_block_area_k4')
+                    r14.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_k4)
+                    row.AppendChild(r14)
+                    
+                    r15 = xml.CreateElement('down_block_area_k5')
+                    r15.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_k5)
+                    row.AppendChild(r15)
+                    
+                    r16 = xml.CreateElement('down_block_area_h1')
+                    r16.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_h1)
+                    row.AppendChild(r16)
+                    
+                    r17 = xml.CreateElement('down_block_area_h2')
+                    r17.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_h2)
+                    row.AppendChild(r17)
+                    
+                    r18 = xml.CreateElement('down_block_area_h3')
+                    r18.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_h3)
+                    row.AppendChild(r18)
+                    
+                    r19 = xml.CreateElement('down_block_area_h4')
+                    r19.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_h4)
+                    row.AppendChild(r19)
+                    
+                    r20 = xml.CreateElement('down_block_area_h5')
+                    r20.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_h5)
+                    row.AppendChild(r20)
+                    
+                    r21 = xml.CreateElement('horizontal')
+                    r21.InnerText = str(self.model.rows[i].stepping)
+                    row.AppendChild(r21)
+                    
+                    r22 = xml.CreateElement('vertical')
+                    r22.InnerText = str(self.model.rows[i].position)
+                    row.AppendChild(r22)
+                    
+                    r23 = xml.CreateElement('down_horizontal')
+                    r23.InnerText = str(self.model.rows[i].round_rect_config.down_horizontal)
+                    row.AppendChild(r23)
+                    
+                    r24 = xml.CreateElement('down_vertical')
+                    r24.InnerText = str(self.model.rows[i].round_rect_config.down_vertical)
+                    row.AppendChild(r24)
+                    
+            f_path = XMLPATH()
+            xml.Save(f_path)
+        except:
+            pass
     
     def FlipCheckClick(self, sender, e):
         if sender.Tag == 'is_outer_flip':
