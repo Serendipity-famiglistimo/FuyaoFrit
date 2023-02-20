@@ -53,6 +53,7 @@ class RowFrits:
     def fill_dots(self):
         del self.dots[:]
         print(self.row_id)
+        print("区域类型为："+self.region.type)
         if self.region.type == 'band' and self.region.curves[0]:
             if self.is_transit:
                 self.fill_transit_band()
@@ -73,6 +74,13 @@ class RowFrits:
                 self.fill_bottom_band()
 
     def fill_general_band(self):
+        #print("self.stepping:"+self.stepping)
+        #if self.stepping == 0:
+        #self.stepping == 2.7
+        #print(self.stepping)
+        #elif self.position == 0:
+        #self.position == 1
+        #print(self.position)
         refer_curve = self.region.curves[0] 
         if self.region.is_flip[0] == True:
             refer_curve, _ = ghcomp.FlipCurve(refer_curve)
@@ -336,8 +344,11 @@ class RowFrits:
                 row.round_rect_config.r = val['r']
             elif row.dot_type == FritType.ARC_CIRCLE:
                 row.arc_config.lr = val['lr']
+                print(row.arc_config.lr)
                 row.arc_config.sr = val['sr']
+                print(row.arc_config.sr)
                 row.arc_config.angle = val['angle']
+                print(row.arc_config.angle)
             elif row.dot_type == FritType.TRI_ARC:
                 row.tri_arc_config.lr = val['lr']
                 row.tri_arc_config.sr = val['sr']
@@ -382,6 +393,90 @@ class RowFrits:
             row.circle_config.slope_r2 = val['slope_r2']
             row.circle_config.slope_r3 = val['slope_r3']
             row.circle_config.slope_r4 = val['slope_r4']
+            rows.append(row)
+            print(len(rows))
+        return rows
+        
+        
+    @staticmethod
+    def load_New_block_xml(file_path, region):
+        xmldoc = System.Xml.XmlDocument()
+        xmldoc.Load(file_path)
+        items = xmldoc.SelectNodes("setting/block/row")
+        rows = []
+        for item in items:
+            nid = int(item.GetAttributeNode('id').Value)
+            row = RowFrits(nid, region)
+            #dot_type = item.GetAttributeNode('type').Value
+            #row.dot_type = {'circle': FritType.CIRCLE_DOT, 'roundrect': FritType.ROUND_RECT, 'arcdot': FritType.ARC_CIRCLE, 'triarc': FritType.TRI_ARC}[dot_type]
+            #arrange_type = item.GetAttributeNode('arrange').Value
+            #row.arrange_type = {'heading': RowArrangeType.HEADING, 'cross': RowArrangeType.CROSS }[arrange_type]
+            val = dict()
+            for node in item.ChildNodes:
+                val[node.Name] = float(node.InnerText)
+            row.stepping = val['horizontal']
+            row.position = val['vertical']
+            #if row.dot_type == FritType.CIRCLE_DOT:
+            
+            row.circle_config.New_cross_position3 = val['New_cross_position3']
+            row.circle_config.New_cross_position2 = val['New_cross_position2']
+            row.circle_config.New_cross_position1 = val['New_cross_position1']
+            row.circle_config.New_cross_r3 = val['New_cross_r3']
+            row.circle_config.New_cross_r2 = val['New_cross_r2']
+            row.circle_config.New_cross_r1 = val['New_cross_r1']
+            
+            rows.append(row)
+            print(len(rows))
+        return rows
+        
+        
+    @staticmethod
+    def load_AoDi_block_xml(file_path, region):
+        xmldoc = System.Xml.XmlDocument()
+        xmldoc.Load(file_path)
+        items = xmldoc.SelectNodes("setting/block/row")
+        rows = []
+        for item in items:
+            nid = int(item.GetAttributeNode('id').Value)
+            row = RowFrits(nid, region)
+            #dot_type = item.GetAttributeNode('type').Value
+            #row.dot_type = {'circle': FritType.CIRCLE_DOT, 'roundrect': FritType.ROUND_RECT, 'arcdot': FritType.ARC_CIRCLE, 'triarc': FritType.TRI_ARC}[dot_type]
+            #arrange_type = item.GetAttributeNode('arrange').Value
+            #row.arrange_type = {'heading': RowArrangeType.HEADING, 'cross': RowArrangeType.CROSS }[arrange_type]
+            val = dict()
+            for node in item.ChildNodes:
+                val[node.Name] = float(node.InnerText)
+            row.stepping = val['horizontal']
+            row.position = val['vertical']
+            #if row.dot_type == FritType.CIRCLE_DOT:
+            
+            row.round_rect_config.outer_block_k = val['outer_block_k']
+            row.round_rect_config.outer_block_r = val['outer_block_r']
+            row.round_rect_config.inner_block_k = val['inner_block_k']
+            row.round_rect_config.inner_block_r = val['inner_block_r']
+            
+            row.round_rect_config.border_k = val['border_k']
+            row.round_rect_config.border_r = val['border_r']
+            
+            row.round_rect_config.black_band_k1 = val['black_band_k1']
+            row.round_rect_config.black_band_h1 = val['black_band_h1']
+            row.round_rect_config.black_band_k2 = val['black_band_k2']
+            row.round_rect_config.black_band_h2 = val['black_band_h2']
+            
+            row.round_rect_config.down_block_area_k1 = val['down_block_area_k1']
+            row.round_rect_config.down_block_area_h1 = val['down_block_area_h1']
+            row.round_rect_config.down_block_area_k2 = val['down_block_area_k2']
+            row.round_rect_config.down_block_area_h2 = val['down_block_area_h2']
+            row.round_rect_config.down_block_area_k3 = val['down_block_area_k3']
+            row.round_rect_config.down_block_area_h3 = val['down_block_area_h3']
+            row.round_rect_config.down_block_area_k4 = val['down_block_area_k4']
+            row.round_rect_config.down_block_area_h4 = val['down_block_area_h4']
+            row.round_rect_config.down_block_area_k5 = val['down_block_area_k5']
+            row.round_rect_config.down_block_area_h5 = val['down_block_area_h5']
+            row.round_rect_config.down_horizontal = val['down_horizontal']
+            row.round_rect_config.down_vertical = val['down_vertical']
+            
+            
             rows.append(row)
             print(len(rows))
         return rows
