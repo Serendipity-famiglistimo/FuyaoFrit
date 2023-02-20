@@ -1876,15 +1876,33 @@ class AoDi_fill_holes:
             #print(white_crv[i])
             #self.display.AddCurve(white_crv[i],self.display_color,1)
             self.white_frit.append(white_crv[i])#块状内部花点加入BAKE列表
-        print(len(self.white_frit))
-        for i in range(len(self.white_frit)):
-            self.display.AddCurve(self.white_frit[i],self.display_color,1)
-        print(len(self.black_frit))
+        #print(len(self.white_frit))
+        #for i in range(len(self.white_frit)):
+            #self.display.AddCurve(self.white_frit[i],self.display_color,1)
+        #print(len(self.black_frit))
+        ##for i in range(len(self.black_frit)):
+            #self.display.AddCurve(self.black_frit[i],self.display_color,1)
+        #print(len(self.border_frit))
+        ##for i in range(len(self.border_frit)):
+            ##self.display.AddCurve(self.border_frit[i],self.display_color,1)
+            
+        layer_name = 'fuyao_black'
+        rs.AddLayer(layer_name, self.display_color)
         for i in range(len(self.black_frit)):
-            self.display.AddCurve(self.black_frit[i],self.display_color,1)
-        print(len(self.border_frit))
+            obj = scriptcontext.doc.Objects.AddCurve(self.black_frit[i])
+            rs.ObjectLayer(obj, layer_name)
+        
+        layer_name = 'fuyao_white'
+        rs.AddLayer(layer_name, self.display_color)
+        for i in range(len(self.white_frit)):
+            obj = scriptcontext.doc.Objects.AddCurve(self.white_frit[i])
+            rs.ObjectLayer(obj, layer_name)
+        
+        layer_name = 'fuyao_bound'
+        rs.AddLayer(layer_name, self.display_color)
         for i in range(len(self.border_frit)):
-            self.display.AddCurve(self.border_frit[i],self.display_color,1)
+            obj = scriptcontext.doc.Objects.AddCurve(self.border_frit[i])
+            rs.ObjectLayer(obj, layer_name)
 
 class HoleFrits:
     def __init__(self, hole_id, region):
