@@ -1893,16 +1893,19 @@ class AoDi_fill_holes:
         #print(len(final_border_frit))
         for i in range(len(final_border_frit)):
             self.border_frit.append(final_border_frit[i])#边界花点加入列表中
-        black_crv,white_crv = self.down_frit_fill(self.down_inner,self.down_boundary_crv)
-        ##print(len(black_crv))
-        #print(len(white_crv))
-        for i in range(len(black_crv)):
-            #self.display.AddCurve(black_crv[i],self.display_color,1)
-            self.black_frit.append(black_crv[i])#块状内部花点加入BAKE列表
-        for i in range(len(white_crv)):
-            #print(white_crv[i])
-            #self.display.AddCurve(white_crv[i],self.display_color,1)
-            self.white_frit.append(white_crv[i])#块状内部花点加入BAKE列表
+        if self.down_inner != None and self.down_boundary_crv != None:
+            black_crv,white_crv = self.down_frit_fill(self.down_inner,self.down_boundary_crv)
+            ##print(len(black_crv))
+            #print(len(white_crv))
+            for i in range(len(black_crv)):
+                #self.display.AddCurve(black_crv[i],self.display_color,1)
+                self.black_frit.append(black_crv[i])#块状内部花点加入BAKE列表
+            for i in range(len(white_crv)):
+                #print(white_crv[i])
+                #self.display.AddCurve(white_crv[i],self.display_color,1)
+                self.white_frit.append(white_crv[i])#块状内部花点加入BAKE列表
+        else:
+            pass
         layer_name = 'fuyao_black'
         rs.AddLayer(layer_name, self.display_color)
         for i in range(len(self.black_frit)):
@@ -1962,14 +1965,21 @@ class HoleFrits:
         if self.region.is_flip[2] == True:
             self.up_bottom_crv, _ = ghcomp.FlipCurve(self.up_bottom_crv)
         
-        self.down_inner_crv = self.region.curves[3]
-        if self.region.is_flip[3] == True:
-            self.down_inner_crv, _ = ghcomp.FlipCurve(self.down_inner_crv)
+        try:
+            self.down_inner_crv = self.region.curves[3]
+            if self.region.is_flip[3] == True:
+                self.down_inner_crv, _ = ghcomp.FlipCurve(self.down_inner_crv)
+        except:
+            self.down_inner_crv = None
+            pass
         
-        self.down_outer_crv = self.region.curves[4]
-        if self.region.is_flip[4] == True:
-            self.down_outer_crv, _ = ghcomp.FlipCurve(self.down_outer_crv)
-        
+        try:
+            self.down_outer_crv = self.region.curves[4]
+            if self.region.is_flip[4] == True:
+                self.down_outer_crv, _ = ghcomp.FlipCurve(self.down_outer_crv)
+        except:
+            self.down_outer_crv = None
+            pass
         #预处理函数变量
         self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
         self.display = rc.Display.CustomDisplay(True)
@@ -1986,15 +1996,18 @@ class HoleFrits:
             edgelist_up.append(blocksrf_up.Edges[i].EdgeCurve)
         blockborder_up = ghcomp.JoinCurves(edgelist_up)
         #self.display.AddCurve(blockborder_up,self.display_color,1)
-        
-        blocksrf_down = ghcomp.RuledSurface(self.down_inner_crv, self.down_outer_crv)
-        edgelist_down = []
-        for i in range(blocksrf_down.Edges.Count):
-            edgelist_down.append(blocksrf_down.Edges[i].EdgeCurve)
-        blockborder_down = ghcomp.JoinCurves(edgelist_down)
-        #self.display.AddCurve(self.down_inner_crv,self.display_color,1)
-        
-        blockborder = ghcomp.OffsetCurve(blockborder_down, distance = -2, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
+        if self.region.curves[3] and self.region.curves[4]:
+            blocksrf_down = ghcomp.RuledSurface(self.down_inner_crv, self.down_outer_crv)
+            edgelist_down = []
+            for i in range(blocksrf_down.Edges.Count):
+                edgelist_down.append(blocksrf_down.Edges[i].EdgeCurve)
+            blockborder_down = ghcomp.JoinCurves(edgelist_down)
+            #self.display.AddCurve(self.down_inner_crv,self.display_color,1)
+            
+            blockborder = ghcomp.OffsetCurve(blockborder_down, distance = -2, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
+        else:
+            blockborder = None
+            #self.down_inner_crv = None
         #self.display.AddCurve(blockborder,self.display_color,1)
         horizontal_up = self.region.rows[0].stepping
         vertical_up = self.region.rows[0].position
