@@ -1939,6 +1939,10 @@ class HoleFrits:
         self.top_curve = None
         self.bottom_curve = None
         self.border_curve = None
+        #print(self.region.rows[0].stepping)
+        #print(self.region.rows[0].position)
+        #print(self.region.rows[0].round_rect_config.down_horizontal)
+        #print(self.region.rows[0].round_rect_config.down_vertical)
     
     def bake(self):
         pass
@@ -1992,10 +1996,14 @@ class HoleFrits:
         
         blockborder = ghcomp.OffsetCurve(blockborder_down, distance = -2, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
         #self.display.AddCurve(blockborder,self.display_color,1)
-        horizontal_up = 2.4
-        vertical_up = 1.2
-        horizontal_down = 2
-        vertical_down = 1.22
+        horizontal_up = self.region.rows[0].stepping
+        vertical_up = self.region.rows[0].position
+        horizontal_down = self.region.rows[0].round_rect_config.down_horizontal
+        vertical_down = self.region.rows[0].round_rect_config.down_vertical
+        #horizontal_up = 2.4
+        #vertical_up = 1.2
+        #horizontal_down = 2
+        #vertical_down = 1.22
         AoDi_frit_generator = AoDi_fill_holes(\
                                 up_outer_line = self.up_outer_crv, up_inner_line = self.up_inner_crv, \
                                 up_boundary_crv = blockborder_up,down_boundary_crv = blockborder, up_bottom_line = up_bottom, \
