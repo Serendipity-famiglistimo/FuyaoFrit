@@ -16,6 +16,30 @@ class RoundRectConfig:
     def __init__(self):
         self.k = 0
         self.r = 0
+        #如下是奥迪复杂算法的参数初始化
+        self.outer_block_k = 0
+        self.outer_block_r = 0
+        self.inner_block_k = 0
+        self.inner_block_r = 0
+        self.border_k = 0
+        self.border_r = 0
+        self.black_band_k1 = 0
+        self.black_band_h1 = 0
+        self.black_band_k2 = 0
+        self.black_band_h2 = 0
+        self.down_block_area_k1 = 0
+        self.down_block_area_k2 = 0
+        self.down_block_area_k3 = 0
+        self.down_block_area_k4 = 0
+        self.down_block_area_k5 = 0
+        self.down_block_area_h1 = 0
+        self.down_block_area_h2 = 0
+        self.down_block_area_h3 = 0
+        self.down_block_area_h4 = 0
+        self.down_block_area_h5 = 0
+        self.down_horizontal = 0
+        self.down_vertical = 0
+        
     
     def top(self):
         return self.k / 2
