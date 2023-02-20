@@ -1340,6 +1340,9 @@ class AoDi_fill_holes:
         self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
         self.display = rc.Display.CustomDisplay(True)
         self.display.Clear()
+        self.white_frit = []
+        self.black_frit = []
+        self.border_frit = []
     def down_frit_fill(self,base_crv,edge_crv):
         h = [-2.65, -1.65, -0.5, 0.51, 1.71]
         k = [0.55, 0.775, 1, 0.9, 0.9]
@@ -1739,8 +1742,8 @@ class AoDi_fill_holes:
         final_outer_frit,_ = ghcomp.RotateDirection(original_outer_frit,outer_crv_pts,ghcomp.UnitY(1),all_refer_vector)#旋转后的内部花点
         #print(len(final_outer_frit))
         for i in range(len(final_outer_frit)):
-            self.display.AddCurve(final_outer_frit[i],self.display_color,1) #OK 
-        
+            #self.display.AddCurve(final_outer_frit[i],self.display_color,1) #OK 
+            self.white_frit.append(final_outer_frit[i])#最外侧块状花点加入bake列表
         outer_second_pts = []
         for i in range(len(all_refer_line)):
             result = ghcomp.CurveXCurve(all_refer_line[i],up_outer)
@@ -1840,7 +1843,8 @@ class AoDi_fill_holes:
         #print(len(final_inner_frit))
         for i in range(len(final_inner_frit)):
             #for i in range(len(final_inner_frit)):
-            self.display.AddCurve(final_inner_frit[i],self.display_color,1)
+            #self.display.AddCurve(final_inner_frit[i],self.display_color,1)
+            self.white_frit.append(final_inner_frit[i])#块状内部花点加入BAKE列表
         #bottom_ofst = ghcomp.OffsetCurve(self.up_bottom_line, distance = -0.423, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
         short_refer_line = ghcomp.LineSDL(bottom_pts,all_refer_vector,2)
         border_pts,_,_ = ghcomp.CurveXCurve(short_refer_line,self.up_inner_line)
@@ -1848,15 +1852,16 @@ class AoDi_fill_holes:
         black_band = self.black_band_frit_fill(border_pts,self.up_bottom_line)
         #print(len(black_band))
         for i in range(len(black_band)):
-            self.display.AddCurve(black_band[i],self.display_color,1)
-        
+            #self.display.AddCurve(black_band[i],self.display_color,1)
+            self.black_frit.append(black_band[i])#块状内部花点加入BAKE列表
         border_Xsize = ghcomp.ConstructDomain(-0.5,0.5)
         border_Ysize = ghcomp.ConstructDomain(-0.5,0.5)
         original_border_frit,_ = ghcomp.Rectangle(border_pts,border_Xsize,border_Ysize,0.25)
         final_border_frit,_ = ghcomp.RotateDirection(original_border_frit,border_pts,ghcomp.UnitY(1),all_refer_vector)
         #print(len(final_border_frit))
         for i in range(len(final_border_frit)):
-            self.display.AddCurve(final_border_frit[i],self.display_color,1)
+            self.border_frit.append(final_border_frit[i])#边界花点加入列表中
+            #self.display.AddCurve(final_border_frit[i],self.display_color,1)
         
         #down_inner_crv_pre = ghcomp.OffsetCurve(self.down_inner_crv, distance = 0, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
         #self.display.AddCurve(down_inner_crv_pre, self.display_color, 1)
@@ -1864,12 +1869,40 @@ class AoDi_fill_holes:
         print(len(black_crv))
         print(len(white_crv))
         for i in range(len(black_crv)):
-            print(black_crv[i])
-            self.display.AddCurve(black_crv[i],self.display_color,1)
+            #print(black_crv[i])
+            #self.display.AddCurve(black_crv[i],self.display_color,1)
+            self.black_frit.append(black_crv[i])#块状内部花点加入BAKE列表
         for i in range(len(white_crv)):
-            print(white_crv[i])
-            self.display.AddCurve(white_crv[i],self.display_color,1)
+            #print(white_crv[i])
+            #self.display.AddCurve(white_crv[i],self.display_color,1)
+            self.white_frit.append(white_crv[i])#块状内部花点加入BAKE列表
+        #print(len(self.white_frit))
+        #for i in range(len(self.white_frit)):
+            #self.display.AddCurve(self.white_frit[i],self.display_color,1)
+        #print(len(self.black_frit))
+        ##for i in range(len(self.black_frit)):
+            #self.display.AddCurve(self.black_frit[i],self.display_color,1)
+        #print(len(self.border_frit))
+        ##for i in range(len(self.border_frit)):
+            ##self.display.AddCurve(self.border_frit[i],self.display_color,1)
+            
+        layer_name = 'fuyao_black'
+        rs.AddLayer(layer_name, self.display_color)
+        for i in range(len(self.black_frit)):
+            obj = scriptcontext.doc.Objects.AddCurve(self.black_frit[i])
+            rs.ObjectLayer(obj, layer_name)
         
+        layer_name = 'fuyao_white'
+        rs.AddLayer(layer_name, self.display_color)
+        for i in range(len(self.white_frit)):
+            obj = scriptcontext.doc.Objects.AddCurve(self.white_frit[i])
+            rs.ObjectLayer(obj, layer_name)
+        
+        layer_name = 'fuyao_bound'
+        rs.AddLayer(layer_name, self.display_color)
+        for i in range(len(self.border_frit)):
+            obj = scriptcontext.doc.Objects.AddCurve(self.border_frit[i])
+            rs.ObjectLayer(obj, layer_name)
 
 class HoleFrits:
     def __init__(self, hole_id, region):
