@@ -56,7 +56,7 @@ class SelectedDialog(forms.Dialog):
         con.choose = 'false'
         self.pick_label = forms.Label(Text='选择填充算法:', Font=Font('Microsoft YaHei', 12.))
         self.list = forms.RadioButtonList()
-        self.list.DataStore = ['大众图纸', '斜向普通填法', '斜向等距填法','普通块状填法','斜向辅助线填法','三角块状填法','斜向贴边填法']
+        self.list.DataStore = ['大众图纸', '斜向普通填法', '斜向等距填法','普通块状填法','斜向辅助线填法','三角块状填法','斜向贴边填法','复杂奥迪算法']
         self.list.Orientation = forms.Orientation.Vertical
         self.list.SelectedIndex = self.list.DataStore.index(con.type)
         self.list.SelectedIndexChanged += self.typeselected
@@ -92,6 +92,8 @@ class SelectedDialog(forms.Dialog):
             self.type = '00792LFW000023'
         elif self.list.SelectedIndex == 6:
             self.type = 'New_165'
+        elif self.list.SelectedIndex == 7:
+            self.type = '复杂奥迪算法'
         con.type = self.type
         #self.create(self.type)
         print(con.type)
@@ -102,6 +104,33 @@ def selectedtoDialog():
     dialog1 = SelectedDialog()
     dialog1.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)
 
+class AboutUsDialog(forms.Dialog):
+
+    def __init__(self):
+        self.Title = "关于我们"
+        self.ClientSize = drawing.Size(200, 60)
+        self.Padding = drawing.Padding(5)
+        self.Resizable = False
+        #self.text = 
+        #con.type = '关于我们'
+        #con.choose = 'false'
+        self.version_label = forms.Label(Text='版本号：2.1版', Font=Font('Microsoft YaHei', 12.))
+        self.CommitButton1 = forms.Button(Text = '确认')
+        self.CommitButton1.Click += self.OnCommitButtonClick1
+        layout = forms.DynamicLayout()
+        layout.Spacing = drawing.Size(5, 5)
+        layout.AddRow(None,self.version_label,None)
+        layout.AddRow(None,self.CommitButton1,None)
+        self.Content = layout
+        
+    
+    def OnCommitButtonClick1(self,sender,e):
+        self.Close()
+
+
+def AboutUsToDialog():
+    dialog2 = AboutUsDialog()
+    dialog2.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)
 
 #XML文件导出
 def XMLPATH():
@@ -125,7 +154,7 @@ class NewBlockPage(forms.TabPage):
 
     def __init__(self, page_id):
         self.page_id = page_id
-        self.Text = '第三遮阳区-165通用型'
+        self.Text = '第三遮阳区-复杂型号'
         self.panel = forms.Scrollable()
         self.panel.Padding = drawing.Padding(10)
         self.model = dzBlockZone()
@@ -251,7 +280,10 @@ class NewBlockPage(forms.TabPage):
         current_path1 = os.getcwd()
  
         self.img = ImageView()
-        self.img.Image = Bitmap("C:\\ico\\New165.png")
+        if con.type == 'New_165':
+            self.img.Image = Bitmap("C:\\ico\\New165.png")
+        elif con.type == '复杂奥迪算法':
+            self.img.Image = Bitmap("C:\\ico\\AoDi.png")
         grouplayout.AddRow(self.img.Image)
         self.m_groupbox.Content = grouplayout
         #groupbox2
@@ -297,7 +329,10 @@ class NewBlockPage(forms.TabPage):
         if len(self.model.rows) == 0:
             try:
                 file_name = Save.path_data
-                rows = RowFrits.load_New_block_xml(file_name, self.model)
+                if con.type == 'New_165':
+                    rows = RowFrits.load_New_block_xml(file_name, self.model)
+                elif con.type == '复杂奥迪算法':
+                    rows = RowFrits.load_AoDi_block_xml(file_name, self.model)
                 holes = HoleFrits.load_block_xml(file_name, self.model)
                 self.model.holes = holes
                 self.model.rows = rows
@@ -306,10 +341,16 @@ class NewBlockPage(forms.TabPage):
             #DZ_ConfigPanel
         del self.row_panels[:]
         self.layout.BeginVertical()
-        for i in range(len(self.model.rows)):
-            rpanel = NewConfigPanel(self, self.model.rows[i])
-            self.layout.AddRow(rpanel)
-            self.row_panels.append(rpanel)
+        if con.type == 'New_165':
+            for i in range(len(self.model.rows)):
+                rpanel = NewConfigPanel(self, self.model.rows[i])
+                self.layout.AddRow(rpanel)
+                self.row_panels.append(rpanel)
+        elif con.type == '复杂奥迪算法':
+            for i in range(len(self.model.rows)):
+                rpanel = AODIConfigPanel(self, self.model.rows[i])
+                self.layout.AddRow(rpanel)
+                self.row_panels.append(rpanel)
         self.layout.EndVertical()
 
         del self.hole_panels[:]
@@ -337,57 +378,179 @@ class NewBlockPage(forms.TabPage):
     
     def InsertButtonClick(self, sender, e):
         self.clear_dots()
-        HoleFrits(1,self.model).New165_fill_dots()
+        if con.type == 'New_165':
+            self.clear_dots()
+            HoleFrits(1,self.model).New165_fill_dots()
+            print("cicehngxu")
+        elif con.type == '复杂奥迪算法':
+            print(con.type)
+            self.clear_dots()
+            HoleFrits(1,self.model).AoDi_fill()
+            print("复杂奥迪")
         
     def XMLButtonClick(self, sender, e):
-        xml = XML.XmlDocument()
-        xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
-        xml.AppendChild(xml_declaration)
-        set = xml.CreateElement('setting')
-        block = xml.CreateElement('block')
-        set.AppendChild(block)
-        xml.AppendChild(set)
-        for i in range(len(self.model.rows)):
-            print(i)
-            row = xml.CreateElement('row')
-            block.AppendChild(row)
-            row.SetAttribute('id',str(i))
-            
-            r1 = xml.CreateElement('New_cross_position3')
-            r1.InnerText = str(self.model.rows[i].circle_config.New_cross_position3)
-            row.AppendChild(r1)
-            
-            r2 = xml.CreateElement('New_cross_position2')
-            r2.InnerText = str(self.model.rows[i].circle_config.New_cross_position2)
-            row.AppendChild(r2)
-            
-            r3 = xml.CreateElement('New_cross_position1')
-            r3.InnerText = str(self.model.rows[i].circle_config.New_cross_position1)
-            row.AppendChild(r3)
-            
-            r4 = xml.CreateElement('New_cross_r1')
-            r4.InnerText = str(self.model.rows[i].circle_config.New_cross_r1)
-            row.AppendChild(r4)
-            
-            
-            r5 = xml.CreateElement('New_cross_r2')
-            r5.InnerText = str(self.model.rows[i].circle_config.New_cross_r2)
-            row.AppendChild(r5)
-            
-            r6 = xml.CreateElement('New_cross_r3')
-            r6.InnerText = str(self.model.rows[i].circle_config.New_cross_r3)
-            row.AppendChild(r6)
-            
-            
-            stepping = xml.CreateElement('horizontal')
-            stepping.InnerText = str(self.model.rows[i].stepping)
-            row.AppendChild(stepping)
-            
-            position = xml.CreateElement('vertical')
-            position.InnerText = str(self.model.rows[i].position)
-            row.AppendChild(position)
-        f_path = XMLPATH()
-        xml.Save(f_path)
+        try:
+            if con.type == 'New_165':
+                xml = XML.XmlDocument()
+                xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
+                xml.AppendChild(xml_declaration)
+                set = xml.CreateElement('setting')
+                block = xml.CreateElement('block')
+                set.AppendChild(block)
+                xml.AppendChild(set)
+                for i in range(len(self.model.rows)):
+                    print(i)
+                    row = xml.CreateElement('row')
+                    block.AppendChild(row)
+                    row.SetAttribute('id',str(i))
+                    
+                    r1 = xml.CreateElement('New_cross_position3')
+                    r1.InnerText = str(self.model.rows[i].circle_config.New_cross_position3)
+                    row.AppendChild(r1)
+                    
+                    r2 = xml.CreateElement('New_cross_position2')
+                    r2.InnerText = str(self.model.rows[i].circle_config.New_cross_position2)
+                    row.AppendChild(r2)
+                    
+                    r3 = xml.CreateElement('New_cross_position1')
+                    r3.InnerText = str(self.model.rows[i].circle_config.New_cross_position1)
+                    row.AppendChild(r3)
+                    
+                    r4 = xml.CreateElement('New_cross_r1')
+                    r4.InnerText = str(self.model.rows[i].circle_config.New_cross_r1)
+                    row.AppendChild(r4)
+                    
+                    
+                    r5 = xml.CreateElement('New_cross_r2')
+                    r5.InnerText = str(self.model.rows[i].circle_config.New_cross_r2)
+                    row.AppendChild(r5)
+                    
+                    r6 = xml.CreateElement('New_cross_r3')
+                    r6.InnerText = str(self.model.rows[i].circle_config.New_cross_r3)
+                    row.AppendChild(r6)
+                    
+                    
+                    stepping = xml.CreateElement('horizontal')
+                    stepping.InnerText = str(self.model.rows[i].stepping)
+                    row.AppendChild(stepping)
+                    
+                    position = xml.CreateElement('vertical')
+                    position.InnerText = str(self.model.rows[i].position)
+                    row.AppendChild(position)
+            elif con.type == '复杂奥迪算法':
+                xml = XML.XmlDocument()
+                xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
+                xml.AppendChild(xml_declaration)
+                set = xml.CreateElement('setting')
+                block = xml.CreateElement('block')
+                set.AppendChild(block)
+                xml.AppendChild(set)
+                for i in range(len(self.model.rows)):
+                    print(i)
+                    row = xml.CreateElement('row')
+                    block.AppendChild(row)
+                    row.SetAttribute('id',str(i))
+                    
+                    r1 = xml.CreateElement('outer_block_k')
+                    r1.InnerText = str(self.model.rows[i].round_rect_config.outer_block_k)
+                    row.AppendChild(r1)
+                    
+                    r2 = xml.CreateElement('outer_block_r')
+                    r2.InnerText = str(self.model.rows[i].round_rect_config.outer_block_r)
+                    row.AppendChild(r2)
+                    
+                    r3 = xml.CreateElement('inner_block_k')
+                    r3.InnerText = str(self.model.rows[i].round_rect_config.inner_block_k)
+                    row.AppendChild(r3)
+                    
+                    r4 = xml.CreateElement('inner_block_r')
+                    r4.InnerText = str(self.model.rows[i].round_rect_config.inner_block_r)
+                    row.AppendChild(r4)
+                    
+                    r5 = xml.CreateElement('border_k')
+                    r5.InnerText = str(self.model.rows[i].round_rect_config.border_k)
+                    row.AppendChild(r5)
+                    
+                    r6 = xml.CreateElement('border_r')
+                    r6.InnerText = str(self.model.rows[i].round_rect_config.border_r)
+                    row.AppendChild(r6)
+                    
+                    r7 = xml.CreateElement('black_band_k1')
+                    r7.InnerText = str(self.model.rows[i].round_rect_config.black_band_k1)
+                    row.AppendChild(r7)
+                    
+                    r8 = xml.CreateElement('black_band_h1')
+                    r8.InnerText = str(self.model.rows[i].round_rect_config.black_band_h1)
+                    row.AppendChild(r8)
+                    
+                    r9 = xml.CreateElement('black_band_k2')
+                    r9.InnerText = str(self.model.rows[i].round_rect_config.black_band_k2)
+                    row.AppendChild(r9)
+                    
+                    r10 = xml.CreateElement('black_band_h2')
+                    r10.InnerText = str(self.model.rows[i].round_rect_config.black_band_h2)
+                    row.AppendChild(r10)
+                    
+                    r11 = xml.CreateElement('down_block_area_k1')
+                    r11.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_k1)
+                    row.AppendChild(r11)
+                    
+                    r12 = xml.CreateElement('down_block_area_k2')
+                    r12.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_k2)
+                    row.AppendChild(r12)
+                    
+                    r13 = xml.CreateElement('down_block_area_k3')
+                    r13.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_k3)
+                    row.AppendChild(r13)
+                    
+                    r14 = xml.CreateElement('down_block_area_k4')
+                    r14.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_k4)
+                    row.AppendChild(r14)
+                    
+                    r15 = xml.CreateElement('down_block_area_k5')
+                    r15.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_k5)
+                    row.AppendChild(r15)
+                    
+                    r16 = xml.CreateElement('down_block_area_h1')
+                    r16.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_h1)
+                    row.AppendChild(r16)
+                    
+                    r17 = xml.CreateElement('down_block_area_h2')
+                    r17.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_h2)
+                    row.AppendChild(r17)
+                    
+                    r18 = xml.CreateElement('down_block_area_h3')
+                    r18.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_h3)
+                    row.AppendChild(r18)
+                    
+                    r19 = xml.CreateElement('down_block_area_h4')
+                    r19.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_h4)
+                    row.AppendChild(r19)
+                    
+                    r20 = xml.CreateElement('down_block_area_h5')
+                    r20.InnerText = str(self.model.rows[i].round_rect_config.down_block_area_h5)
+                    row.AppendChild(r20)
+                    
+                    r21 = xml.CreateElement('horizontal')
+                    r21.InnerText = str(self.model.rows[i].stepping)
+                    row.AppendChild(r21)
+                    
+                    r22 = xml.CreateElement('vertical')
+                    r22.InnerText = str(self.model.rows[i].position)
+                    row.AppendChild(r22)
+                    
+                    r23 = xml.CreateElement('down_horizontal')
+                    r23.InnerText = str(self.model.rows[i].round_rect_config.down_horizontal)
+                    row.AppendChild(r23)
+                    
+                    r24 = xml.CreateElement('down_vertical')
+                    r24.InnerText = str(self.model.rows[i].round_rect_config.down_vertical)
+                    row.AppendChild(r24)
+                    
+            f_path = XMLPATH()
+            xml.Save(f_path)
+        except:
+            pass
     
     def FlipCheckClick(self, sender, e):
         if sender.Tag == 'is_outer_flip':
@@ -473,6 +636,7 @@ class FritDialog(forms.Dialog[bool]):
         
         file_menu = self.Menu.Items.GetSubmenu("文件")
         edit_menu = self.Menu.Items.GetSubmenu("编辑")
+        about_us_menu = self.Menu.Items.GetSubmenu("关于我们")
         
         open_menu = forms.Command()
         open_menu.MenuText = "打开"
@@ -494,6 +658,10 @@ class FritDialog(forms.Dialog[bool]):
         add_region_menu2.Image = drawing.Bitmap('C:\\ico\\rect.png')
         edit_menu.Items.Add(add_region_menu2,1)
             
+        add_about_menu = forms.Command(self.AboutUsCommand)
+        add_about_menu.MenuText = "关于我们"
+        #add_about_menu.Image = drawing.Bitmap(current_path + '\\ico\\line.png')
+        about_us_menu.Items.Add(add_about_menu,0)
     
     def create_toolbar(self):
         current_path = os.getcwd()
@@ -520,6 +688,9 @@ class FritDialog(forms.Dialog[bool]):
             region.clear_dots()
         # self.display.Clear()
     
+    def AboutUsCommand(self, sender, e):
+        AboutUsToDialog()
+    
 
     def AddBandRegionCommand(self, sender, e):
         page = BandPage(len(self.regions))
@@ -538,7 +709,7 @@ class FritDialog(forms.Dialog[bool]):
                 page = dzBlockPage(len(self.regions))
                 self.regions.append(page)
                 self.tab.Pages.Add(page)
-            elif con.type == 'New_165':
+            elif con.type == 'New_165' or con.type == '复杂奥迪算法':
                 page = NewBlockPage(len(self.regions))
                 self.regions.append(page)
                 self.tab.Pages.Add(page)
@@ -907,7 +1078,7 @@ class HoleArrangeType:
     def get_hole_arrange_type():
         return ['顶头', '交错']
 
-#原HoleFrits 块状填充算法
+#原HoleFrits 块状填充算法--大众
 class Dazhong_fill_holes:
     def __init__(self, upline, midline, downline, boundary, split_crv, edge_crv, horizontal, vertical, region, aligned = False):
         self.upline = upline
@@ -2199,6 +2370,608 @@ class New_165_fill_holes:
        
         self.bake()
 
+#原HoleFrits 块状填充算法--奥迪
+class AoDi_fill_holes:
+    def __init__(self, up_outer_line, up_inner_line, up_boundary_crv,down_boundary_crv, up_bottom_line,down_inner_line,horizontal_up,vertical_up,horizontal_down,vertical_down,region, aligned = False):
+        self.up_outer_line = up_outer_line
+        self.up_inner_line = up_inner_line
+        self.up_boundary_crv = up_boundary_crv
+        self.down_boundary_crv = down_boundary_crv
+        self.up_bottom_line = up_bottom_line
+        self.down_inner = down_inner_line
+        self.horizontal_up = horizontal_up
+        self.vertical_up = vertical_up
+        self.horizontal_down = horizontal_down
+        self.vertical_down = vertical_down
+        self.region = region
+        self.aligned = aligned
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        self.white_frit = []
+        self.black_frit = []
+        self.border_frit = []
+        #print(self.region.rows[0].round_rect_config.outer_block_k)
+        #print(self.region.rows[0].round_rect_config.outer_block_r)
+        #print(self.region.rows[0].round_rect_config.inner_block_k)
+        #print(self.region.rows[0].round_rect_config.inner_block_r)
+        
+        #print(self.region.rows[0].round_rect_config.border_k)
+        #print(self.region.rows[0].round_rect_config.border_r)
+        
+        #print(self.region.rows[0].round_rect_config.black_band_k1)
+        #print(self.region.rows[0].round_rect_config.black_band_h1)
+        #print(self.region.rows[0].round_rect_config.black_band_k2)
+        #print(self.region.rows[0].round_rect_config.black_band_h2)
+        
+        #print(self.region.rows[0].round_rect_config.down_block_area_k1)
+        #print(self.region.rows[0].round_rect_config.down_block_area_h1)
+        #print(self.region.rows[0].round_rect_config.down_block_area_k2)
+        #print(self.region.rows[0].round_rect_config.down_block_area_h2)
+        #print(self.region.rows[0].round_rect_config.down_block_area_k3)
+        #print(self.region.rows[0].round_rect_config.down_block_area_h3)
+        #print(self.region.rows[0].round_rect_config.down_block_area_k4)
+        #print(self.region.rows[0].round_rect_config.down_block_area_h4)
+        #print(self.region.rows[0].round_rect_config.down_block_area_k5)
+        #print(self.region.rows[0].round_rect_config.down_block_area_h5)
+        
+        #print(self.region.rows[0].stepping)
+        #print(self.region.rows[0].position)
+        #print(self.region.rows[0].round_rect_config.down_horizontal)
+        #print(self.region.rows[0].round_rect_config.down_vertical)
+        
+        
+    def down_frit_fill(self,base_crv,edge_crv):
+        k1 = self.region.rows[0].round_rect_config.down_block_area_k1
+        h1 = self.region.rows[0].round_rect_config.down_block_area_h1
+        k2 = self.region.rows[0].round_rect_config.down_block_area_k2
+        h2 = self.region.rows[0].round_rect_config.down_block_area_h2
+        k3 = self.region.rows[0].round_rect_config.down_block_area_k3
+        h3 = self.region.rows[0].round_rect_config.down_block_area_h3
+        k4 = self.region.rows[0].round_rect_config.down_block_area_k4
+        h4 = self.region.rows[0].round_rect_config.down_block_area_h4
+        k5 = self.region.rows[0].round_rect_config.down_block_area_k5
+        h5 = self.region.rows[0].round_rect_config.down_block_area_h5
+        h = []
+        k = []
+        h.append(h1)
+        h.append(h2)
+        h.append(h3)
+        h.append(h4)
+        h.append(h5)
+        #print(type(h))
+        #for i in range(len(h)):
+            #print(h[i])
+        k.append(k1)
+        k.append(k2)
+        k.append(k3)
+        k.append(k4)
+        k.append(k5)
+        #print(type(k))
+        #for i in range(len(k)):
+            #print(k[i])
+        white_crv = []
+        black_crv = []
+        ##print(ghcomp.Length(base_crv))
+        
+        num = int(math.floor(1.0*(ghcomp.Length(base_crv))/self.horizontal_down))
+        base_pts, _, _ = ghcomp.DivideCurve(base_crv, num, False)
+        shift_pts = []
+        for i in range(len(base_pts)-1):
+            shift_pts.append(ghcomp.Division(ghcomp.Addition(base_pts[i]+base_pts[i+1]),2))
+        
+        for i in range(len(h)):
+            cur_base_pts = []
+            if i==1 or i==4:
+                cur_base_pts = shift_pts
+            else:
+                cur_base_pts = base_pts
+            crv = ghcomp.OffsetCurve(base_crv, h[i], ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), 1)
+            cur_k = k[i]
+            pts, ts, _ = ghcomp.CurveClosestPoint(cur_base_pts, crv)
+            _, tgts, _ = ghcomp.EvaluateCurve(crv, ts)
+            domain = ghcomp.ConstructDomain((-1.0*cur_k/2), (1.0*cur_k/2))
+            rect, _ = ghcomp.Rectangle(pts, domain, domain,1.0*cur_k/4)
+            rect, _ = ghcomp.RotateDirection(rect, pts, ghcomp.UnitY(1), tgts)
+            if i<3:
+                black_crv += rect
+            else:
+                white_crv += rect
+            
+            if i==3:
+                base_pts = pts
+            if i==4:
+                shift_pts = pts
+        
+        base_crv = ghcomp.PolyLine(shift_pts, False)
+        
+        cur_k = k[-1]
+        for i in range(35):
+            cur_base_pts = []
+            if i%2 == 0:
+                cur_base_pts = base_pts
+            else:
+                cur_base_pts = shift_pts
+            
+            crv = ghcomp.OffsetCurve(base_crv, self.vertical_down, ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), 1)
+            pts, ts, _ = ghcomp.CurveClosestPoint(cur_base_pts, crv)
+            _, tgts, _ = ghcomp.EvaluateCurve(crv, ts)
+            
+            relation, _ = ghcomp.PointInCurve(pts, edge_crv)
+            pts, _ = ghcomp.Dispatch(pts, relation)
+            tgts, _ = ghcomp.Dispatch(tgts, relation)
+            
+            if pts == None:
+                break
+            
+            pts = self.construct_safe_pts_list(pts)
+            if len(pts)>1:
+                base_crv = ghcomp.PolyLine(pts, False)
+            else:
+                base_crv = crv
+                
+            
+            domain = ghcomp.ConstructDomain((-1.0*cur_k/2), (1.0*cur_k/2))
+            rect, _ = ghcomp.Rectangle(pts, domain, domain, 1.0*cur_k/4)
+            rect, _ = ghcomp.RotateDirection(rect, pts, ghcomp.UnitY(1), tgts)
+            white_crv += rect
+            
+            if i%2 == 0:
+                base_pts = pts
+            else:
+                shift_pts = pts
+        return black_crv,white_crv
+    
+    def pt_construct(self,center_pt,d_vec):
+        centerx, centery, centerz = ghcomp.Deconstruct(center_pt)
+        x,y,z = ghcomp.DeconstructVector(d_vec)
+        left_up = ghcomp.ConstructPoint(centerx - x/2, centery + y/2, z)
+        left_down = ghcomp.ConstructPoint(centerx - x/2, centery - y/2, z)
+        right_up = ghcomp.ConstructPoint(centerx + x/2, centery + y/2, z)
+        right_down = ghcomp.ConstructPoint(centerx + x/2, centery - y/2, z)
+        return left_up,left_down,right_up,right_down
+        
+    def generate_rect(self,center_pts, k, r, n, pattern = None):
+        sr = r
+        lr = sr
+        #默认圆角矩形的边方向为逆时针（黑），白色则为顺时针
+        bound_crv = []
+        rect_crv = []
+        #TODO: modify line to nurbscurve
+        k = 1.0*k/2
+        #k = k/2
+        #ang, _ = ghcomp.Angle(ghcomp.UnitY(-1), n)
+        
+        for i in range(len(center_pts)):
+            cur_rect = {}
+            cur_pt = center_pts[i]
+            x = cur_pt.X
+            y = cur_pt.Y
+            z = cur_pt.Z
+            cur_n = n
+            #cur_ang = ang[i]
+            #if n[i].X < 0:
+            #    cur_ang = -cur_ang
+            
+            std_vec = ghcomp.UnitX(1)
+            
+            luarc_ct = ghcomp.ConstructPoint(x-k+r, y+k-r, 0)
+            lu_angle = ghcomp.ConstructDomain(ghcomp.Pi(0.5), ghcomp.Pi(1))
+            luarc, _ = ghcomp.Arc(ghcomp.XYPlane(luarc_ct), r, lu_angle)
+            luarc = rg.NurbsCurve.CreateFromArc(luarc)
+            luarc, _ = ghcomp.RotateDirection(luarc, cur_pt, std_vec, cur_n)
+            #luarc, _ = ghcomp.Rotate(luarc, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                luarc, _ = ghcomp.FlipCurve(luarc)
+            bound_crv.append(luarc)
+            cur_rect['lu'] = luarc
+            
+            up_l = ghcomp.ConstructPoint(x-k+r, y+k, 0)
+            up_r = ghcomp.ConstructPoint(x+k-r, y+k, 0)
+            up_crv = ghcomp.Line(up_r, up_l)
+            up_crv = rg.NurbsCurve.CreateFromLine(up_crv)
+            up_crv, _ = ghcomp.RotateDirection(up_crv, cur_pt, std_vec, cur_n)
+            #up_crv, _ = ghcomp.Rotate(up_crv, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                up_crv, _ = ghcomp.FlipCurve(up_crv)
+            bound_crv.append(up_crv)
+            cur_rect['up'] = up_crv
+            rec_crv = ghcomp.JoinCurves(ghcomp.Merge(up_crv, luarc), True)
+            
+            ruarc_ct = ghcomp.ConstructPoint(x+k-r, y+k-r, 0)
+            ru_angle = ghcomp.ConstructDomain(ghcomp.Pi(0), ghcomp.Pi(0.5))
+            ruarc, _ = ghcomp.Arc(ghcomp.XYPlane(ruarc_ct), r, ru_angle)
+            ruarc = rg.NurbsCurve.CreateFromArc(ruarc)
+            ruarc, _ = ghcomp.RotateDirection(ruarc, cur_pt, std_vec, cur_n)
+            #ruarc, _ = ghcomp.Rotate(ruarc, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                ruarc, _ = ghcomp.FlipCurve(ruarc)
+            bound_crv.append(ruarc)
+            cur_rect['ru'] = ruarc
+            rec_crv = ghcomp.JoinCurves(ghcomp.Merge(ruarc, rec_crv), True)
+            
+            right_u = ghcomp.ConstructPoint(x+k, y+k-r, 0)
+            r = sr
+            right_b = ghcomp.ConstructPoint(x+k, y-k+r, 0)
+            right_crv = ghcomp.Line(right_b, right_u)
+            right_crv = rg.NurbsCurve.CreateFromLine(right_crv)
+            right_crv, _ = ghcomp.RotateDirection(right_crv, cur_pt, std_vec, cur_n)
+            #right_crv, _ = ghcomp.Rotate(right_crv, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                right_crv, _ = ghcomp.FlipCurve(right_crv)
+            bound_crv.append(right_crv)
+            cur_rect['right'] = right_crv
+            rec_crv = ghcomp.JoinCurves(ghcomp.Merge(right_crv, rec_crv), True)
+            
+            rbarc_ct = ghcomp.ConstructPoint(x+k-r, y-k+r, 0)
+            rb_angle = ghcomp.ConstructDomain(ghcomp.Pi(-0.5), ghcomp.Pi(0))
+            rbarc, _ = ghcomp.Arc(ghcomp.XYPlane(rbarc_ct), r, rb_angle)
+            rbarc = rg.NurbsCurve.CreateFromArc(rbarc)
+            rbarc, _ = ghcomp.RotateDirection(rbarc, cur_pt, std_vec, cur_n)
+            #rbarc, _ = ghcomp.Rotate(rbarc, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                rbarc, _ = ghcomp.FlipCurve(rbarc)
+            bound_crv.append(rbarc)
+            cur_rect['rb'] = rbarc
+            rec_crv = ghcomp.JoinCurves(ghcomp.Merge(rbarc, rec_crv), True)
+            
+            bottom_r = ghcomp.ConstructPoint(x+k-r, y-k, 0)
+            bottom_l = ghcomp.ConstructPoint(x-k+r, y-k, 0)
+            bottom_crv = ghcomp.Line(bottom_l, bottom_r)
+            bottom_crv = rg.NurbsCurve.CreateFromLine(bottom_crv)
+            bottom_crv, _ = ghcomp.RotateDirection(bottom_crv, cur_pt, std_vec, cur_n)
+            #bottom_crv, _ = ghcomp.Rotate(bottom_crv, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                bottom_crv, _ = ghcomp.FlipCurve(bottom_crv)
+            bound_crv.append(bottom_crv)
+            cur_rect['bottom'] = bottom_crv
+            rec_crv = ghcomp.JoinCurves(ghcomp.Merge(bottom_crv, rec_crv), True)
+            
+            lbarc_ct = ghcomp.ConstructPoint(x-k+r, y-k+r, 0)
+            lb_angle = ghcomp.ConstructDomain(ghcomp.Pi(-1), ghcomp.Pi(-0.5))
+            lbarc, _ = ghcomp.Arc(ghcomp.XYPlane(lbarc_ct), r, lb_angle)
+            lbarc = rg.NurbsCurve.CreateFromArc(lbarc)
+            lbarc, _ = ghcomp.RotateDirection(lbarc, cur_pt, std_vec, cur_n)
+            #lbarc, _ = ghcomp.Rotate(lbarc, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                lbarc, _ = ghcomp.FlipCurve(lbarc)
+            bound_crv.append(lbarc)
+            cur_rect['lb'] = lbarc
+            rec_crv = ghcomp.JoinCurves(ghcomp.Merge(lbarc, rec_crv), True)
+            
+            left_b = ghcomp.ConstructPoint(x-k, y-k+r, 0)
+            left_u = ghcomp.ConstructPoint(x-k, y+k-r, 0)
+            left_crv = ghcomp.Line(left_u, left_b)
+            left_crv = rg.NurbsCurve.CreateFromLine(left_crv)
+            left_crv, _ = ghcomp.RotateDirection(left_crv, cur_pt, std_vec, cur_n)
+            #left_crv, _ = ghcomp.Rotate(left_crv, cur_ang, ghcomp.XYPlane(cur_pt))
+            if pattern == "white":
+                left_crv, _ = ghcomp.FlipCurve(left_crv)
+            bound_crv.append(left_crv)
+            cur_rect['left'] = left_crv
+            rec_crv = ghcomp.JoinCurves(ghcomp.Merge(left_crv, rec_crv), True)
+            
+            seamptl, seamptr = ghcomp.EndPoints(bottom_crv)
+            #seampt = ghcomp.Division(ghcomp.Addition(seamptl, seamptr), 2)
+            _, seamt, _ = ghcomp.CurveClosestPoint(seamptl, rec_crv)
+            rec_crvl = ghcomp.Seam(rec_crv, seamt)
+            cur_rect['rect'] = rec_crvl
+            _, seamt, _ = ghcomp.CurveClosestPoint(seamptr, rec_crv)
+            rec_crvr = ghcomp.Seam(rec_crv, seamt)
+            cur_rect['rect2'] = rec_crvr
+            
+            rect_crv.append(cur_rect)
+        
+        return bound_crv, rect_crv
+        
+    def generate_slope_band(self,slope_pts, h_direc, edge_crv):
+        slope_band = []
+        
+        k1 = self.region.rows[0].round_rect_config.black_band_k1
+        k2 = self.region.rows[0].round_rect_config.black_band_k2
+        h1 = self.region.rows[0].round_rect_config.black_band_h1
+        h2 = self.region.rows[0].round_rect_config.black_band_h2
+        
+        #k1 = 0.55
+        #k2 = 0.775
+        k3 = 1
+        
+        rect_1 = []
+        rect_2 = []
+        rect_3 = []
+        
+        #h1 = 1.5
+        ##h2 = 2.725
+        #h3 = 2.725+1.0*(0.55/2)
+        h3 = h2+1.0*(k1/2)
+        threshold = 0.4
+        
+        for i in range(len(slope_pts)):
+            cur_pt = slope_pts[i]
+            line = ghcomp.LineSDL(cur_pt, h_direc, 10)
+            end_pt, _, _ = ghcomp.CurveXCurve(line, edge_crv)
+            flag = False
+            if end_pt:
+                cur_direc, _ = ghcomp.Vector2Pt(cur_pt, end_pt, False)
+                dist = ghcomp.Distance(cur_pt, end_pt)
+                factor = 1.0*dist/h3
+                unit_length = 1.7*factor
+                count = int(math.floor(1.0*dist/unit_length))
+                cpst = dist - count * unit_length
+                if cpst > (1-threshold) * unit_length:
+                    count += 1
+                    flag = True
+                else:
+                    flag = False
+                    
+                for j in range(count):
+                    _, cpst_pt = ghcomp.EndPoints(ghcomp.LineSDL(cur_pt, cur_direc, dist))
+                    
+                    if j==count-1:
+                        _, band_pt = ghcomp.EndPoints(ghcomp.LineSDL(cur_pt, cur_direc, factor*h2))
+                        if flag == False:
+                            if cpst < threshold * unit_length:
+                                rect_1.append(cpst_pt)
+                            else:
+                                rect_1.append(band_pt)
+                        else:
+                            rect_1.append(cpst_pt)
+                    elif j==count-2:
+                        _, band_pt = ghcomp.EndPoints(ghcomp.LineSDL(cur_pt, cur_direc, factor*h1))
+                        rect_2.append(band_pt)
+                    else:
+                        _, band_pt = ghcomp.EndPoints(ghcomp.LineSDL(cur_pt, cur_direc, unit_length*(j+1)))
+                        rect_3.append(band_pt)
+                
+        
+        n, _ = ghcomp.VectorXYZ(-1, -1, 0)
+        bound_crv1, _ = self.generate_rect(rect_1, k1, 0.25*k1, n, pattern = None)
+        bound_crv2, _ = self.generate_rect(rect_2, k2, 0.25*k2, n, pattern = None)
+        bound_crv3, _ = self.generate_rect(rect_3, k3, 0.25*k3, n, pattern = None)
+        
+        slope_band += bound_crv1
+        slope_band += bound_crv2
+        slope_band += bound_crv3
+        
+        return slope_band
+        
+    def construct_safe_pts_list(self,pts):
+        #[x,y,z]to[pt]
+        if len(pts)==3:
+            try:
+                if pts[2]==0:
+                    new_pts = []
+                    pt = ghcomp.ConstructPoint(pts[0], pts[1], pts[2])
+                    new_pts.append(pt)
+                    return new_pts
+            except:
+                return pts
+        return pts
+        
+        
+    def black_band_frit_fill(self,bound_pts,edge_crv):
+        direc, _ = ghcomp.VectorXYZ(-1, -1, 0)
+        black_band = self.generate_slope_band(bound_pts, direc, edge_crv)
+        return black_band
+        
+    def block_inner_frit_fill(self,grid_crv,horizontal,vertical,aligned,fit_ends):
+        pts = []
+        unit_length = 1
+        pts_array = []
+        
+        top_pts = []
+        bottom_pts = []
+        limbo_pts = []
+        
+        if aligned == False:
+            unit_length = math.sqrt(0.25 * horizontal*horizontal + vertical*vertical)
+        else:
+            unit_length = math.sqrt(horizontal*horizontal + vertical*vertical)
+        
+        print(unit_length)
+        
+        for i in range(len(fit_ends)):
+            cur_crv = fit_ends[i]
+            start_pt, end_pt = ghcomp.EndPoints(cur_crv)
+            x = start_pt.X
+            y = start_pt.Y
+            z = start_pt.Z
+            x_domain = end_pt.X - x
+            y_domain = end_pt.Y - y
+            z_domain = end_pt.Z - z
+            num = int(math.floor(ghcomp.Length(cur_crv)/unit_length)+1)
+            #print(num)
+            cur_pts = []
+            for k in range(num+1):
+                cur_fac = 1.0*k/num
+                #cur_fac = k/num
+                cur_x = x + cur_fac*x_domain
+                cur_y = y + cur_fac*y_domain
+                cur_z = z + cur_fac*z_domain
+                cur_pt = ghcomp.ConstructPoint(cur_x, cur_y, cur_z)
+                cur_pts.append(cur_pt)
+            for k in range(1, num-1):
+                pts.append(cur_pts[k])
+            if num>1:
+                top_pts.append(cur_pts[0])
+            bottom_pts.append(cur_pts[-1])
+            limbo_pts.append(cur_pts[-2])
+        return pts,top_pts,bottom_pts,limbo_pts
+        
+        
+    
+    def run(self):
+        up_outer_pre = ghcomp.OffsetCurve(self.up_outer_line, distance = -0.423, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        up_outer = ghcomp.OffsetCurve(up_outer_pre, distance = -1, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
+        up_outer_closed_crv,_ = ghcomp.Pufferfish.CloseCurve(up_outer_pre, 0, 0.5, 0)
+        box,_ = ghcomp.BoundingBox(up_outer_closed_crv,plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)))
+        box_center_point,box_diagonal_vector,_,_,_ = ghcomp.BoxProperties(box)
+        left_up,left_down,right_up,right_down = self.pt_construct(box_center_point,box_diagonal_vector)
+        V_length = ghcomp.VectorLength(box_diagonal_vector)
+        line = ghcomp.LineSDL(box_center_point,box_diagonal_vector,V_length)
+        subtraction_result = ghcomp.Subtraction(right_up,left_down)
+        line_segment = ghcomp.LineSDL(right_down,subtraction_result,V_length)
+        _,end_pt = ghcomp.EndPoints(line_segment)
+        new_line = ghcomp.Line(left_up,end_pt)
+        length_newLine = ghcomp.Length(new_line)
+        newline_division = ghcomp.Division(length_newLine,2.397)
+        division_pts,_,_ = ghcomp.DivideCurve(new_line,newline_division,False)
+        all_refer_vector,_ = ghcomp.VectorXYZ(-1.2,-1.2,0)
+        all_refer_line = ghcomp.LineSDL(division_pts,all_refer_vector,V_length)
+        outer_crv_pts,_,_ = ghcomp.CurveXCurve(all_refer_line,up_outer_pre)#块状最外侧花点 OK 
+        #print(self.region.rows[0].round_rect_config.outer_block_k)
+        #print(self.region.rows[0].round_rect_config.outer_block_r)
+        domain_outer_block = self.region.rows[0].round_rect_config.outer_block_k/2
+        ##print(domain_outer_block)
+        Outer_Xsize = ghcomp.ConstructDomain(-domain_outer_block,domain_outer_block)
+        #print(Outer_Xsize)
+        Outer_Ysize = ghcomp.ConstructDomain(-domain_outer_block,domain_outer_block)
+        #print(Outer_Ysize)
+        outer_r = self.region.rows[0].round_rect_config.outer_block_r
+        #print(outer_r)
+        original_outer_frit,_ = ghcomp.Rectangle(outer_crv_pts,Outer_Xsize,Outer_Ysize,outer_r)
+        final_outer_frit,_ = ghcomp.RotateDirection(original_outer_frit,outer_crv_pts,ghcomp.UnitY(1),all_refer_vector)#旋转后的内部花点
+        for i in range(len(final_outer_frit)):
+            #self.display.AddCurve(final_outer_frit[i],self.display_color,1) #OK 
+            self.white_frit.append(final_outer_frit[i])#最外侧块状花点加入bake列表
+            
+        #开始处理大块状斜向参考线
+        outer_second_pts = []
+        for i in range(len(all_refer_line)):
+            result = ghcomp.CurveXCurve(all_refer_line[i],up_outer)
+            null = 'none'
+            if result:
+                outer_second_pts.append(result)
+            else:
+                outer_second_pts.append(null)
+            
+        inner_crv_pts = []
+        for i in range(len(all_refer_line)):
+            Result = ghcomp.CurveXCurve(all_refer_line[i],self.up_inner_line)
+            Null = 'none'
+            if result:
+                inner_crv_pts.append(Result)
+            else:
+                inner_crv_pts.append(Null)
+        
+        inner_ray_line = []
+        for i in range(len(inner_crv_pts)):
+            Ruselt = inner_crv_pts[i][0]
+            
+            apd = 'none'
+            if Ruselt != 'none':
+                data = ghcomp.LineSDL(inner_crv_pts[i][0],all_refer_vector,-1.25)
+                inner_ray_line.append(data)
+            else:
+                inner_ray_line.append(apd)
+        inner_ray_line_end = []
+        for i in range(len(inner_ray_line)):
+            apd1 = 'none'
+            if inner_ray_line[i] != 'none':
+                _,results = ghcomp.EndPoints(inner_ray_line[i])
+                inner_ray_line_end.append(results)
+            else:
+                inner_ray_line_end.append(apd1)
+        
+        block_inner_refer_line = []
+        for i in range(len(outer_second_pts)):
+            block_inner_refer_line.append(ghcomp.Line(outer_second_pts[i][0],inner_ray_line_end[i]))
+        New_block_inner_refer_line = []
+        for i in range(len(block_inner_refer_line)):
+            if block_inner_refer_line[i] != None:
+                New_block_inner_refer_line.append(block_inner_refer_line[i])
+            
+        #处理大块状斜向参考线结束
+        
+        
+        
+        fit_end = []
+        for i in range(len(New_block_inner_refer_line)):
+            fit_end.append(rg.NurbsCurve.CreateFromLine(New_block_inner_refer_line[i]))
+        
+        grid_crv = []
+        for i in range(len(all_refer_line)):
+            grid_crv.append(rg.NurbsCurve.CreateFromLine(all_refer_line[i]))
+        
+        pts,top_pts,bottom_pts,limbo_pts = self.block_inner_frit_fill(grid_crv,self.horizontal_up,self.vertical_up,self.aligned,fit_end)
+        
+        frits_one = ghcomp.Merge(pts,top_pts)#self.up_boundary_crv
+        frits_two = ghcomp.Merge(bottom_pts,limbo_pts)
+        block_inner_frits = ghcomp.Merge(frits_one,frits_two)
+        pts_in_boundarycrv,_ = ghcomp.PointInCurve(block_inner_frits,self.up_boundary_crv)
+        
+        pts_dispch,_ = ghcomp.Dispatch(block_inner_frits,pts_in_boundarycrv)
+        ##print(self.region.rows[0].round_rect_config.inner_block_k)
+        ##print(self.region.rows[0].round_rect_config.inner_block_r)
+        
+        inner_k = self.region.rows[0].round_rect_config.inner_block_k/2
+        #print(inner_k)
+        inner_r = self.region.rows[0].round_rect_config.inner_block_r
+        #print(inner_r)
+        
+        inner_Xsize = ghcomp.ConstructDomain(-inner_k,inner_k)
+        inner_Ysize = ghcomp.ConstructDomain(-inner_k,inner_k)
+        original_inner_frit,_ = ghcomp.Rectangle(pts_dispch,inner_Xsize,inner_Ysize,inner_r)
+        final_inner_frit,_ = ghcomp.RotateDirection(original_inner_frit,pts_dispch,ghcomp.UnitY(1),all_refer_vector)#旋转后的内部花点
+        for i in range(len(final_inner_frit)):
+            #for i in range(len(final_inner_frit)):
+            #self.display.AddCurve(final_inner_frit[i],self.display_color,1)
+            self.white_frit.append(final_inner_frit[i])#块状内部花点加入BAKE列表
+        short_refer_line = ghcomp.LineSDL(bottom_pts,all_refer_vector,2)
+        border_pts,_,_ = ghcomp.CurveXCurve(short_refer_line,self.up_inner_line)
+        
+        black_band = self.black_band_frit_fill(border_pts,self.up_bottom_line)
+        #print(len(black_band))
+        for i in range(len(black_band)):
+            #self.display.AddCurve(black_band[i],self.display_color,1)
+            self.black_frit.append(black_band[i])#块状内部花点加入BAKE列表
+            
+        #print(self.region.rows[0].round_rect_config.border_k)
+        #print(self.region.rows[0].round_rect_config.border_r)
+        border_kk = self.region.rows[0].round_rect_config.border_k/2
+        border_rr = self.region.rows[0].round_rect_config.border_r
+        #print(border_kk)
+        #print(border_rr)
+        
+        
+        border_Xsize = ghcomp.ConstructDomain(-border_kk,border_kk)
+        border_Ysize = ghcomp.ConstructDomain(-border_kk,border_kk)
+        original_border_frit,_ = ghcomp.Rectangle(border_pts,border_Xsize,border_Ysize,border_rr)
+        final_border_frit,_ = ghcomp.RotateDirection(original_border_frit,border_pts,ghcomp.UnitY(1),all_refer_vector)
+        #print(len(final_border_frit))
+        for i in range(len(final_border_frit)):
+            self.border_frit.append(final_border_frit[i])#边界花点加入列表中
+        if self.down_inner != None and self.down_boundary_crv != None:
+            black_crv,white_crv = self.down_frit_fill(self.down_inner,self.down_boundary_crv)
+            ##print(len(black_crv))
+            #print(len(white_crv))
+            for i in range(len(black_crv)):
+                #self.display.AddCurve(black_crv[i],self.display_color,1)
+                self.black_frit.append(black_crv[i])#块状内部花点加入BAKE列表
+            for i in range(len(white_crv)):
+                #print(white_crv[i])
+                #self.display.AddCurve(white_crv[i],self.display_color,1)
+                self.white_frit.append(white_crv[i])#块状内部花点加入BAKE列表
+        else:
+            pass
+        layer_name = 'fuyao_black'
+        rs.AddLayer(layer_name, self.display_color)
+        for i in range(len(self.black_frit)):
+            obj = scriptcontext.doc.Objects.AddCurve(self.black_frit[i])
+            rs.ObjectLayer(obj, layer_name)
+        
+        layer_name = 'fuyao_white'
+        rs.AddLayer(layer_name, self.display_color)
+        for i in range(len(self.white_frit)):
+            obj = scriptcontext.doc.Objects.AddCurve(self.white_frit[i])
+            rs.ObjectLayer(obj, layer_name)
+        
+        layer_name = 'fuyao_bound'
+        rs.AddLayer(layer_name, self.display_color)
+        for i in range(len(self.border_frit)):
+            obj = scriptcontext.doc.Objects.AddCurve(self.border_frit[i])
+            rs.ObjectLayer(obj, layer_name)
+
 #原HoleFrits 块状填充算法
 class HoleFrits:
     def __init__(self, hole_id, region):
@@ -2217,6 +2990,82 @@ class HoleFrits:
         self.top_curve = None
         self.bottom_curve = None
         self.border_curve = None
+    
+    
+    def AoDi_fill(self):
+        print('奥迪调用')
+        self.up_outer_crv = self.region.curves[0]
+        if self.region.is_flip[0] == True:
+            self.up_outer_crv, _ = ghcomp.FlipCurve(self.up_outer_crv)
+        
+        self.up_inner_crv = self.region.curves[1]
+        if self.region.is_flip[1] == True:
+            self.up_inner_crv, _ = ghcomp.FlipCurve(self.up_inner_crv)
+        
+        self.up_bottom_crv = self.region.curves[2]
+        if self.region.is_flip[2] == True:
+            self.up_bottom_crv, _ = ghcomp.FlipCurve(self.up_bottom_crv)
+        
+        try:
+            self.down_inner_crv = self.region.curves[3]
+            if self.region.is_flip[3] == True:
+                self.down_inner_crv, _ = ghcomp.FlipCurve(self.down_inner_crv)
+        except:
+            self.down_inner_crv = None
+            pass
+        
+        try:
+            self.down_outer_crv = self.region.curves[4]
+            if self.region.is_flip[4] == True:
+                self.down_outer_crv, _ = ghcomp.FlipCurve(self.down_outer_crv)
+        except:
+            self.down_outer_crv = None
+            pass
+        #预处理函数变量
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        
+        #up_outer_pre = ghcomp.OffsetCurve(self.up_outer_crv, distance = -0.423, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+        #up_outer = ghcomp.OffsetCurve(up_outer_pre, distance = -1, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
+        up_bottom = ghcomp.OffsetCurve(self.up_bottom_crv, distance = -0.275, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
+        #self.display.AddCurve(up_bottom,self.display_color,1)
+        
+        blocksrf_up = ghcomp.RuledSurface(self.up_outer_crv, self.up_inner_crv)
+        edgelist_up = []
+        for i in range(blocksrf_up.Edges.Count):
+            edgelist_up.append(blocksrf_up.Edges[i].EdgeCurve)
+        blockborder_up = ghcomp.JoinCurves(edgelist_up)
+        #self.display.AddCurve(blockborder_up,self.display_color,1)
+        if self.region.curves[3] and self.region.curves[4]:
+            blocksrf_down = ghcomp.RuledSurface(self.down_inner_crv, self.down_outer_crv)
+            edgelist_down = []
+            for i in range(blocksrf_down.Edges.Count):
+                edgelist_down.append(blocksrf_down.Edges[i].EdgeCurve)
+            blockborder_down = ghcomp.JoinCurves(edgelist_down)
+            #self.display.AddCurve(self.down_inner_crv,self.display_color,1)
+            
+            blockborder = ghcomp.OffsetCurve(blockborder_down, distance = -2, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
+        else:
+            blockborder = None
+            #self.down_inner_crv = None
+        #self.display.AddCurve(blockborder,self.display_color,1)
+        horizontal_up = self.region.rows[0].stepping
+        vertical_up = self.region.rows[0].position
+        horizontal_down = self.region.rows[0].round_rect_config.down_horizontal
+        vertical_down = self.region.rows[0].round_rect_config.down_vertical
+        #horizontal_up = 2.4
+        #vertical_up = 1.2
+        #horizontal_down = 2
+        #vertical_down = 1.22
+        AoDi_frit_generator = AoDi_fill_holes(\
+                                up_outer_line = self.up_outer_crv, up_inner_line = self.up_inner_crv, \
+                                up_boundary_crv = blockborder_up,down_boundary_crv = blockborder, up_bottom_line = up_bottom, \
+                                down_inner_line = self.down_inner_crv,horizontal_up = horizontal_up, vertical_up = vertical_up,\
+                                horizontal_down = horizontal_down,vertical_down = vertical_down,region = self.region, aligned = False)
+        AoDi_frit_generator.run()
+    
+    
     
     def New165_fill_dots(self):
         
@@ -3797,7 +4646,57 @@ class RowFrits:
             rows.append(row)
             print(len(rows))
         return rows
-
+    
+    @staticmethod
+    def load_AoDi_block_xml(file_path, region):
+        xmldoc = System.Xml.XmlDocument()
+        xmldoc.Load(file_path)
+        items = xmldoc.SelectNodes("setting/block/row")
+        rows = []
+        for item in items:
+            nid = int(item.GetAttributeNode('id').Value)
+            row = RowFrits(nid, region)
+            #dot_type = item.GetAttributeNode('type').Value
+            #row.dot_type = {'circle': FritType.CIRCLE_DOT, 'roundrect': FritType.ROUND_RECT, 'arcdot': FritType.ARC_CIRCLE, 'triarc': FritType.TRI_ARC}[dot_type]
+            #arrange_type = item.GetAttributeNode('arrange').Value
+            #row.arrange_type = {'heading': RowArrangeType.HEADING, 'cross': RowArrangeType.CROSS }[arrange_type]
+            val = dict()
+            for node in item.ChildNodes:
+                val[node.Name] = float(node.InnerText)
+            row.stepping = val['horizontal']
+            row.position = val['vertical']
+            #if row.dot_type == FritType.CIRCLE_DOT:
+            
+            row.round_rect_config.outer_block_k = val['outer_block_k']
+            row.round_rect_config.outer_block_r = val['outer_block_r']
+            row.round_rect_config.inner_block_k = val['inner_block_k']
+            row.round_rect_config.inner_block_r = val['inner_block_r']
+            
+            row.round_rect_config.border_k = val['border_k']
+            row.round_rect_config.border_r = val['border_r']
+            
+            row.round_rect_config.black_band_k1 = val['black_band_k1']
+            row.round_rect_config.black_band_h1 = val['black_band_h1']
+            row.round_rect_config.black_band_k2 = val['black_band_k2']
+            row.round_rect_config.black_band_h2 = val['black_band_h2']
+            
+            row.round_rect_config.down_block_area_k1 = val['down_block_area_k1']
+            row.round_rect_config.down_block_area_h1 = val['down_block_area_h1']
+            row.round_rect_config.down_block_area_k2 = val['down_block_area_k2']
+            row.round_rect_config.down_block_area_h2 = val['down_block_area_h2']
+            row.round_rect_config.down_block_area_k3 = val['down_block_area_k3']
+            row.round_rect_config.down_block_area_h3 = val['down_block_area_h3']
+            row.round_rect_config.down_block_area_k4 = val['down_block_area_k4']
+            row.round_rect_config.down_block_area_h4 = val['down_block_area_h4']
+            row.round_rect_config.down_block_area_k5 = val['down_block_area_k5']
+            row.round_rect_config.down_block_area_h5 = val['down_block_area_h5']
+            row.round_rect_config.down_horizontal = val['down_horizontal']
+            row.round_rect_config.down_vertical = val['down_vertical']
+            
+            
+            rows.append(row)
+            print(len(rows))
+        return rows
 #原Separatrix
 class Separatrix:
     def __init__(self, grid_direc, white_pts, white_k, white_sr, black_k, black_sr, r, white_base_crv, split_crv, black_base_crv):
@@ -4527,6 +5426,29 @@ class RoundRectConfig:
     def __init__(self):
         self.k = 0
         self.r = 0
+        #如下是奥迪复杂算法的参数初始化
+        self.outer_block_k = 0
+        self.outer_block_r = 0
+        self.inner_block_k = 0
+        self.inner_block_r = 0
+        self.border_k = 0
+        self.border_r = 0
+        self.black_band_k1 = 0
+        self.black_band_h1 = 0
+        self.black_band_k2 = 0
+        self.black_band_h2 = 0
+        self.down_block_area_k1 = 0
+        self.down_block_area_k2 = 0
+        self.down_block_area_k3 = 0
+        self.down_block_area_k4 = 0
+        self.down_block_area_k5 = 0
+        self.down_block_area_h1 = 0
+        self.down_block_area_h2 = 0
+        self.down_block_area_h3 = 0
+        self.down_block_area_h4 = 0
+        self.down_block_area_h5 = 0
+        self.down_horizontal = 0
+        self.down_vertical = 0
     
     def top(self):
         return self.k / 2
@@ -5504,6 +6426,343 @@ class NewConfigPanel(forms.GroupBox):
             obj = d.bake()
             rs.ObjectLayer(obj, layer_name)
 
+#AoDi ConfigPanel
+class AODIConfigPanel(forms.GroupBox):
+    def __init__(self, parent, row_config):
+        self.parent = parent
+        self.model = row_config
+        self.Text = '第{}排'.format(row_config.row_id)
+        self.setup_view()
+        self.display = rc.Display.CustomDisplay(True)
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+
+    def setup_view(self):
+        self.RemoveAll()
+        self.basic_setting_label = forms.Label(Text='基础设置:', Font = Font('Microsoft YaHei', 12.))
+        
+        self.outer_block_k_label = forms.Label(Text='块状最外侧花点K值：')
+        self.outer_block_k = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.outer_block_k))
+        self.outer_block_k.Size = drawing.Size(60, -1)
+        self.outer_block_k.TextChanged += self.outer_block_k_changed
+        
+        self.outer_block_r_label = forms.Label(Text='块状最外侧花点R值：')
+        self.outer_block_r = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.outer_block_r))
+        self.outer_block_r.Size = drawing.Size(60, -1)
+        self.outer_block_r.TextChanged += self.outer_block_r_changed
+        
+        
+        self.inner_block_k_label = forms.Label(Text='块状中间花点K值：')
+        self.inner_block_k = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.inner_block_k))
+        self.inner_block_k.Size = drawing.Size(60, -1)
+        self.inner_block_k.TextChanged += self.inner_block_k_changed
+        
+        self.inner_block_r_label = forms.Label(Text='块状中间花点R值：')
+        self.inner_block_r = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.inner_block_r))
+        self.inner_block_r.Size = drawing.Size(60, -1)
+        self.inner_block_r.TextChanged += self.inner_block_r_changed
+        
+        
+        self.border_k_label = forms.Label(Text='黑白边缘花点K值：')
+        self.border_k = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.border_k))
+        self.border_k.Size = drawing.Size(60, -1)
+        self.border_k.TextChanged += self.border_k_changed
+        
+        self.border_r_label = forms.Label(Text='黑白边缘花点R值：')
+        self.border_r = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.border_r))
+        self.border_r.Size = drawing.Size(60, -1)
+        self.border_r.TextChanged += self.border_r_changed
+        
+        
+        self.black_band_k1_label = forms.Label(Text='黑色带状花点K1值：')
+        self.black_band_k1 = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.black_band_k1))
+        self.black_band_k1.Size = drawing.Size(60, -1)
+        self.black_band_k1.TextChanged += self.black_band_k1_changed
+        self.black_band_k2_label = forms.Label(Text='黑色带状花点K2值：')
+        self.black_band_k2 = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.black_band_k2))
+        self.black_band_k2.Size = drawing.Size(60, -1)
+        self.black_band_k2.TextChanged += self.black_band_k2_changed
+        
+        self.black_band_h2_label = forms.Label(Text='黑色带状花点H2值：')
+        self.black_band_h2 = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.black_band_h2))
+        self.black_band_h2.Size = drawing.Size(60, -1)
+        self.black_band_h2.TextChanged += self.black_band_h2_changed
+        self.black_band_h1_label = forms.Label(Text='黑色带状花点H1值：')
+        self.black_band_h1 = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.black_band_h1))
+        self.black_band_h1.Size = drawing.Size(60, -1)
+        self.black_band_h1.TextChanged += self.black_band_h1_changed
+        
+        
+        self.down_block_area_k1_label = forms.Label(Text='小块状花点K1值：')
+        self.down_block_area_k1 = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.down_block_area_k1))
+        self.down_block_area_k1.Size = drawing.Size(60, -1)
+        self.down_block_area_k1.TextChanged += self.down_block_area_k1_changed
+        
+        self.down_block_area_k2_label = forms.Label(Text='小块状花点K2值：')
+        self.down_block_area_k2 = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.down_block_area_k2))
+        self.down_block_area_k2.Size = drawing.Size(60, -1)
+        self.down_block_area_k2.TextChanged += self.down_block_area_k2_changed
+        
+        self.down_block_area_k3_label = forms.Label(Text='小块状花点K3值：')
+        self.down_block_area_k3 = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.down_block_area_k3))
+        self.down_block_area_k3.Size = drawing.Size(60, -1)
+        self.down_block_area_k3.TextChanged += self.down_block_area_k3_changed
+        
+        self.down_block_area_k4_label = forms.Label(Text='小块状花点K4值：')
+        self.down_block_area_k4 = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.down_block_area_k4))
+        self.down_block_area_k4.Size = drawing.Size(60, -1)
+        self.down_block_area_k4.TextChanged += self.down_block_area_k4_changed
+        
+        self.down_block_area_k5_label = forms.Label(Text='小块状花点K5值：')
+        self.down_block_area_k5 = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.down_block_area_k5))
+        self.down_block_area_k5.Size = drawing.Size(60, -1)
+        self.down_block_area_k5.TextChanged += self.down_block_area_k5_changed
+        
+        
+        self.down_block_area_h1_label = forms.Label(Text='小块状花点H1值：')
+        self.down_block_area_h1 = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.down_block_area_h1))
+        self.down_block_area_h1.Size = drawing.Size(60, -1)
+        self.down_block_area_h1.TextChanged += self.down_block_area_h1_changed
+        
+        self.down_block_area_h2_label = forms.Label(Text='小块状花点H2值：')
+        self.down_block_area_h2 = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.down_block_area_h2))
+        self.down_block_area_h2.Size = drawing.Size(60, -1)
+        self.down_block_area_h2.TextChanged += self.down_block_area_h2_changed
+        
+        self.down_block_area_h3_label = forms.Label(Text='小块状花点H3值：')
+        self.down_block_area_h3 = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.down_block_area_h3))
+        self.down_block_area_h3.Size = drawing.Size(60, -1)
+        self.down_block_area_h3.TextChanged += self.down_block_area_h3_changed
+        
+        self.down_block_area_h4_label = forms.Label(Text='小块状花点H4值：')
+        self.down_block_area_h4 = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.down_block_area_h4))
+        self.down_block_area_h4.Size = drawing.Size(60, -1)
+        self.down_block_area_h4.TextChanged += self.down_block_area_h4_changed
+        
+        self.down_block_area_h5_label = forms.Label(Text='小块状花点H5值：')
+        self.down_block_area_h5 = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.down_block_area_h5))
+        self.down_block_area_h5.Size = drawing.Size(60, -1)
+        self.down_block_area_h5.TextChanged += self.down_block_area_h5_changed
+        
+        self.stepping_label = forms.Label(Text='大块状花点水平间距：')
+        self.stepping_input = forms.TextBox(Text='{0}'.format(self.model.stepping))
+        self.stepping_input.Size = drawing.Size(60, -1)
+        self.stepping_input.TextChanged += self.stepping_input_changed
+        
+        self.position_label = forms.Label(Text='大块状花点垂直间距：')
+        self.position_input = forms.TextBox(Text='{0}'.format(self.model.position))
+        self.position_input.Size = drawing.Size(60, -1)
+        self.position_input.TextChanged += self.position_input_changed
+        
+        self.down_horizontal_label = forms.Label(Text='小块状花点水平间距：')
+        self.down_horizontal_input = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.down_horizontal))
+        self.down_horizontal_input.Size = drawing.Size(60, -1)
+        self.down_horizontal_input.TextChanged += self.down_horizontal_changed
+        
+        self.down_vertical_label = forms.Label(Text='小块状花点垂直间距：')
+        self.down_vertical_input = forms.TextBox(Text='{0}'.format(self.model.round_rect_config.down_vertical))
+        self.down_vertical_input.Size = drawing.Size(60, -1)
+        self.down_vertical_input.TextChanged += self.down_vertical_changed
+        
+        self.layout = forms.DynamicLayout()
+        self.layout.DefaultSpacing = drawing.Size(10, 10)
+       
+        # default is circle dot
+        self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
+        self.layout.AddRow(self.basic_setting_label, None)
+        self.layout.EndVertical()
+        self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
+        self.layout.AddRow(self.outer_block_k_label,self.outer_block_k,self.outer_block_r_label,self.outer_block_r,None)
+        self.layout.AddRow(self.inner_block_k_label,self.inner_block_k,self.inner_block_r_label,self.inner_block_r,None)
+        
+        self.layout.AddRow(self.border_k_label,self.border_k,self.border_r_label,self.border_r,None)
+        
+        self.layout.AddRow(self.black_band_k1_label,self.black_band_k1,self.black_band_h1_label,self.black_band_h1,None)
+        self.layout.AddRow(self.black_band_k2_label,self.black_band_k2,self.black_band_h2_label,self.black_band_h2,None)
+        
+        self.layout.AddRow(self.down_block_area_k1_label,self.down_block_area_k1,self.down_block_area_h1_label,self.down_block_area_h1,None)
+        self.layout.AddRow(self.down_block_area_k2_label,self.down_block_area_k2,self.down_block_area_h2_label,self.down_block_area_h2,None)
+        self.layout.AddRow(self.down_block_area_k3_label,self.down_block_area_k3,self.down_block_area_h3_label,self.down_block_area_h3,None)
+        self.layout.AddRow(self.down_block_area_k4_label,self.down_block_area_k4,self.down_block_area_h4_label,self.down_block_area_h4,None)
+        self.layout.AddRow(self.down_block_area_k5_label,self.down_block_area_k5,self.down_block_area_h5_label,self.down_block_area_h5,None)
+        
+        
+        self.layout.AddRow(self.stepping_label,self.stepping_input,self.position_label,self.position_input,None)
+        self.layout.AddRow(self.down_horizontal_label,self.down_horizontal_input,self.down_vertical_label,self.down_vertical_input,None)
+        
+        self.layout.EndVertical()
+        self.Content = self.layout
+        
+        
+    def outer_block_k_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.outer_block_k = float(self.outer_block_k.Text)
+            
+        except:
+            pass
+    def outer_block_r_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.outer_block_r = float(self.outer_block_r.Text)
+            
+        except:
+            pass
+    def inner_block_k_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.inner_block_k = float(self.inner_block_k.Text)
+            
+        except:
+            pass
+    def inner_block_r_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.inner_block_r = float(self.inner_block_r.Text)
+            
+        except:
+            pass
+    def border_k_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.border_k = float(self.border_k.Text)
+            
+        except:
+            pass
+    def border_r_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.border_r = float(self.border_r.Text)
+            
+        except:
+            pass
+    def black_band_k1_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.black_band_k1 = float(self.black_band_k1.Text)
+            
+        except:
+            pass
+    def black_band_k2_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.black_band_k2 = float(self.black_band_k2.Text)
+            
+        except:
+            pass
+    def black_band_h1_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.black_band_h1 = float(self.black_band_h1.Text)
+            
+        except:
+            pass
+    def black_band_h2_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.black_band_h2 = float(self.black_band_h2.Text)
+            
+        except:
+            pass
+    def down_block_area_k1_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.down_block_area_k1 = float(self.down_block_area_k1.Text)
+            
+        except:
+            pass
+    def down_block_area_k2_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.down_block_area_k2 = float(self.down_block_area_k2.Text)
+            
+        except:
+            pass
+    def down_block_area_k3_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.down_block_area_k3 = float(self.down_block_area_k3.Text)
+            
+        except:
+            pass
+    def down_block_area_k4_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.down_block_area_k4 = float(self.down_block_area_k4.Text)
+            
+        except:
+            pass
+    def down_block_area_k5_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.down_block_area_k5 = float(self.down_block_area_k5.Text)
+            
+        except:
+            pass
+    
+    
+    def down_block_area_h1_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.down_block_area_h1 = float(self.down_block_area_h1.Text)
+            
+        except:
+            pass
+    def down_block_area_h2_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.down_block_area_h2 = float(self.down_block_area_h2.Text)
+            
+        except:
+            pass
+    def down_block_area_h3_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.down_block_area_h3= float(self.down_block_area_h3.Text)
+            
+        except:
+            pass
+    def down_block_area_h4_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.down_block_area_h4 = float(self.down_block_area_h4.Text)
+            
+        except:
+            pass
+    def down_block_area_h5_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.down_block_area_h5 = float(self.down_block_area_h5.Text)
+            
+        except:
+            pass
+    
+    def down_horizontal_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.down_horizontal = float(self.down_horizontal_input.Text)
+            
+        except:
+            pass
+    
+    def down_vertical_changed(self, sender, e):
+        try:
+            self.model.round_rect_config.down_vertical = float(self.down_vertical_input.Text)
+            
+        except:
+            pass
+    
+    
+    def stepping_input_changed(self, sender, e):
+        try:
+            self.model.stepping = float(self.stepping_input.Text)
+            
+        except:
+            pass
+    
+    def position_input_changed(self, sender, e):
+        try:
+            self.model.position = float(self.position_input.Text)
+            
+        except:
+            pass
+    
+    def fill_row_frits(self, sender, e):
+        self.clear_dots()
+        self.model.fill_dots()
+        for d in self.model.dots:
+            d.draw(self.display, self.display_color)
+    
+    def clear_dots(self):
+        self.display.Clear()
+        #print(self.model.row_id)
+        #del self.model.dots[self.model.row_id]
+    
+    def bake(self):
+        layer_name = 'page_{0}_row_{1}'.format(self.parent.page_id, self.model.row_id)
+        rs.AddLayer(layer_name,get_color(self.model.row_id), parent='fuyao_frits')
+        for d in self.model.dots:
+            obj = d.bake()
+            rs.ObjectLayer(obj, layer_name)
+
 #原Bandpage 带状&底部区域填充界面
 class BandPage(forms.TabPage):
     
@@ -5677,341 +6936,344 @@ class BandPage(forms.TabPage):
             row_panel.fill_row_frits(None, None)
             
     def XMLButtonClick(self, sender, e):
-        xml = XML.XmlDocument()
-        xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
-        xml.AppendChild(xml_declaration)
-        set = xml.CreateElement('setting')
-        if self.band_type == 'general':
-            band = xml.CreateElement('band')
-            set.AppendChild(band)
-            xml.AppendChild(set)
-            for i in range(len(self.model.rows)):
-                print(i)
+        try:
+            xml = XML.XmlDocument()
+            xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
+            xml.AppendChild(xml_declaration)
+            set = xml.CreateElement('setting')
+            if self.band_type == 'general':
+                band = xml.CreateElement('band')
+                set.AppendChild(band)
+                xml.AppendChild(set)
+                for i in range(len(self.model.rows)):
+                    print(i)
+                    
+                    row = xml.CreateElement('row')
+                    band.AppendChild(row)
+                    #row_id = xml.CreateAttribute('id')
+                    row.SetAttribute('id',str(i))
+                    #row.Attributes.Append(row_id)
+                    #xml.AppendChild(row)
+                    if self.model.rows[i].dot_type == FritType.CIRCLE_DOT:
+                        type = xml.CreateAttribute('type')
+                        type.Value = 'circle'
+                        row.Attributes.Append(type)
+                        if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'heading'
+                            row.Attributes.Append(arrange)
+                        else:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'cross'
+                            row.Attributes.Append(arrange)
+                        #print('圆形') row.circle_config.r
+                        r = xml.CreateElement('r')
+                        r.InnerText = str(self.model.rows[i].circle_config.r)
+                        row.AppendChild(r)
+                        
+                        step = xml.CreateElement('stepping')
+                        step.InnerText = str(self.model.rows[i].stepping)
+                        row.AppendChild(step)
+                        
+                        position = xml.CreateElement('position')
+                        position.InnerText = str(self.model.rows[i].position)
+                        row.AppendChild(position)
+                        if self.model.rows[i].is_transit:
+                            transit = xml.CreateElement('transit')
+                            transit.InnerText = str(self.model.rows[i].transit_radius)
+                            row.AppendChild(transit)
+                            
+                            transit_position = xml.CreateElement('transitposition')
+                            transit_position.InnerText = str(self.model.rows[i].transit_position)
+                            row.AppendChild(transit_position)
+                    elif self.model.rows[i].dot_type == FritType.ROUND_RECT:
+                        type = xml.CreateAttribute('type')
+                        type.Value = 'roundrect'
+                        row.Attributes.Append(type)
+                        if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'heading'
+                            row.Attributes.Append(arrange)
+                        else:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'cross'
+                            row.Attributes.Append(arrange)
+                        #print('圆形') row.circle_config.r
+                        r = xml.CreateElement('r')
+                        r.InnerText = str(self.model.rows[i].round_rect_config.r)
+                        row.AppendChild(r)
+                        
+                        k = xml.CreateElement('k')
+                        k.InnerText = str(self.model.rows[i].round_rect_config.k)
+                        row.AppendChild(k)
+                        
+                        step = xml.CreateElement('stepping')
+                        step.InnerText = str(self.model.rows[i].stepping)
+                        row.AppendChild(step)
+                        
+                        position = xml.CreateElement('position')
+                        position.InnerText = str(self.model.rows[i].position)
+                        row.AppendChild(position)
+                        if self.model.rows[i].is_transit:
+                            transit = xml.CreateElement('transit')
+                            transit.InnerText = str(self.model.rows[i].transit_radius)
+                            row.AppendChild(transit)
+                            
+                            transit_position = xml.CreateElement('transitposition')
+                            transit_position.InnerText = str(self.model.rows[i].transit_position)
+                            row.AppendChild(transit_position)
+                    elif self.model.rows[i].dot_type == FritType.ARC_CIRCLE:
+                        type = xml.CreateAttribute('type')
+                        type.Value = 'arcdot'
+                        row.Attributes.Append(type)
+                        if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'heading'
+                            row.Attributes.Append(arrange)
+                        else:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'cross'
+                            row.Attributes.Append(arrange)
+                        #print('圆形') row.circle_config.r
+                        lr = xml.CreateElement('lr')
+                        lr.InnerText = str(self.model.rows[i].arc_config.lr)
+                        row.AppendChild(lr)
+                        
+                        sr = xml.CreateElement('sr')
+                        sr.InnerText = str(self.model.rows[i].arc_config.sr)
+                        row.AppendChild(sr)
+                        
+                        angle = xml.CreateElement('angle')
+                        angle.InnerText = str(self.model.rows[i].arc_config.angle)
+                        row.AppendChild(angle)
+                        
+                        step = xml.CreateElement('stepping')
+                        step.InnerText = str(self.model.rows[i].stepping)
+                        row.AppendChild(step)
+                        
+                        position = xml.CreateElement('position')
+                        position.InnerText = str(self.model.rows[i].position)
+                        row.AppendChild(position)
+                        if self.model.rows[i].is_transit:
+                            
+                            transit = xml.CreateElement('transit')
+                            transit.InnerText = str(self.model.rows[i].transit_radius)
+                            row.AppendChild(transit)
+                            
+                            transit_position = xml.CreateElement('transitposition')
+                            transit_position.InnerText = str(self.model.rows[i].transit_position)
+                            row.AppendChild(transit_position)
+                    elif self.model.rows[i].dot_type == FritType.TRI_ARC:
+                        type = xml.CreateAttribute('type')
+                        type.Value = 'triarc'
+                        row.Attributes.Append(type)
+                        if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'heading'
+                            row.Attributes.Append(arrange)
+                        else:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'cross'
+                            row.Attributes.Append(arrange)
+                        #print('圆形') row.circle_config.r
+                        lr = xml.CreateElement('lr')
+                        lr.InnerText = str(self.model.rows[i].tri_arc_config.lr)
+                        row.AppendChild(lr)
+                        
+                        sr = xml.CreateElement('sr')
+                        sr.InnerText = str(self.model.rows[i].tri_arc_config.sr)
+                        row.AppendChild(sr)
+                        
+                        angle = xml.CreateElement('angle')
+                        angle.InnerText = str(self.model.rows[i].tri_arc_config.angle)
+                        row.AppendChild(angle)
+                        
+                        step = xml.CreateElement('stepping')
+                        step.InnerText = str(self.model.rows[i].stepping)
+                        row.AppendChild(step)
+                        
+                        position = xml.CreateElement('position')
+                        position.InnerText = str(self.model.rows[i].position)
+                        row.AppendChild(position)
+                        
+                        if self.model.rows[i].is_transit:
+                            transit = xml.CreateElement('transit')
+                            transit.InnerText = str(self.model.rows[i].transit_radius)
+                            row.AppendChild(transit)
+                            
+                            transit_position = xml.CreateElement('transitposition')
+                            transit_position.InnerText = str(self.model.rows[i].transit_position)
+                            row.AppendChild(transit_position)
+                f_path = XMLPATH()
+                xml.Save(f_path)
                 
-                row = xml.CreateElement('row')
-                band.AppendChild(row)
-                #row_id = xml.CreateAttribute('id')
-                row.SetAttribute('id',str(i))
-                #row.Attributes.Append(row_id)
-                #xml.AppendChild(row)
-                if self.model.rows[i].dot_type == FritType.CIRCLE_DOT:
-                    type = xml.CreateAttribute('type')
-                    type.Value = 'circle'
-                    row.Attributes.Append(type)
-                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'heading'
-                        row.Attributes.Append(arrange)
-                    else:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'cross'
-                        row.Attributes.Append(arrange)
-                    #print('圆形') row.circle_config.r
-                    r = xml.CreateElement('r')
-                    r.InnerText = str(self.model.rows[i].circle_config.r)
-                    row.AppendChild(r)
+            elif self.band_type == 'bottom':
+                bottom = xml.CreateElement('bottom')
+                set.AppendChild(bottom)
+                xml.AppendChild(set)
+                for i in range(len(self.model.rows)):
+                    print(i)
                     
-                    step = xml.CreateElement('stepping')
-                    step.InnerText = str(self.model.rows[i].stepping)
-                    row.AppendChild(step)
-                    
-                    position = xml.CreateElement('position')
-                    position.InnerText = str(self.model.rows[i].position)
-                    row.AppendChild(position)
-                    if self.model.rows[i].is_transit:
-                        transit = xml.CreateElement('transit')
-                        transit.InnerText = str(self.model.rows[i].transit_radius)
-                        row.AppendChild(transit)
+                    row = xml.CreateElement('row')
+                    bottom.AppendChild(row)
+                    #row_id = xml.CreateAttribute('id')
+                    row.SetAttribute('id',str(i))
+                    #row.Attributes.Append(row_id)
+                    #xml.AppendChild(row)
+                    if self.model.rows[i].dot_type == FritType.CIRCLE_DOT:
+                        type = xml.CreateAttribute('type')
+                        type.Value = 'circle'
+                        row.Attributes.Append(type)
+                        if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'heading'
+                            row.Attributes.Append(arrange)
+                        else:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'cross'
+                            row.Attributes.Append(arrange)
+                        #print('圆形') row.circle_config.r
+                        r = xml.CreateElement('r')
+                        r.InnerText = str(self.model.rows[i].circle_config.r)
+                        row.AppendChild(r)
                         
-                        transit_position = xml.CreateElement('transitposition')
-                        transit_position.InnerText = str(self.model.rows[i].transit_position)
-                        row.AppendChild(transit_position)
-                elif self.model.rows[i].dot_type == FritType.ROUND_RECT:
-                    type = xml.CreateAttribute('type')
-                    type.Value = 'roundrect'
-                    row.Attributes.Append(type)
-                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'heading'
-                        row.Attributes.Append(arrange)
-                    else:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'cross'
-                        row.Attributes.Append(arrange)
-                    #print('圆形') row.circle_config.r
-                    r = xml.CreateElement('r')
-                    r.InnerText = str(self.model.rows[i].round_rect_config.r)
-                    row.AppendChild(r)
-                    
-                    k = xml.CreateElement('k')
-                    k.InnerText = str(self.model.rows[i].round_rect_config.k)
-                    row.AppendChild(k)
-                    
-                    step = xml.CreateElement('stepping')
-                    step.InnerText = str(self.model.rows[i].stepping)
-                    row.AppendChild(step)
-                    
-                    position = xml.CreateElement('position')
-                    position.InnerText = str(self.model.rows[i].position)
-                    row.AppendChild(position)
-                    if self.model.rows[i].is_transit:
-                        transit = xml.CreateElement('transit')
-                        transit.InnerText = str(self.model.rows[i].transit_radius)
-                        row.AppendChild(transit)
+                        step = xml.CreateElement('stepping')
+                        step.InnerText = str(self.model.rows[i].stepping)
+                        row.AppendChild(step)
                         
-                        transit_position = xml.CreateElement('transitposition')
-                        transit_position.InnerText = str(self.model.rows[i].transit_position)
-                        row.AppendChild(transit_position)
-                elif self.model.rows[i].dot_type == FritType.ARC_CIRCLE:
-                    type = xml.CreateAttribute('type')
-                    type.Value = 'arcdot'
-                    row.Attributes.Append(type)
-                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'heading'
-                        row.Attributes.Append(arrange)
-                    else:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'cross'
-                        row.Attributes.Append(arrange)
-                    #print('圆形') row.circle_config.r
-                    lr = xml.CreateElement('lr')
-                    lr.InnerText = str(self.model.rows[i].arc_config.lr)
-                    row.AppendChild(lr)
-                    
-                    sr = xml.CreateElement('sr')
-                    sr.InnerText = str(self.model.rows[i].arc_config.sr)
-                    row.AppendChild(sr)
-                    
-                    angle = xml.CreateElement('angle')
-                    angle.InnerText = str(self.model.rows[i].arc_config.angle)
-                    row.AppendChild(angle)
-                    
-                    step = xml.CreateElement('stepping')
-                    step.InnerText = str(self.model.rows[i].stepping)
-                    row.AppendChild(step)
-                    
-                    position = xml.CreateElement('position')
-                    position.InnerText = str(self.model.rows[i].position)
-                    row.AppendChild(position)
-                    if self.model.rows[i].is_transit:
+                        position = xml.CreateElement('position')
+                        position.InnerText = str(self.model.rows[i].position)
+                        row.AppendChild(position)
+                        if self.model.rows[i].is_transit:
+                            transit = xml.CreateElement('transit')
+                            transit.InnerText = str(self.model.rows[i].transit_radius)
+                            row.AppendChild(transit)
+                            
+                            transit_position = xml.CreateElement('transitposition')
+                            transit_position.InnerText = str(self.model.rows[i].transit_position)
+                            row.AppendChild(transit_position)
+                    elif self.model.rows[i].dot_type == FritType.ROUND_RECT:
+                        type = xml.CreateAttribute('type')
+                        type.Value = 'roundrect'
+                        row.Attributes.Append(type)
+                        if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'heading'
+                            row.Attributes.Append(arrange)
+                        else:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'cross'
+                            row.Attributes.Append(arrange)
+                        #print('圆形') row.circle_config.r
+                        r = xml.CreateElement('r')
+                        r.InnerText = str(self.model.rows[i].round_rect_config.r)
+                        row.AppendChild(r)
                         
-                        transit = xml.CreateElement('transit')
-                        transit.InnerText = str(self.model.rows[i].transit_radius)
-                        row.AppendChild(transit)
+                        k = xml.CreateElement('k')
+                        k.InnerText = str(self.model.rows[i].round_rect_config.k)
+                        row.AppendChild(k)
                         
-                        transit_position = xml.CreateElement('transitposition')
-                        transit_position.InnerText = str(self.model.rows[i].transit_position)
-                        row.AppendChild(transit_position)
-                elif self.model.rows[i].dot_type == FritType.TRI_ARC:
-                    type = xml.CreateAttribute('type')
-                    type.Value = 'triarc'
-                    row.Attributes.Append(type)
-                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'heading'
-                        row.Attributes.Append(arrange)
-                    else:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'cross'
-                        row.Attributes.Append(arrange)
-                    #print('圆形') row.circle_config.r
-                    lr = xml.CreateElement('lr')
-                    lr.InnerText = str(self.model.rows[i].tri_arc_config.lr)
-                    row.AppendChild(lr)
-                    
-                    sr = xml.CreateElement('sr')
-                    sr.InnerText = str(self.model.rows[i].tri_arc_config.sr)
-                    row.AppendChild(sr)
-                    
-                    angle = xml.CreateElement('angle')
-                    angle.InnerText = str(self.model.rows[i].tri_arc_config.angle)
-                    row.AppendChild(angle)
-                    
-                    step = xml.CreateElement('stepping')
-                    step.InnerText = str(self.model.rows[i].stepping)
-                    row.AppendChild(step)
-                    
-                    position = xml.CreateElement('position')
-                    position.InnerText = str(self.model.rows[i].position)
-                    row.AppendChild(position)
-                    
-                    if self.model.rows[i].is_transit:
-                        transit = xml.CreateElement('transit')
-                        transit.InnerText = str(self.model.rows[i].transit_radius)
-                        row.AppendChild(transit)
+                        step = xml.CreateElement('stepping')
+                        step.InnerText = str(self.model.rows[i].stepping)
+                        row.AppendChild(step)
                         
-                        transit_position = xml.CreateElement('transitposition')
-                        transit_position.InnerText = str(self.model.rows[i].transit_position)
-                        row.AppendChild(transit_position)
-            f_path = XMLPATH()
-            xml.Save(f_path)
-            
-        elif self.band_type == 'bottom':
-            bottom = xml.CreateElement('bottom')
-            set.AppendChild(bottom)
-            xml.AppendChild(set)
-            for i in range(len(self.model.rows)):
-                print(i)
-                
-                row = xml.CreateElement('row')
-                bottom.AppendChild(row)
-                #row_id = xml.CreateAttribute('id')
-                row.SetAttribute('id',str(i))
-                #row.Attributes.Append(row_id)
-                #xml.AppendChild(row)
-                if self.model.rows[i].dot_type == FritType.CIRCLE_DOT:
-                    type = xml.CreateAttribute('type')
-                    type.Value = 'circle'
-                    row.Attributes.Append(type)
-                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'heading'
-                        row.Attributes.Append(arrange)
-                    else:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'cross'
-                        row.Attributes.Append(arrange)
-                    #print('圆形') row.circle_config.r
-                    r = xml.CreateElement('r')
-                    r.InnerText = str(self.model.rows[i].circle_config.r)
-                    row.AppendChild(r)
-                    
-                    step = xml.CreateElement('stepping')
-                    step.InnerText = str(self.model.rows[i].stepping)
-                    row.AppendChild(step)
-                    
-                    position = xml.CreateElement('position')
-                    position.InnerText = str(self.model.rows[i].position)
-                    row.AppendChild(position)
-                    if self.model.rows[i].is_transit:
-                        transit = xml.CreateElement('transit')
-                        transit.InnerText = str(self.model.rows[i].transit_radius)
-                        row.AppendChild(transit)
+                        position = xml.CreateElement('position')
+                        position.InnerText = str(self.model.rows[i].position)
+                        row.AppendChild(position)
+                        if self.model.rows[i].is_transit:
+                            transit = xml.CreateElement('transit')
+                            transit.InnerText = str(self.model.rows[i].transit_radius)
+                            row.AppendChild(transit)
+                            
+                            transit_position = xml.CreateElement('transitposition')
+                            transit_position.InnerText = str(self.model.rows[i].transit_position)
+                            row.AppendChild(transit_position)
+                    elif self.model.rows[i].dot_type == FritType.ARC_CIRCLE:
+                        type = xml.CreateAttribute('type')
+                        type.Value = 'arcdot'
+                        row.Attributes.Append(type)
+                        if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'heading'
+                            row.Attributes.Append(arrange)
+                        else:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'cross'
+                            row.Attributes.Append(arrange)
+                        #print('圆形') row.circle_config.r
+                        lr = xml.CreateElement('lr')
+                        lr.InnerText = str(self.model.rows[i].arc_config.lr)
+                        row.AppendChild(lr)
                         
-                        transit_position = xml.CreateElement('transitposition')
-                        transit_position.InnerText = str(self.model.rows[i].transit_position)
-                        row.AppendChild(transit_position)
-                elif self.model.rows[i].dot_type == FritType.ROUND_RECT:
-                    type = xml.CreateAttribute('type')
-                    type.Value = 'roundrect'
-                    row.Attributes.Append(type)
-                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'heading'
-                        row.Attributes.Append(arrange)
-                    else:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'cross'
-                        row.Attributes.Append(arrange)
-                    #print('圆形') row.circle_config.r
-                    r = xml.CreateElement('r')
-                    r.InnerText = str(self.model.rows[i].round_rect_config.r)
-                    row.AppendChild(r)
-                    
-                    k = xml.CreateElement('k')
-                    k.InnerText = str(self.model.rows[i].round_rect_config.k)
-                    row.AppendChild(k)
-                    
-                    step = xml.CreateElement('stepping')
-                    step.InnerText = str(self.model.rows[i].stepping)
-                    row.AppendChild(step)
-                    
-                    position = xml.CreateElement('position')
-                    position.InnerText = str(self.model.rows[i].position)
-                    row.AppendChild(position)
-                    if self.model.rows[i].is_transit:
-                        transit = xml.CreateElement('transit')
-                        transit.InnerText = str(self.model.rows[i].transit_radius)
-                        row.AppendChild(transit)
+                        sr = xml.CreateElement('sr')
+                        sr.InnerText = str(self.model.rows[i].arc_config.sr)
+                        row.AppendChild(sr)
                         
-                        transit_position = xml.CreateElement('transitposition')
-                        transit_position.InnerText = str(self.model.rows[i].transit_position)
-                        row.AppendChild(transit_position)
-                elif self.model.rows[i].dot_type == FritType.ARC_CIRCLE:
-                    type = xml.CreateAttribute('type')
-                    type.Value = 'arcdot'
-                    row.Attributes.Append(type)
-                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'heading'
-                        row.Attributes.Append(arrange)
-                    else:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'cross'
-                        row.Attributes.Append(arrange)
-                    #print('圆形') row.circle_config.r
-                    lr = xml.CreateElement('lr')
-                    lr.InnerText = str(self.model.rows[i].arc_config.lr)
-                    row.AppendChild(lr)
-                    
-                    sr = xml.CreateElement('sr')
-                    sr.InnerText = str(self.model.rows[i].arc_config.sr)
-                    row.AppendChild(sr)
-                    
-                    angle = xml.CreateElement('angle')
-                    angle.InnerText = str(self.model.rows[i].arc_config.angle)
-                    row.AppendChild(angle)
-                    
-                    step = xml.CreateElement('stepping')
-                    step.InnerText = str('2.2')
-                    row.AppendChild(step)
-                    
-                    position = xml.CreateElement('position')
-                    position.InnerText = str('0.2')
-                    row.AppendChild(position)
-                    
-                    if self.model.rows[i].is_transit:
-                        transit = xml.CreateElement('transit')
-                        transit.InnerText = str(self.model.rows[i].transit_radius)
-                        row.AppendChild(transit)
+                        angle = xml.CreateElement('angle')
+                        angle.InnerText = str(self.model.rows[i].arc_config.angle)
+                        row.AppendChild(angle)
                         
-                        transit_position = xml.CreateElement('transitposition')
-                        transit_position.InnerText = str(self.model.rows[i].transit_position)
-                        row.AppendChild(transit_position)
-                elif self.model.rows[i].dot_type == FritType.TRI_ARC:
-                    type = xml.CreateAttribute('type')
-                    type.Value = 'triarc'
-                    row.Attributes.Append(type)
-                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'heading'
-                        row.Attributes.Append(arrange)
-                    else:
-                        arrange = xml.CreateAttribute('arrange')
-                        arrange.Value = 'cross'
-                        row.Attributes.Append(arrange)
-                    #print('圆形') row.circle_config.r
-                    lr = xml.CreateElement('lr')
-                    lr.InnerText = str(self.model.rows[i].tri_arc_config.lr)
-                    row.AppendChild(lr)
-                    
-                    sr = xml.CreateElement('sr')
-                    sr.InnerText = str(self.model.rows[i].tri_arc_config.sr)
-                    row.AppendChild(sr)
-                    
-                    angle = xml.CreateElement('angle')
-                    angle.InnerText = str(self.model.rows[i].tri_arc_config.angle)
-                    row.AppendChild(angle)
-                    
-                    step = xml.CreateElement('stepping')
-                    step.InnerText = str('2.2')
-                    row.AppendChild(step)
-                    
-                    position = xml.CreateElement('position')
-                    position.InnerText = str('0.2')
-                    row.AppendChild(position)
-                    
-                    if self.model.rows[i].is_transit:
-                        transit = xml.CreateElement('transit')
-                        transit.InnerText = str(self.model.rows[i].transit_radius)
-                        row.AppendChild(transit)
+                        step = xml.CreateElement('stepping')
+                        step.InnerText = str(self.model.rows[i].stepping)
+                        row.AppendChild(step)
                         
-                        transit_position = xml.CreateElement('transitposition')
-                        transit_position.InnerText = str(self.model.rows[i].transit_position)
-                        row.AppendChild(transit_position)
-            f_path = XMLPATH()
-            xml.Save(f_path)
+                        position = xml.CreateElement('position')
+                        position.InnerText = str(self.model.rows[i].position)
+                        row.AppendChild(position)
+                        
+                        if self.model.rows[i].is_transit:
+                            transit = xml.CreateElement('transit')
+                            transit.InnerText = str(self.model.rows[i].transit_radius)
+                            row.AppendChild(transit)
+                            
+                            transit_position = xml.CreateElement('transitposition')
+                            transit_position.InnerText = str(self.model.rows[i].transit_position)
+                            row.AppendChild(transit_position)
+                    elif self.model.rows[i].dot_type == FritType.TRI_ARC:
+                        type = xml.CreateAttribute('type')
+                        type.Value = 'triarc'
+                        row.Attributes.Append(type)
+                        if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'heading'
+                            row.Attributes.Append(arrange)
+                        else:
+                            arrange = xml.CreateAttribute('arrange')
+                            arrange.Value = 'cross'
+                            row.Attributes.Append(arrange)
+                        #print('圆形') row.circle_config.r
+                        lr = xml.CreateElement('lr')
+                        lr.InnerText = str(self.model.rows[i].tri_arc_config.lr)
+                        row.AppendChild(lr)
+                        
+                        sr = xml.CreateElement('sr')
+                        sr.InnerText = str(self.model.rows[i].tri_arc_config.sr)
+                        row.AppendChild(sr)
+                        
+                        angle = xml.CreateElement('angle')
+                        angle.InnerText = str(self.model.rows[i].tri_arc_config.angle)
+                        row.AppendChild(angle)
+                        
+                        step = xml.CreateElement('stepping')
+                        step.InnerText = str(self.model.rows[i].stepping)
+                        row.AppendChild(step)
+                        
+                        position = xml.CreateElement('position')
+                        position.InnerText = str(self.model.rows[i].position)
+                        row.AppendChild(position)
+                        
+                        if self.model.rows[i].is_transit:
+                            transit = xml.CreateElement('transit')
+                            transit.InnerText = str(self.model.rows[i].transit_radius)
+                            row.AppendChild(transit)
+                            
+                            transit_position = xml.CreateElement('transitposition')
+                            transit_position.InnerText = str(self.model.rows[i].transit_position)
+                            row.AppendChild(transit_position)
+                f_path = XMLPATH()
+                xml.Save(f_path)
+        except:
+            pass
         #xml.Save("E:\\XML\\Test.xml")
     def FlipCheckClick(self, sender, e):
         if sender.Tag == 'is_refer_flip':
@@ -6250,246 +7512,248 @@ class BlockPage(forms.TabPage):
     
     
     def XMLButtonClick(self, sender, e):
-        xml = XML.XmlDocument()
-        xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
-        xml.AppendChild(xml_declaration)
-        set = xml.CreateElement('setting')
-        block = xml.CreateElement('block')
-        set.AppendChild(block)
-        xml.AppendChild(set)
-        for i in range(len(self.model.rows)):
-            print(i)
-            row = xml.CreateElement('row')
-            block.AppendChild(row)
-            #row_id = xml.CreateAttribute('id')
-            row.SetAttribute('id',str(i))
-            if self.model.rows[i].dot_type == FritType.CIRCLE_DOT:
-                type = xml.CreateAttribute('type')
-                type.Value = 'circle'
-                row.Attributes.Append(type)
-                if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
-                    arrange = xml.CreateAttribute('arrange')
-                    arrange.Value = 'heading'
-                    row.Attributes.Append(arrange)
-                else:
-                    arrange = xml.CreateAttribute('arrange')
-                    arrange.Value = 'cross'
-                    row.Attributes.Append(arrange)
-                #print('圆形') row.circle_config.r
-                r = xml.CreateElement('r')
-                r.InnerText = str(self.model.rows[i].circle_config.r)
-                row.AppendChild(r)
-                
-                step = xml.CreateElement('stepping')
-                step.InnerText = str(self.model.rows[i].stepping)
-                row.AppendChild(step)
-                
-                position = xml.CreateElement('position')
-                position.InnerText = str(self.model.rows[i].position)
-                row.AppendChild(position)
-                if self.model.rows[i].is_transit:
-                    transit = xml.CreateElement('transit')
-                    transit.InnerText = str(self.model.rows[i].transit_radius)
-                    row.AppendChild(transit)
+        try:
+            xml = XML.XmlDocument()
+            xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
+            xml.AppendChild(xml_declaration)
+            set = xml.CreateElement('setting')
+            block = xml.CreateElement('block')
+            set.AppendChild(block)
+            xml.AppendChild(set)
+            for i in range(len(self.model.rows)):
+                print(i)
+                row = xml.CreateElement('row')
+                block.AppendChild(row)
+                #row_id = xml.CreateAttribute('id')
+                row.SetAttribute('id',str(i))
+                if self.model.rows[i].dot_type == FritType.CIRCLE_DOT:
+                    type = xml.CreateAttribute('type')
+                    type.Value = 'circle'
+                    row.Attributes.Append(type)
+                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'heading'
+                        row.Attributes.Append(arrange)
+                    else:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'cross'
+                        row.Attributes.Append(arrange)
+                    #print('圆形') row.circle_config.r
+                    r = xml.CreateElement('r')
+                    r.InnerText = str(self.model.rows[i].circle_config.r)
+                    row.AppendChild(r)
                     
-                    transit_position = xml.CreateElement('transitposition')
-                    transit_position.InnerText = str(self.model.rows[i].transit_position)
-                    row.AppendChild(transit_position)
-            elif self.model.rows[i].dot_type == FritType.ROUND_RECT:
-                type = xml.CreateAttribute('type')
-                type.Value = 'roundrect'
-                row.Attributes.Append(type)
-                if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
-                    arrange = xml.CreateAttribute('arrange')
-                    arrange.Value = 'heading'
-                    row.Attributes.Append(arrange)
-                else:
-                    arrange = xml.CreateAttribute('arrange')
-                    arrange.Value = 'cross'
-                    row.Attributes.Append(arrange)
-                #print('圆形') row.circle_config.r
-                r = xml.CreateElement('r')
-                r.InnerText = str(self.model.rows[i].round_rect_config.r)
-                row.AppendChild(r)
-                
-                k = xml.CreateElement('k')
-                k.InnerText = str(self.model.rows[i].round_rect_config.k)
-                row.AppendChild(k)
-                
-                step = xml.CreateElement('stepping')
-                step.InnerText = str(self.model.rows[i].stepping)
-                row.AppendChild(step)
-                
-                position = xml.CreateElement('position')
-                position.InnerText = str(self.model.rows[i].position)
-                row.AppendChild(position)
-                if self.model.rows[i].is_transit:
-                    transit = xml.CreateElement('transit')
-                    transit.InnerText = str(self.model.rows[i].transit_radius)
-                    row.AppendChild(transit)
+                    step = xml.CreateElement('stepping')
+                    step.InnerText = str(self.model.rows[i].stepping)
+                    row.AppendChild(step)
                     
-                    transit_position = xml.CreateElement('transitposition')
-                    transit_position.InnerText = str(self.model.rows[i].transit_position)
-                    row.AppendChild(transit_position)
-            elif self.model.rows[i].dot_type == FritType.ARC_CIRCLE:
-                type = xml.CreateAttribute('type')
-                type.Value = 'arcdot'
-                row.Attributes.Append(type)
-                if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
-                    arrange = xml.CreateAttribute('arrange')
-                    arrange.Value = 'heading'
-                    row.Attributes.Append(arrange)
-                else:
-                    arrange = xml.CreateAttribute('arrange')
-                    arrange.Value = 'cross'
-                    row.Attributes.Append(arrange)
-                #print('圆形') row.circle_config.r
-                lr = xml.CreateElement('lr')
-                lr.InnerText = str(self.model.rows[i].arc_config.lr)
-                row.AppendChild(lr)
-                
-                sr = xml.CreateElement('sr')
-                sr.InnerText = str(self.model.rows[i].arc_config.sr)
-                row.AppendChild(sr)
-                
-                angle = xml.CreateElement('angle')
-                angle.InnerText = str(self.model.rows[i].arc_config.angle)
-                row.AppendChild(angle)
-                
-                step = xml.CreateElement('stepping')
-                step.InnerText = str('2.2')
-                row.AppendChild(step)
-                
-                position = xml.CreateElement('position')
-                position.InnerText = str('0.2')
-                row.AppendChild(position)
-                if self.model.rows[i].is_transit:
+                    position = xml.CreateElement('position')
+                    position.InnerText = str(self.model.rows[i].position)
+                    row.AppendChild(position)
+                    if self.model.rows[i].is_transit:
+                        transit = xml.CreateElement('transit')
+                        transit.InnerText = str(self.model.rows[i].transit_radius)
+                        row.AppendChild(transit)
+                        
+                        transit_position = xml.CreateElement('transitposition')
+                        transit_position.InnerText = str(self.model.rows[i].transit_position)
+                        row.AppendChild(transit_position)
+                elif self.model.rows[i].dot_type == FritType.ROUND_RECT:
+                    type = xml.CreateAttribute('type')
+                    type.Value = 'roundrect'
+                    row.Attributes.Append(type)
+                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'heading'
+                        row.Attributes.Append(arrange)
+                    else:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'cross'
+                        row.Attributes.Append(arrange)
+                    #print('圆形') row.circle_config.r
+                    r = xml.CreateElement('r')
+                    r.InnerText = str(self.model.rows[i].round_rect_config.r)
+                    row.AppendChild(r)
                     
-                    transit = xml.CreateElement('transit')
-                    transit.InnerText = str(self.model.rows[i].transit_radius)
-                    row.AppendChild(transit)
+                    k = xml.CreateElement('k')
+                    k.InnerText = str(self.model.rows[i].round_rect_config.k)
+                    row.AppendChild(k)
                     
-                    transit_position = xml.CreateElement('transitposition')
-                    transit_position.InnerText = str(self.model.rows[i].transit_position)
-                    row.AppendChild(transit_position)
-            elif self.model.rows[i].dot_type == FritType.TRI_ARC:
-                type = xml.CreateAttribute('type')
-                type.Value = 'triarc'
-                row.Attributes.Append(type)
-                if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
-                    arrange = xml.CreateAttribute('arrange')
-                    arrange.Value = 'heading'
-                    row.Attributes.Append(arrange)
-                else:
-                    arrange = xml.CreateAttribute('arrange')
-                    arrange.Value = 'cross'
-                    row.Attributes.Append(arrange)
-                #print('圆形') row.circle_config.r
-                lr = xml.CreateElement('lr')
-                lr.InnerText = str(self.model.rows[i].tri_arc_config.lr)
-                row.AppendChild(lr)
-                
-                sr = xml.CreateElement('sr')
-                sr.InnerText = str(self.model.rows[i].tri_arc_config.sr)
-                row.AppendChild(sr)
-                
-                angle = xml.CreateElement('angle')
-                angle.InnerText = str(self.model.rows[i].tri_arc_config.angle)
-                row.AppendChild(angle)
-                
-                step = xml.CreateElement('stepping')
-                step.InnerText = str('2.2')
-                row.AppendChild(step)
-                
-                position = xml.CreateElement('position')
-                position.InnerText = str('0.2')
-                row.AppendChild(position)
-                
-                if self.model.rows[i].is_transit:
-                    transit = xml.CreateElement('transit')
-                    transit.InnerText = str(self.model.rows[i].transit_radius)
-                    row.AppendChild(transit)
+                    step = xml.CreateElement('stepping')
+                    step.InnerText = str(self.model.rows[i].stepping)
+                    row.AppendChild(step)
                     
-                    transit_position = xml.CreateElement('transitposition')
-                    transit_position.InnerText = str(self.model.rows[i].transit_position)
-                    row.AppendChild(transit_position)
-        #f_path = XMLPATH()
-        #xml.Save(f_path)
-        for i in range(len(self.model.holes)):
-            print(i)
-            hole = xml.CreateElement('hole')
-            block.AppendChild(hole)
-            #row_id = xml.CreateAttribute('id')
-            hole.SetAttribute('id',str(i))
-            if self.model.holes[i].dot_type == FritType.CIRCLE_DOT:
-                type = xml.CreateAttribute('type')
-                type.Value = 'circle'
-                hole.Attributes.Append(type)
-                if self.model.holes[i].arrange_type == RowArrangeType.HEADING:
-                    arrange = xml.CreateAttribute('arrange')
-                    arrange.Value = 'heading'
-                    hole.Attributes.Append(arrange)
-                else:
-                    arrange = xml.CreateAttribute('arrange')
-                    arrange.Value = 'cross'
-                    hole.Attributes.Append(arrange)
-                #print('圆形') row.circle_config.r
-                r = xml.CreateElement('r')
-                r.InnerText = str(self.model.holes[i].circle_config.r)
-                hole.AppendChild(r)
-                
-                #k = xml.CreateElement('k')
-                #k.InnerText = str(self.model.rows[i].circle_config.k)
-                #row.AppendChild(k)
-                
-                step = xml.CreateElement('stepping')
-                step.InnerText = str(self.model.holes[i].stepping)
-                hole.AppendChild(step)
-                
-                vspace = xml.CreateElement('vspace')
-                vspace.InnerText = str(self.model.holes[i].vspace)
-                hole.AppendChild(vspace)
-                
-                fposition = xml.CreateElement('fposition')
-                fposition.InnerText = str(self.model.holes[i].first_line_position)
-                hole.AppendChild(fposition)
-                
-            elif self.model.holes[i].dot_type == FritType.ROUND_RECT:
-                type = xml.CreateAttribute('type')
-                type.Value = 'roundrect'
-                hole.Attributes.Append(type)
-                if self.model.holes[i].arrange_type == RowArrangeType.HEADING:
-                    arrange = xml.CreateAttribute('arrange')
-                    arrange.Value = 'heading'
-                    hole.Attributes.Append(arrange)
-                else:
-                    arrange = xml.CreateAttribute('arrange')
-                    arrange.Value = 'cross'
-                    hole.Attributes.Append(arrange)
-                #print('圆形') row.circle_config.r
-                r = xml.CreateElement('r')
-                r.InnerText = str(self.model.holes[i].round_rect_config.r)
-                hole.AppendChild(r)
-                
-                k = xml.CreateElement('k')
-                k.InnerText = str(self.model.holes[i].round_rect_config.k)
-                hole.AppendChild(k)
-                
-                step = xml.CreateElement('stepping')
-                step.InnerText = str(self.model.holes[i].stepping)
-                hole.AppendChild(step)
-                
-                vspace = xml.CreateElement('vspace')
-                vspace.InnerText = str(self.model.holes[i].vspace)
-                hole.AppendChild(vspace)
-                
-                fposition = xml.CreateElement('fposition')
-                fposition.InnerText = str(self.model.holes[i].first_line_position)
-                hole.AppendChild(fposition)
-                
-        f_path = XMLPATH()
-        xml.Save(f_path)
-        
+                    position = xml.CreateElement('position')
+                    position.InnerText = str(self.model.rows[i].position)
+                    row.AppendChild(position)
+                    if self.model.rows[i].is_transit:
+                        transit = xml.CreateElement('transit')
+                        transit.InnerText = str(self.model.rows[i].transit_radius)
+                        row.AppendChild(transit)
+                        
+                        transit_position = xml.CreateElement('transitposition')
+                        transit_position.InnerText = str(self.model.rows[i].transit_position)
+                        row.AppendChild(transit_position)
+                elif self.model.rows[i].dot_type == FritType.ARC_CIRCLE:
+                    type = xml.CreateAttribute('type')
+                    type.Value = 'arcdot'
+                    row.Attributes.Append(type)
+                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'heading'
+                        row.Attributes.Append(arrange)
+                    else:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'cross'
+                        row.Attributes.Append(arrange)
+                    #print('圆形') row.circle_config.r
+                    lr = xml.CreateElement('lr')
+                    lr.InnerText = str(self.model.rows[i].arc_config.lr)
+                    row.AppendChild(lr)
+                    
+                    sr = xml.CreateElement('sr')
+                    sr.InnerText = str(self.model.rows[i].arc_config.sr)
+                    row.AppendChild(sr)
+                    
+                    angle = xml.CreateElement('angle')
+                    angle.InnerText = str(self.model.rows[i].arc_config.angle)
+                    row.AppendChild(angle)
+                    
+                    step = xml.CreateElement('stepping')
+                    step.InnerText = str(self.model.rows[i].stepping)
+                    row.AppendChild(step)
+                    
+                    position = xml.CreateElement('position')
+                    position.InnerText = str(self.model.rows[i].position)
+                    row.AppendChild(position)
+                    if self.model.rows[i].is_transit:
+                        
+                        transit = xml.CreateElement('transit')
+                        transit.InnerText = str(self.model.rows[i].transit_radius)
+                        row.AppendChild(transit)
+                        
+                        transit_position = xml.CreateElement('transitposition')
+                        transit_position.InnerText = str(self.model.rows[i].transit_position)
+                        row.AppendChild(transit_position)
+                elif self.model.rows[i].dot_type == FritType.TRI_ARC:
+                    type = xml.CreateAttribute('type')
+                    type.Value = 'triarc'
+                    row.Attributes.Append(type)
+                    if self.model.rows[i].arrange_type == RowArrangeType.HEADING:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'heading'
+                        row.Attributes.Append(arrange)
+                    else:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'cross'
+                        row.Attributes.Append(arrange)
+                    #print('圆形') row.circle_config.r
+                    lr = xml.CreateElement('lr')
+                    lr.InnerText = str(self.model.rows[i].tri_arc_config.lr)
+                    row.AppendChild(lr)
+                    
+                    sr = xml.CreateElement('sr')
+                    sr.InnerText = str(self.model.rows[i].tri_arc_config.sr)
+                    row.AppendChild(sr)
+                    
+                    angle = xml.CreateElement('angle')
+                    angle.InnerText = str(self.model.rows[i].tri_arc_config.angle)
+                    row.AppendChild(angle)
+                    
+                    step = xml.CreateElement('stepping')
+                    step.InnerText = str(self.model.rows[i].stepping)
+                    row.AppendChild(step)
+                    
+                    position = xml.CreateElement('position')
+                    position.InnerText = str(self.model.rows[i].position)
+                    row.AppendChild(position)
+                    
+                    if self.model.rows[i].is_transit:
+                        transit = xml.CreateElement('transit')
+                        transit.InnerText = str(self.model.rows[i].transit_radius)
+                        row.AppendChild(transit)
+                        
+                        transit_position = xml.CreateElement('transitposition')
+                        transit_position.InnerText = str(self.model.rows[i].transit_position)
+                        row.AppendChild(transit_position)
+            #f_path = XMLPATH()
+            #xml.Save(f_path)
+            for i in range(len(self.model.holes)):
+                print(i)
+                hole = xml.CreateElement('hole')
+                block.AppendChild(hole)
+                #row_id = xml.CreateAttribute('id')
+                hole.SetAttribute('id',str(i))
+                if self.model.holes[i].dot_type == FritType.CIRCLE_DOT:
+                    type = xml.CreateAttribute('type')
+                    type.Value = 'circle'
+                    hole.Attributes.Append(type)
+                    if self.model.holes[i].arrange_type == RowArrangeType.HEADING:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'heading'
+                        hole.Attributes.Append(arrange)
+                    else:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'cross'
+                        hole.Attributes.Append(arrange)
+                    #print('圆形') row.circle_config.r
+                    r = xml.CreateElement('r')
+                    r.InnerText = str(self.model.holes[i].circle_config.r)
+                    hole.AppendChild(r)
+                    
+                    #k = xml.CreateElement('k')
+                    #k.InnerText = str(self.model.rows[i].circle_config.k)
+                    #row.AppendChild(k)
+                    
+                    step = xml.CreateElement('stepping')
+                    step.InnerText = str(self.model.holes[i].stepping)
+                    hole.AppendChild(step)
+                    
+                    vspace = xml.CreateElement('vspace')
+                    vspace.InnerText = str(self.model.holes[i].vspace)
+                    hole.AppendChild(vspace)
+                    
+                    fposition = xml.CreateElement('fposition')
+                    fposition.InnerText = str(self.model.holes[i].first_line_position)
+                    hole.AppendChild(fposition)
+                    
+                elif self.model.holes[i].dot_type == FritType.ROUND_RECT:
+                    type = xml.CreateAttribute('type')
+                    type.Value = 'roundrect'
+                    hole.Attributes.Append(type)
+                    if self.model.holes[i].arrange_type == RowArrangeType.HEADING:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'heading'
+                        hole.Attributes.Append(arrange)
+                    else:
+                        arrange = xml.CreateAttribute('arrange')
+                        arrange.Value = 'cross'
+                        hole.Attributes.Append(arrange)
+                    #print('圆形') row.circle_config.r
+                    r = xml.CreateElement('r')
+                    r.InnerText = str(self.model.holes[i].round_rect_config.r)
+                    hole.AppendChild(r)
+                    
+                    k = xml.CreateElement('k')
+                    k.InnerText = str(self.model.holes[i].round_rect_config.k)
+                    hole.AppendChild(k)
+                    
+                    step = xml.CreateElement('stepping')
+                    step.InnerText = str(self.model.holes[i].stepping)
+                    hole.AppendChild(step)
+                    
+                    vspace = xml.CreateElement('vspace')
+                    vspace.InnerText = str(self.model.holes[i].vspace)
+                    hole.AppendChild(vspace)
+                    
+                    fposition = xml.CreateElement('fposition')
+                    fposition.InnerText = str(self.model.holes[i].first_line_position)
+                    hole.AppendChild(fposition)
+                    
+            f_path = XMLPATH()
+            xml.Save(f_path)
+        except:
+            pass
         
     def InsertButtonClick(self, sender, e):
         self.clear_dots()
@@ -6800,76 +8064,79 @@ class dzBlockPage(forms.TabPage):
         HoleFrits(1,self.model).dazhong_fill_dots()
         
     def XMLButtonClick(self, sender, e):
-        xml = XML.XmlDocument()
-        xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
-        xml.AppendChild(xml_declaration)
-        set = xml.CreateElement('setting')
-        block = xml.CreateElement('block')
-        set.AppendChild(block)
-        xml.AppendChild(set)
-        for i in range(len(self.model.rows)):
-            print(i)
-            row = xml.CreateElement('row')
-            block.AppendChild(row)
-            row.SetAttribute('id',str(i))
-            
-            r1 = xml.CreateElement('cross_k1')
-            r1.InnerText = str(self.model.rows[i].circle_config.cross_k1)
-            row.AppendChild(r1)
-            
-            r2 = xml.CreateElement('cross_position3')
-            r2.InnerText = str(self.model.rows[i].circle_config.cross_position3)
-            row.AppendChild(r2)
-            
-            r3 = xml.CreateElement('cross_position2')
-            r3.InnerText = str(self.model.rows[i].circle_config.cross_position2)
-            row.AppendChild(r3)
-            
-            r4 = xml.CreateElement('cross_position1')
-            r4.InnerText = str(self.model.rows[i].circle_config.cross_position1)
-            row.AppendChild(r4)
-            
-            r5 = xml.CreateElement('cross_k2')
-            r5.InnerText = str(self.model.rows[i].circle_config.cross_k2)
-            row.AppendChild(r5)
-            
-            r6 = xml.CreateElement('cross_round_rect_r')
-            r6.InnerText = str(self.model.rows[i].circle_config.cross_round_rect_r)
-            row.AppendChild(r6)
-            
-            r7 = xml.CreateElement('cross_r2')
-            r7.InnerText = str(self.model.rows[i].circle_config.cross_r2)
-            row.AppendChild(r7)
-            
-            r8 = xml.CreateElement('cross_r1')
-            r8.InnerText = str(self.model.rows[i].circle_config.cross_r1)
-            row.AppendChild(r8)
-            
-            r9 = xml.CreateElement('slope_r1')
-            r9.InnerText = str(self.model.rows[i].circle_config.slope_r1)
-            row.AppendChild(r9)
-            
-            r10 = xml.CreateElement('slope_r2')
-            r10.InnerText = str(self.model.rows[i].circle_config.slope_r2)
-            row.AppendChild(r10)
-            
-            r11 = xml.CreateElement('slope_r3')
-            r11.InnerText = str(self.model.rows[i].circle_config.slope_r3)
-            row.AppendChild(r11)
-            
-            r12 = xml.CreateElement('slope_r4')
-            r12.InnerText = str(self.model.rows[i].circle_config.slope_r4)
-            row.AppendChild(r12)
-            
-            stepping = xml.CreateElement('horizontal')
-            stepping.InnerText = str(self.model.rows[i].stepping)
-            row.AppendChild(stepping)
-            
-            position = xml.CreateElement('vertical')
-            position.InnerText = str(self.model.rows[i].position)
-            row.AppendChild(position)
-        f_path = XMLPATH()
-        xml.Save(f_path)
+        try:
+            xml = XML.XmlDocument()
+            xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
+            xml.AppendChild(xml_declaration)
+            set = xml.CreateElement('setting')
+            block = xml.CreateElement('block')
+            set.AppendChild(block)
+            xml.AppendChild(set)
+            for i in range(len(self.model.rows)):
+                print(i)
+                row = xml.CreateElement('row')
+                block.AppendChild(row)
+                row.SetAttribute('id',str(i))
+                
+                r1 = xml.CreateElement('cross_k1')
+                r1.InnerText = str(self.model.rows[i].circle_config.cross_k1)
+                row.AppendChild(r1)
+                
+                r2 = xml.CreateElement('cross_position3')
+                r2.InnerText = str(self.model.rows[i].circle_config.cross_position3)
+                row.AppendChild(r2)
+                
+                r3 = xml.CreateElement('cross_position2')
+                r3.InnerText = str(self.model.rows[i].circle_config.cross_position2)
+                row.AppendChild(r3)
+                
+                r4 = xml.CreateElement('cross_position1')
+                r4.InnerText = str(self.model.rows[i].circle_config.cross_position1)
+                row.AppendChild(r4)
+                
+                r5 = xml.CreateElement('cross_k2')
+                r5.InnerText = str(self.model.rows[i].circle_config.cross_k2)
+                row.AppendChild(r5)
+                
+                r6 = xml.CreateElement('cross_round_rect_r')
+                r6.InnerText = str(self.model.rows[i].circle_config.cross_round_rect_r)
+                row.AppendChild(r6)
+                
+                r7 = xml.CreateElement('cross_r2')
+                r7.InnerText = str(self.model.rows[i].circle_config.cross_r2)
+                row.AppendChild(r7)
+                
+                r8 = xml.CreateElement('cross_r1')
+                r8.InnerText = str(self.model.rows[i].circle_config.cross_r1)
+                row.AppendChild(r8)
+                
+                r9 = xml.CreateElement('slope_r1')
+                r9.InnerText = str(self.model.rows[i].circle_config.slope_r1)
+                row.AppendChild(r9)
+                
+                r10 = xml.CreateElement('slope_r2')
+                r10.InnerText = str(self.model.rows[i].circle_config.slope_r2)
+                row.AppendChild(r10)
+                
+                r11 = xml.CreateElement('slope_r3')
+                r11.InnerText = str(self.model.rows[i].circle_config.slope_r3)
+                row.AppendChild(r11)
+                
+                r12 = xml.CreateElement('slope_r4')
+                r12.InnerText = str(self.model.rows[i].circle_config.slope_r4)
+                row.AppendChild(r12)
+                
+                stepping = xml.CreateElement('horizontal')
+                stepping.InnerText = str(self.model.rows[i].stepping)
+                row.AppendChild(stepping)
+                
+                position = xml.CreateElement('vertical')
+                position.InnerText = str(self.model.rows[i].position)
+                row.AppendChild(position)
+            f_path = XMLPATH()
+            xml.Save(f_path)
+        except:
+            pass
     
     def FlipCheckClick(self, sender, e):
         if sender.Tag == 'is_outer_flip':
