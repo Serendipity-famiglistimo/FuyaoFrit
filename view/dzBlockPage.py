@@ -329,76 +329,79 @@ class dzBlockPage(forms.TabPage):
         HoleFrits(1,self.model).dazhong_fill_dots()
         
     def XMLButtonClick(self, sender, e):
-        xml = XML.XmlDocument()
-        xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
-        xml.AppendChild(xml_declaration)
-        set = xml.CreateElement('setting')
-        block = xml.CreateElement('block')
-        set.AppendChild(block)
-        xml.AppendChild(set)
-        for i in range(len(self.model.rows)):
-            print(i)
-            row = xml.CreateElement('row')
-            block.AppendChild(row)
-            row.SetAttribute('id',str(i))
-            
-            r1 = xml.CreateElement('cross_k1')
-            r1.InnerText = str(self.model.rows[i].circle_config.cross_k1)
-            row.AppendChild(r1)
-            
-            r2 = xml.CreateElement('cross_position3')
-            r2.InnerText = str(self.model.rows[i].circle_config.cross_position3)
-            row.AppendChild(r2)
-            
-            r3 = xml.CreateElement('cross_position2')
-            r3.InnerText = str(self.model.rows[i].circle_config.cross_position2)
-            row.AppendChild(r3)
-            
-            r4 = xml.CreateElement('cross_position1')
-            r4.InnerText = str(self.model.rows[i].circle_config.cross_position1)
-            row.AppendChild(r4)
-            
-            r5 = xml.CreateElement('cross_k2')
-            r5.InnerText = str(self.model.rows[i].circle_config.cross_k2)
-            row.AppendChild(r5)
-            
-            r6 = xml.CreateElement('cross_round_rect_r')
-            r6.InnerText = str(self.model.rows[i].circle_config.cross_round_rect_r)
-            row.AppendChild(r6)
-            
-            r7 = xml.CreateElement('cross_r2')
-            r7.InnerText = str(self.model.rows[i].circle_config.cross_r2)
-            row.AppendChild(r7)
-            
-            r8 = xml.CreateElement('cross_r1')
-            r8.InnerText = str(self.model.rows[i].circle_config.cross_r1)
-            row.AppendChild(r8)
-            
-            r9 = xml.CreateElement('slope_r1')
-            r9.InnerText = str(self.model.rows[i].circle_config.slope_r1)
-            row.AppendChild(r9)
-            
-            r10 = xml.CreateElement('slope_r2')
-            r10.InnerText = str(self.model.rows[i].circle_config.slope_r2)
-            row.AppendChild(r10)
-            
-            r11 = xml.CreateElement('slope_r3')
-            r11.InnerText = str(self.model.rows[i].circle_config.slope_r3)
-            row.AppendChild(r11)
-            
-            r12 = xml.CreateElement('slope_r4')
-            r12.InnerText = str(self.model.rows[i].circle_config.slope_r4)
-            row.AppendChild(r12)
-            
-            stepping = xml.CreateElement('horizontal')
-            stepping.InnerText = str(self.model.rows[i].stepping)
-            row.AppendChild(stepping)
-            
-            position = xml.CreateElement('vertical')
-            position.InnerText = str(self.model.rows[i].position)
-            row.AppendChild(position)
-        f_path = XMLPATH()
-        xml.Save(f_path)
+        try:
+            xml = XML.XmlDocument()
+            xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
+            xml.AppendChild(xml_declaration)
+            set = xml.CreateElement('setting')
+            block = xml.CreateElement('block')
+            set.AppendChild(block)
+            xml.AppendChild(set)
+            for i in range(len(self.model.rows)):
+                print(i)
+                row = xml.CreateElement('row')
+                block.AppendChild(row)
+                row.SetAttribute('id',str(i))
+                
+                r1 = xml.CreateElement('cross_k1')
+                r1.InnerText = str(self.model.rows[i].circle_config.cross_k1)
+                row.AppendChild(r1)
+                
+                r2 = xml.CreateElement('cross_position3')
+                r2.InnerText = str(self.model.rows[i].circle_config.cross_position3)
+                row.AppendChild(r2)
+                
+                r3 = xml.CreateElement('cross_position2')
+                r3.InnerText = str(self.model.rows[i].circle_config.cross_position2)
+                row.AppendChild(r3)
+                
+                r4 = xml.CreateElement('cross_position1')
+                r4.InnerText = str(self.model.rows[i].circle_config.cross_position1)
+                row.AppendChild(r4)
+                
+                r5 = xml.CreateElement('cross_k2')
+                r5.InnerText = str(self.model.rows[i].circle_config.cross_k2)
+                row.AppendChild(r5)
+                
+                r6 = xml.CreateElement('cross_round_rect_r')
+                r6.InnerText = str(self.model.rows[i].circle_config.cross_round_rect_r)
+                row.AppendChild(r6)
+                
+                r7 = xml.CreateElement('cross_r2')
+                r7.InnerText = str(self.model.rows[i].circle_config.cross_r2)
+                row.AppendChild(r7)
+                
+                r8 = xml.CreateElement('cross_r1')
+                r8.InnerText = str(self.model.rows[i].circle_config.cross_r1)
+                row.AppendChild(r8)
+                
+                r9 = xml.CreateElement('slope_r1')
+                r9.InnerText = str(self.model.rows[i].circle_config.slope_r1)
+                row.AppendChild(r9)
+                
+                r10 = xml.CreateElement('slope_r2')
+                r10.InnerText = str(self.model.rows[i].circle_config.slope_r2)
+                row.AppendChild(r10)
+                
+                r11 = xml.CreateElement('slope_r3')
+                r11.InnerText = str(self.model.rows[i].circle_config.slope_r3)
+                row.AppendChild(r11)
+                
+                r12 = xml.CreateElement('slope_r4')
+                r12.InnerText = str(self.model.rows[i].circle_config.slope_r4)
+                row.AppendChild(r12)
+                
+                stepping = xml.CreateElement('horizontal')
+                stepping.InnerText = str(self.model.rows[i].stepping)
+                row.AppendChild(stepping)
+                
+                position = xml.CreateElement('vertical')
+                position.InnerText = str(self.model.rows[i].position)
+                row.AppendChild(position)
+            f_path = XMLPATH()
+            xml.Save(f_path)
+        except:
+            pass
     
     def FlipCheckClick(self, sender, e):
         if sender.Tag == 'is_outer_flip':
