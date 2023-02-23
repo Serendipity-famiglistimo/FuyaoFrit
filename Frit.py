@@ -612,6 +612,7 @@ class FritDialog(forms.Dialog[bool]):
         self.Padding = drawing.Padding(10)
         #self.type = type
         self.Resizable = False
+        self.Minimizable = True
         self.Closing += self.OnFormClosed
         self.MinimumSize = Size(800, 600)
         # 菜单
@@ -5743,10 +5744,16 @@ class HoleConfigPanel(forms.GroupBox):
         self.arrage_type_combo.SelectedIndex = self.model.arrange_type
         self.arrage_type_combo.SelectedIndexChanged += self.change_row_arrange_type
 
-        self.config_panel = forms.Panel()
+        #self.config_panel = forms.Panel()
         self.update_btn = forms.Button(Text='填充花点')
         self.update_btn.Size = drawing.Size(100, 30)
         self.update_btn.Click += self.fill_row_frits
+        
+        
+        #self.undo_panel = forms.Panel()
+        self.undo_btn = forms.Button(Text='清除花点')
+        self.undo_btn.Size = drawing.Size(100, 30)
+        self.undo_btn.Click += self.undo_fill_row_frits
 
         self.layout = forms.DynamicLayout()
         self.layout.DefaultSpacing = drawing.Size(10, 10)
@@ -5771,7 +5778,7 @@ class HoleConfigPanel(forms.GroupBox):
         self.layout.AddRow(self.arrage_type_label, self.arrage_type_combo, None)
         self.layout.EndVertical()
         self.layout.BeginVertical(padding=drawing.Padding(10, 0, 0, 0), spacing=drawing.Size(10, 0))
-        self.layout.AddRow(self.update_btn, None)
+        self.layout.AddRow(self.update_btn,self.undo_btn, None)
         self.layout.EndVertical()
         self.Content = self.layout
     
@@ -5824,6 +5831,10 @@ class HoleConfigPanel(forms.GroupBox):
         # self.display.AddCurve(self.model.border_curve)
         for d in self.model.dots:
             d.draw(self.display, self.display_color)
+            
+    def undo_fill_row_frits(self, sender, e):
+        self.clear_dots()
+        del self.model.dots[:]
     
     def clear_dots(self):
         self.display.Clear()
