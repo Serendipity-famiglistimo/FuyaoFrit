@@ -46,11 +46,12 @@ class SelectedDialog(forms.Dialog):
 
     def __init__(self):
         self.Title = "算法选择"
-        self.ClientSize = drawing.Size(200, 200)
+        self.ClientSize = drawing.Size(200, 210)
         self.Padding = drawing.Padding(5)
-        self.Resizable = False
+        self.Resizable = True
         con.type = '大众图纸'
         con.choose = 'false'
+        self.Topmost = True
         self.pick_label = forms.Label(Text='选择填充算法:', Font=Font('Microsoft YaHei', 12.))
         self.list = forms.RadioButtonList()
         self.list.DataStore = ['大众图纸', '斜向普通填法', '斜向等距填法','普通块状填法','斜向辅助线填法','三角块状填法','斜向贴边填法','复杂奥迪算法']
@@ -100,6 +101,7 @@ class SelectedDialog(forms.Dialog):
 def selectedtoDialog():
     dialog1 = SelectedDialog()
     dialog1.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)
+    #dialog1.Show()
 
 
 class AboutUsDialog(forms.Dialog):
@@ -112,6 +114,7 @@ class AboutUsDialog(forms.Dialog):
         #self.text = 
         #con.type = '关于我们'
         #con.choose = 'false'
+        self.Topmost = True
         self.version_label = forms.Label(Text='版本号：2.1版', Font=Font('Microsoft YaHei', 12.))
         self.CommitButton1 = forms.Button(Text = '确认')
         self.CommitButton1.Click += self.OnCommitButtonClick1
@@ -121,6 +124,8 @@ class AboutUsDialog(forms.Dialog):
         layout.AddRow(None,self.CommitButton1,None)
         self.Content = layout
         
+        #FritDialog().minimize(None,None)
+        self.Focus()
     
     def OnCommitButtonClick1(self,sender,e):
         self.Close()
@@ -131,17 +136,22 @@ class AboutUsDialog(forms.Dialog):
 def AboutUsToDialog():
     dialog2 = AboutUsDialog()
     dialog2.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)
+    #dialogf2.Show()
 
 
-class FritDialog(forms.Dialog[bool]):
+class FritDialog(forms.FloatingForm):
     def __init__(self):
         current_path1 = os.getcwd()
         self.Title = '福耀印刷花点排布工具_V2.1'
         self.Icon = drawing.Icon(current_path1+"\\ico\\FY.ico")
         self.Padding = drawing.Padding(10)
         self.Resizable = False
+        self.Minimizable = True
+        #self.Maximizable = False
+        self.WindowStateChanged += self.OnMinmized
         self.Closing += self.OnFormClosed
         self.MinimumSize = Size(900, 600)
+        self.MaximumSize = Size(900, 600)
         # 菜单
         self.create_menu()
         self.create_toolbar()
@@ -166,18 +176,26 @@ class FritDialog(forms.Dialog[bool]):
         self.Content = self.layout 
 
     
-
+    def OnMinmized(self,sender, e):
+        print("hello world")
+        #Rhino.RhinoApp.SetFocusToMainWindow()
+    def minimized(self,sender, e):
+        self.Minimize()
+    def maximized(self,sender, e):
+        self.Maximize()
+    
+    
     def create_menu(self):
         self.Menu = forms.MenuBar()
         current_path = os.getcwd()
         
-        file_menu = self.Menu.Items.GetSubmenu("文件")
+        file_menu = self.Menu.Items.GetSubmenu("XML")
         edit_menu = self.Menu.Items.GetSubmenu("编辑")
         about_us_menu = self.Menu.Items.GetSubmenu("关于我们")
         
         
-        open_menu = forms.Command()
-        open_menu.MenuText = "打开"
+        open_menu = forms.Command(self.AddXMLCommand)
+        open_menu.MenuText = "打开XML文件"
         open_menu.Image = drawing.Bitmap(current_path + '\\ico\\file-open.png')
         file_menu.Items.Add(open_menu, 0)
         
@@ -226,9 +244,13 @@ class FritDialog(forms.Dialog[bool]):
         for region in self.regions:
             region.clear_dots()
         # self.display.Clear()
-    
+    def AddXMLCommand(self, sender, e):
+        dia = forms.OpenFileDialog()
+        dia.ShowDialog(Rhino.UI.RhinoEtoApp.MainWindow)   
+
 
     def AboutUsCommand(self, sender, e):
+        #forms.MessageBox.Show("2.3.1")
         AboutUsToDialog()
 
     def AddBandRegionCommand(self, sender, e):
@@ -242,7 +264,10 @@ class FritDialog(forms.Dialog[bool]):
         self.tab.Pages.Add(page)
 
     def AddBlockRegionCommand(self, sender, e):
+        ##self.minimized(None,None)
         selectedtoDialog()
+        #self.maximized(None,None)
+        
         if con.choose == 'true':
             if con.type == '大众图纸':
                 page = dzBlockPage(len(self.regions))
@@ -304,5 +329,10 @@ class FritDialog(forms.Dialog[bool]):
 
 if __name__ == "__main__":
     dialog = FritDialog();
+    dialog.Show()
     # rc = dialog.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)
-    Rhino.UI.EtoExtensions.ShowSemiModal(dialog, Rhino.RhinoDoc.ActiveDoc, Rhino.UI.RhinoEtoApp.MainWindow)
+    #Rhino.UI.EtoExtensions.ShowSemiModal(dialog, Rhino.RhinoDoc.ActiveDoc, Rhino.UI.RhinoEtoApp.MainWindow)
+    #Rhino.UI.EtoExtensions.ShowSemiModal(dialog, Rhino.RhinoDoc.ActiveDoc, Rhino.UI.RhinoEtoApp.MainWindow)
+    #Rhino.RhinoApp.SetFocusToMainWindow(dialog)
+    # Rhino.UI.EtoExtensions.Show(dialog, Rhino.RhinoDoc.ActiveDoc)
+    # dialog.ShowModalAsync(Rhino.UI.RhinoEtoApp.MainWindow)
