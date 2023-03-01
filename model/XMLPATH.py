@@ -8,6 +8,7 @@
 '''
 import os
 import clr
+import Eto.Forms as forms
 #from RowControl import RowControl
 from System.Drawing import Color
 clr.AddReference("System.Xml")
@@ -19,12 +20,15 @@ from System import Environment
 
 def XMLPATH():
     file_name = "";
-    save_file_dialog = Rhino.UI.SaveFileDialog()
-    save_file_dialog.FileName = ".xml"
-    save_file_dialog.Filter = "(*.xml)"
+    
+    save_file_dialog = forms.SaveFileDialog()
+    filter = forms.FileFilter('.xml',".xml")
+    save_file_dialog.Filters.Add(filter)
+    #save_file_dialog.FileName = ".xml"
+    save_file_dialog.Filters = "(*.xml)"
     #save_file_dialog.InitialDirectory = \
     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-    if save_file_dialog.ShowDialog() == DialogResult.OK:
-        file_name = save_file_dialog.FileName
+    save_file_dialog.ShowDialog(Rhino.UI.RhinoEtoApp.MainWindow)
+    file_name = save_file_dialog.FileName
     print(file_name)
     return file_name
