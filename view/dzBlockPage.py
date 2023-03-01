@@ -43,7 +43,7 @@ from scriptcontext import doc
 from System.Windows.Forms import *
 import Rhino.UI
 from System import Environment
-
+from model.XMLPATH import XMLPATH
 import imp
 import Rhino
 import Rhino as rc
@@ -74,18 +74,21 @@ clr.AddReference("System.Xml")
 clr.AddReference("System")
 import System.Xml as XML
 from System import Environment
+from model.XML_Output import X_Choose
+from model.Warning_type import Warning 
+#from model.MainWindow_Control import MainWindow_Minimized
 
-def XMLPATH():
-    file_name = "";
-    save_file_dialog = Rhino.UI.SaveFileDialog()
-    save_file_dialog.FileName = ".xml"
-    save_file_dialog.Filter = "(*.xml)"
-    #save_file_dialog.InitialDirectory = \
-    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-    if save_file_dialog.ShowDialog() == DialogResult.OK:
-        file_name = save_file_dialog.FileName
-    print(file_name)
-    return file_name
+#def XMLPATH():
+#    file_name = "";
+#    save_file_dialog = Rhino.UI.SaveFileDialog()
+#    save_file_dialog.FileName = ".xml"
+#    save_file_dialog.Filter = "(*.xml)"
+#    #save_file_dialog.InitialDirectory = \
+#    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+#    if save_file_dialog.ShowDialog() == DialogResult.OK:
+#        file_name = save_file_dialog.FileName
+#    print(file_name)
+#    return file_name
 
 class dzBlockPage(forms.TabPage):
     
@@ -103,6 +106,13 @@ class dzBlockPage(forms.TabPage):
         self.hole_panels = list()
         self.create_interface()
         self.pick_event_btn = None
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        self.frit_white = []
+        self.frit_black = []
+        self.frit_border = []
+        X_Choose.DZblock_XML_OUT = False
         
     def create_interface(self):
         
@@ -229,6 +239,15 @@ class dzBlockPage(forms.TabPage):
         self.xml_btn.Size = Size(100, 30)
         self.xml_btn.Click += self.XMLButtonClick
         
+        self.preview_btn = forms.Button(Text='效果预览')
+        self.preview_btn.Size = Size(100, 30)
+        self.preview_btn.Click += self.PreviewButtonClick
+        
+        self.clear_btn = forms.Button(Text='清除预览')
+        self.clear_btn.Size = Size(100, 30)
+        self.clear_btn.Click += self.ClearButtonClick
+        
+        
         #groupbox1
         self.m_groupbox = forms.GroupBox(Text = '参考线示意图')
         self.m_groupbox.Padding = drawing.Padding(5)
@@ -280,7 +299,7 @@ class dzBlockPage(forms.TabPage):
         self.layout.AddRow(self.m_groupbox2, self.m_groupbox)
         self.layout.EndVertical()
         self.layout.AddSeparateRow(self.fill_label, None)
-        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,self.insert_btn,self.xml_btn,None])
+        self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,self.xml_btn,self.preview_btn,self.clear_btn,self.insert_btn,None])
         #self.layout.AddRow(self.fill_btn,self.insert_btn,self.xml_btn, None)
         #self.layout.AddSeparateRow(padding=drawing.Padding(20, 0, 0, 0), controls=[self.fill_btn,self.insert_btn,self.xml_btn  None])
         if len(self.model.rows) == 0:
@@ -314,6 +333,16 @@ class dzBlockPage(forms.TabPage):
         self.Content = self.panel
 
 
+
+    def PreviewButtonClick(self, sender, e):
+        self.frit_black,self.frit_white,self.frit_border = HoleFrits(1,self.model).dazhong_fill_dots()
+        self.preview(self.frit_white,self.frit_black,self.frit_border)
+        
+    
+    
+    def ClearButtonClick(self, sender, e):
+        self.display.Clear()
+
     def AddButtonClick(self, sender, e):
         self.row_num = len(self.model.rows)
         self.row_num += 1
@@ -326,7 +355,60 @@ class dzBlockPage(forms.TabPage):
     
     def InsertButtonClick(self, sender, e):
         self.clear_dots()
-        HoleFrits(1,self.model).dazhong_fill_dots()
+        if X_Choose.DZblock_XML_OUT == False:
+            
+            dzblock_dialog = Warning('dzblock')
+            dzblock_dialog.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)
+            if X_Choose.DZblock_xml == False:
+                self.frit_black,self.frit_white,self.frit_border = HoleFrits(1,self.model).dazhong_fill_dots()
+                self.bake(self.frit_white,self.frit_black,self.frit_border)
+            elif X_Choose.DZblock_xml == True:
+                self.XMLButtonClick(None,None)
+                self.frit_black,self.frit_white,self.frit_border = HoleFrits(1,self.model).dazhong_fill_dots()
+                self.bake(self.frit_white,self.frit_black,self.frit_border)
+        elif X_Choose.DZblock_XML_OUT == True:
+            self.frit_black,self.frit_white,self.frit_border = HoleFrits(1,self.model).dazhong_fill_dots()
+            self.bake(self.frit_white,self.frit_black,self.frit_border)
+        
+    def bake(self,frit_white,frit_black,frit_boundary):
+        
+        layer_name = 'fuyao_black'
+        rs.AddLayer(layer_name, self.display_color)
+        for i in range(len(frit_black)):
+            obj = scriptcontext.doc.Objects.AddCurve(frit_black[i])
+            #print(obj)
+            #print(type(obj))
+            rs.ObjectLayer(obj, layer_name)
+        
+        layer_name = 'fuyao_white'
+        rs.AddLayer(layer_name, self.display_color)
+        for i in range(len(frit_white)):
+            obj = scriptcontext.doc.Objects.AddCurve(frit_white[i])
+            
+            rs.ObjectLayer(obj, layer_name)
+        
+        layer_name = 'fuyao_bound'
+        rs.AddLayer(layer_name, self.display_color)
+        for i in range(len(frit_boundary)):
+            obj = scriptcontext.doc.Objects.AddCurve(frit_boundary[i])
+            rs.ObjectLayer(obj, layer_name)
+        
+    def preview(self,frit_white,frit_black,frit_boundary):
+        self.display.Clear()
+        #black_frit,white_frit,border_frit = self.run()
+        for i in range(len(frit_black)):
+            self.display.AddCurve(frit_black[i],self.display_color,1) 
+            
+        
+        
+        for i in range(len(frit_white)):
+            self.display.AddCurve(frit_white[i],self.display_color,1)
+            
+            
+        
+        for i in range(len(frit_boundary)):
+            self.display.AddCurve(frit_boundary[i],self.display_color,1)
+        
         
     def XMLButtonClick(self, sender, e):
         try:
@@ -400,6 +482,7 @@ class dzBlockPage(forms.TabPage):
                 row.AppendChild(position)
             f_path = XMLPATH()
             xml.Save(f_path)
+            X_Choose.DZblock_XML_OUT = True
         except:
             pass
     
@@ -450,9 +533,9 @@ class dzBlockPage(forms.TabPage):
         for r in self.hole_panels:
             r.clear_dots()
         
-    def bake(self):
-        for r in self.row_panels:
-            r.bake()
-        
-        for r in self.hole_panels:
-            r.bake()
+#    def bake(self):
+#        for r in self.row_panels:
+#            r.bake()
+#        
+#        for r in self.hole_panels:
+#            r.bake()

@@ -39,6 +39,10 @@ from System import Environment
 from frits import FritType
 from model.HoleFrits import HoleArrangeType
 from model.RowFrits import RowArrangeType
+from model.XML_Output import X_Choose
+from model.Warning_type import Warning 
+
+
 
 class BandPage(forms.TabPage):
     
@@ -56,6 +60,7 @@ class BandPage(forms.TabPage):
         self.row_num = 1
         self.model = BandZone()
         self.row_panels = list()
+        X_Choose.Band_XML_OUT = False
         self.panel = forms.Scrollable()
         self.panel.Padding = drawing.Padding(10)
         
@@ -201,22 +206,76 @@ class BandPage(forms.TabPage):
         self.create_interface()
 
 
-    def FillButtonClick(self, sender, e):
-        # self.row_num += 1
-        # row_frits = RowFrits(len(self.model.rows), self.model)
-       
-        # self.model.rows.append(row_frits)
-        # # row_frits.band_model = self.model  # type: ignore
-        # self.create_interface()
-        for row_panel in self.row_panels:
-            row_panel.fill_row_frits(None, None)
-            
-    def XMLButtonClick(self, sender, e):
+    def FillButtonClick(self,sender,e):
+        if X_Choose.Band_XML_OUT == False:
+            band_dialog = Warning('band')
+            band_dialog.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)
+            if X_Choose.Band_xml == False:
+                for row_panel in self.row_panels:
+                    row_panel.fill_row_frits(None, None)
+            elif X_Choose.Band_xml == True:
+                XML_BAND(self.model,self.band_type).run()
+                for row_panel in self.row_panels:
+                    row_panel.fill_row_frits(None, None)
+        elif X_Choose.Band_XML_OUT == True:
+            for row_panel in self.row_panels:
+                    row_panel.fill_row_frits(None, None)
+    def XMLButtonClick(self,sender, e):
+        XML_BAND(self.model,self.band_type).run()
+        
+        
+    def FlipCheckClick(self, sender, e):
+        if sender.Tag == 'is_refer_flip':
+            self.model.is_flip[0] = self.flip_check.Checked
+        elif sender.Tag == 'is_inner_flip':
+            self.model.is_flip[1] = self.flip_check2.Checked
+        elif sender.Tag == 'is_outer_flip':
+            self.model.is_flip[2] = self.flip_check3.Checked
+        
+        
+        pass
+    
+    def OnGetRhinoObjects(self, sender, e):
+        objectId = rs.GetCurveObject("Select curve:")
+        if objectId is None: 
+            print("Warning: No curve is selected")
+            return
+      
+        crv = objectId[0]
+        if self.pick_event_btn.Tag == 'refer_btn':
+            self.model.curves[0] = crv
+        elif self.pick_event_btn.Tag == 'inner_btn':
+            self.model.curves[1] = crv
+        elif self.pick_event_btn.Tag == 'outer_btn':
+            self.model.curves[2] = crv
+        self.create_interface()
+    
+    def PickReferCurve(self, sender, e):
+        self.pick_event_btn = sender
+        Rhino.UI.EtoExtensions.PushPickButton(self, self.OnGetRhinoObjects)
+    
+    
+    def clear_dots(self):
+        for r in self.row_panels:
+            r.clear_dots()
+
+    def bake(self):
+        for r in self.row_panels:
+            r.bake()
+        
+class XML_BAND():
+    def __init__(self,model,band_type):
+        self.model = model
+        self.band_type = band_type
+        #print('1')
+    def run(self):
+        #print('2')
         try:
             xml = XML.XmlDocument()
             xml_declaration = xml.CreateXmlDeclaration("1.0","UTF-8","yes")
             xml.AppendChild(xml_declaration)
             set = xml.CreateElement('setting')
+            
             if self.band_type == 'general':
                 band = xml.CreateElement('band')
                 set.AppendChild(band)
@@ -382,6 +441,7 @@ class BandPage(forms.TabPage):
                             row.AppendChild(transit_position)
                 f_path = XMLPATH()
                 xml.Save(f_path)
+                X_Choose.Band_XML_OUT = True
                 
             elif self.band_type == 'bottom':
                 bottom = xml.CreateElement('bottom')
@@ -548,44 +608,47 @@ class BandPage(forms.TabPage):
                             row.AppendChild(transit_position)
                 f_path = XMLPATH()
                 xml.Save(f_path)
+                X_Choose.Band_XML_OUT = True
         except:
+            #print('4')
             pass
-        #xml.Save("E:\\XML\\Test.xml")
-    def FlipCheckClick(self, sender, e):
-        if sender.Tag == 'is_refer_flip':
-            self.model.is_flip[0] = self.flip_check.Checked
-        elif sender.Tag == 'is_inner_flip':
-            self.model.is_flip[1] = self.flip_check2.Checked
-        elif sender.Tag == 'is_outer_flip':
-            self.model.is_flip[2] = self.flip_check3.Checked
         
-        
-        pass
-    
-    def OnGetRhinoObjects(self, sender, e):
-        objectId = rs.GetCurveObject("Select curve:")
-        if objectId is None: 
-            print("Warning: No curve is selected")
-            return
-      
-        crv = objectId[0]
-        if self.pick_event_btn.Tag == 'refer_btn':
-            self.model.curves[0] = crv
-        elif self.pick_event_btn.Tag == 'inner_btn':
-            self.model.curves[1] = crv
-        elif self.pick_event_btn.Tag == 'outer_btn':
-            self.model.curves[2] = crv
-        self.create_interface()
-    
-    def PickReferCurve(self, sender, e):
-        self.pick_event_btn = sender
-        Rhino.UI.EtoExtensions.PushPickButton(self, self.OnGetRhinoObjects)
-    
-    
-    def clear_dots(self):
-        for r in self.row_panels:
-            r.clear_dots()
 
-    def bake(self):
-        for r in self.row_panels:
-            r.bake()
+            
+#class Warning_Band(forms.Dialog):
+#
+#    def __init__(self):
+#        self.Title = "提醒"
+#        self.ClientSize = drawing.Size(350, 65)
+#        self.Padding = drawing.Padding(5)
+#        self.Resizable = False
+#        #self.text = 
+#        #con.type = '关于我们'
+#        X_Choose.Band_xml = False
+#        self.warn_label = forms.Label(Text='您还未保存XML文件,是否保存?', Font=Font('Microsoft YaHei', 12.))
+#        self.CommitButton = forms.Button(Text = '确认')
+#        self.CommitButton.Click += self.OnCommitButtonClick
+#        self.CancelButton = forms.Button(Text = '取消')
+#        self.CancelButton.Click += self.OnCancelButtonClick
+#        
+#        layout = forms.DynamicLayout()
+#        layout.Spacing = drawing.Size(5, 5)
+#        layout.AddSeparateRow(None,self.warn_label,None)
+#        layout.AddSeparateRow(None,self.CommitButton,None,self.CancelButton,None)
+#        self.Content = layout
+#        
+#    
+#    def OnCancelButtonClick(self,sender,e):
+#        self.Close()
+#    
+#    
+#    def OnCommitButtonClick(self,sender,e):
+#        X_Choose.Band_xml = True
+#        self.Close()
+        
+        
+        
+
+#def Warning_Band_dialog():
+#    band_dialog = Warning_Band()
+#    band_dialog.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)

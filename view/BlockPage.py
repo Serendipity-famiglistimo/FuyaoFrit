@@ -41,6 +41,10 @@ from frits import FritType
 from model.HoleFrits import HoleArrangeType
 from model.RowFrits import RowArrangeType
 from model.ChooseZone import con
+from model.XML_Output import X_Choose
+from model.Warning_type import Warning 
+
+
 
 class BlockPage(forms.TabPage):
     
@@ -59,6 +63,7 @@ class BlockPage(forms.TabPage):
         self.hole_panels = list()
         self.create_interface()
         self.pick_event_btn = None
+        X_Choose.Block_XML_OUT = False
         
     def create_interface(self):
         
@@ -479,17 +484,36 @@ class BlockPage(forms.TabPage):
                     
             f_path = XMLPATH()
             xml.Save(f_path)
+            X_Choose.Block_XML_OUT = True
         except:
             pass
         
     def InsertButtonClick(self, sender, e):
         self.clear_dots()
-        self.model.fill_dots()
-        self.display = rc.Display.CustomDisplay(True)
-        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
-        for d in self.model.dots:
-            d.draw(self.display, self.display_color)
-        
+        #self.model.fill_dots()
+        #self.display = rc.Display.CustomDisplay(True)
+        #self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        #for d in self.model.dots:
+            #d.draw(self.display, self.display_color)
+        if X_Choose.Block_XML_OUT == False:
+            block_dialog = Warning('block')
+            block_dialog.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)
+            if X_Choose.Block_xml == False:
+                for row_panel in self.row_panels:
+                    row_panel.fill_row_frits(None, None)
+                for hole_panel in self.hole_panels:
+                    hole_panel.fill_row_frits(None, None)
+            elif X_Choose.Block_xml == True:
+                self.XMLButtonClick(None,None)
+                for row_panel in self.row_panels:
+                    row_panel.fill_row_frits(None, None)
+                for hole_panel in self.hole_panels:
+                    hole_panel.fill_row_frits(None, None)
+        elif X_Choose.Block_XML_OUT == True:
+            for row_panel in self.row_panels:
+                row_panel.fill_row_frits(None, None)
+            for hole_panel in self.hole_panels:
+                hole_panel.fill_row_frits(None, None)
     
     def FlipCheckClick(self, sender, e):
         if sender.Tag == 'is_refer_flip':
@@ -529,3 +553,43 @@ class BlockPage(forms.TabPage):
         
         for r in self.hole_panels:
             r.bake()
+
+
+
+#class Warning_Block(forms.Dialog):
+#
+#    def __init__(self):
+#        self.Title = "提醒"
+#        self.ClientSize = drawing.Size(350, 65)
+#        self.Padding = drawing.Padding(5)
+#        self.Resizable = False
+#        #self.text = 
+#        #con.type = '关于我们'
+#        X_Choose.Band_xml = False
+#        self.warn_label = forms.Label(Text='您还未保存XML文件,是否保存?', Font=Font('Microsoft YaHei', 12.))
+#        self.CommitButton = forms.Button(Text = '确认')
+#        self.CommitButton.Click += self.OnCommitButtonClick
+#        self.CancelButton = forms.Button(Text = '取消')
+#        self.CancelButton.Click += self.OnCancelButtonClick
+#        
+#        layout = forms.DynamicLayout()
+#        layout.Spacing = drawing.Size(5, 5)
+#        layout.AddSeparateRow(None,self.warn_label,None)
+#        layout.AddSeparateRow(None,self.CommitButton,None,self.CancelButton,None)
+#        self.Content = layout
+#        
+#    
+#    def OnCancelButtonClick(self,sender,e):
+#        self.Close()
+#    
+#    
+#    def OnCommitButtonClick(self,sender,e):
+#        X_Choose.Block_xml = True
+#        self.Close()
+        
+        
+        
+
+#def Warning_Block_dialog():
+#    block_dialog = Warning_Block()
+#    block_dialog.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)
