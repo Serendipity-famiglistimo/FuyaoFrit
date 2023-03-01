@@ -17,6 +17,7 @@ class DefaultPage(forms.TabPage):
         forms.TabPage.__init__(self)
         #self.type = '大众算法'
         self.panel = forms.Scrollable()
+        #self.Topmost = True
         self.panel.Padding = drawing.Padding(10)
         self.create()
         
@@ -24,7 +25,7 @@ class DefaultPage(forms.TabPage):
     def create(self):
         self.Text = '基本属性'
         self.layout = forms.DynamicLayout()
-        self.pick_label = forms.Label(Text='选择填充算法:', Font=Font('Microsoft YaHei', 12.))
+        self.pick_label = forms.Label(Text='选择填充规则:', Font=Font('Microsoft YaHei', 12.))
         
         #self.list.SelectedIndexChanged += self.typeselected
         self.load_btn = forms.Button(Text='加载填充规则')
@@ -47,9 +48,41 @@ class DefaultPage(forms.TabPage):
         
     def LoadButtonClick(self, sender, e):
         # 清空现有的填充规则
-        fd = Rhino.UI.OpenFileDialog()
-        fd.Title = '加载规则文件'
-        fd.Filter = '规则文件 (*.xml)'
-        fd.MultiSelect = False
-        if fd.ShowOpenDialog():
+#        fd = Rhino.UI.OpenFileDialog()
+#        #fd.Topmost = True
+#        fd.Title = '加载规则文件'
+#        fd.Filter = '规则文件 (*.xml)'
+#        fd.MultiSelect = False
+#        if fd.ShowOpenDialog():
+#            Save.path_data = fd.FileName
+        try:
+            fd = forms.OpenFileDialog()
+        except:
+            print(1)
+        try:
+            fd.Title = '加载规则文件'
+        except:
+            print(2)
+        try:
+            filter = forms.FileFilter('XML file',".xml")
+        except:
+            print(3)
+        try:
+            fd.Filters.Add(filter)
+        except:
+            print(4)
+        try:
+            fd.MultiSelect = False
+        except:
+            print(5)
+        try:
+            fd.ShowDialog(Rhino.UI.RhinoEtoApp.MainWindow)##   
+        except:
+            print(6)
+        try:
             Save.path_data = fd.FileName
+            print(fd.FileName)
+        except:
+            print('文件路径获取失败')
+
+
