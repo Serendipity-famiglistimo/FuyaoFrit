@@ -796,6 +796,8 @@ class Dazhong_fill_holes:
         for i in range(len(self.frit_bound)):
             obj = scriptcontext.doc.Objects.AddCurve(self.frit_bound[i])
             rs.ObjectLayer(obj, layer_name)
+            
+    
     
     def run(self):
         pts, bound_pts = self.generate_grid_pts()
@@ -843,7 +845,7 @@ class Dazhong_fill_holes:
             self.frit_white.append(rg.NurbsCurve.CreateFromCircle(rc.Geometry.Circle(white_hole_frit[i],0.5)))
             #self.display.AddCircle(rc.Geometry.Circle(white_hole_frit[i],0.5),self.display_color,1)
         
-        self.bake()
+        return self.frit_black,self.frit_white,self.frit_bound
 
 
 class New_165_fill_holes:
@@ -1320,8 +1322,8 @@ class New_165_fill_holes:
         for i in range(len(black_band)):
             self.frit_black.append(black_band[i])
             #self.display.AddCurve(black_band[i], self.display_color, 1)
-       
-        self.bake()
+        return self.frit_black
+        #self.bake()
 
 class AoDi_fill_holes:
     def __init__(self, up_outer_line, up_inner_line, up_boundary_crv,down_boundary_crv, up_bottom_line,down_inner_line,horizontal_up,vertical_up,horizontal_down,vertical_down,region, aligned = False):
@@ -1753,147 +1755,151 @@ class AoDi_fill_holes:
         
     
     def run(self):
-        up_outer_pre = ghcomp.OffsetCurve(self.up_outer_line, distance = -0.423, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
-        up_outer = ghcomp.OffsetCurve(up_outer_pre, distance = -1, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
-        up_outer_closed_crv,_ = ghcomp.Pufferfish.CloseCurve(up_outer_pre, 0, 0.5, 0)
-        box,_ = ghcomp.BoundingBox(up_outer_closed_crv,plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)))
-        box_center_point,box_diagonal_vector,_,_,_ = ghcomp.BoxProperties(box)
-        left_up,left_down,right_up,right_down = self.pt_construct(box_center_point,box_diagonal_vector)
-        V_length = ghcomp.VectorLength(box_diagonal_vector)
-        line = ghcomp.LineSDL(box_center_point,box_diagonal_vector,V_length)
-        subtraction_result = ghcomp.Subtraction(right_up,left_down)
-        line_segment = ghcomp.LineSDL(right_down,subtraction_result,V_length)
-        _,end_pt = ghcomp.EndPoints(line_segment)
-        new_line = ghcomp.Line(left_up,end_pt)
-        length_newLine = ghcomp.Length(new_line)
-        newline_division = ghcomp.Division(length_newLine,2.397)
-        division_pts,_,_ = ghcomp.DivideCurve(new_line,newline_division,False)
-        all_refer_vector,_ = ghcomp.VectorXYZ(-1.2,-1.2,0)
-        all_refer_line = ghcomp.LineSDL(division_pts,all_refer_vector,V_length)
-        outer_crv_pts,_,_ = ghcomp.CurveXCurve(all_refer_line,up_outer_pre)#块状最外侧花点 OK 
-        #print(self.region.rows[0].round_rect_config.outer_block_k)
-        #print(self.region.rows[0].round_rect_config.outer_block_r)
-        domain_outer_block = self.region.rows[0].round_rect_config.outer_block_k/2
-        ##print(domain_outer_block)
-        Outer_Xsize = ghcomp.ConstructDomain(-domain_outer_block,domain_outer_block)
-        #print(Outer_Xsize)
-        Outer_Ysize = ghcomp.ConstructDomain(-domain_outer_block,domain_outer_block)
-        #print(Outer_Ysize)
-        outer_r = self.region.rows[0].round_rect_config.outer_block_r
-        #print(outer_r)
-        original_outer_frit,_ = ghcomp.Rectangle(outer_crv_pts,Outer_Xsize,Outer_Ysize,outer_r)
-        final_outer_frit,_ = ghcomp.RotateDirection(original_outer_frit,outer_crv_pts,ghcomp.UnitY(1),all_refer_vector)#旋转后的内部花点
-        for i in range(len(final_outer_frit)):
-            #self.display.AddCurve(final_outer_frit[i],self.display_color,1) #OK 
-            self.white_frit.append(final_outer_frit[i])#最外侧块状花点加入bake列表
+        if self.up_outer_line == None or self.up_inner_line == None:
+            print('仅小块填充')
+        else:
+            up_outer_pre = ghcomp.OffsetCurve(self.up_outer_line, distance = -0.423, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
+            up_outer = ghcomp.OffsetCurve(up_outer_pre, distance = -1, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
+            up_outer_closed_crv,_ = ghcomp.Pufferfish.CloseCurve(up_outer_pre, 0, 0.5, 0)
+            box,_ = ghcomp.BoundingBox(up_outer_closed_crv,plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)))
+            box_center_point,box_diagonal_vector,_,_,_ = ghcomp.BoxProperties(box)
+            left_up,left_down,right_up,right_down = self.pt_construct(box_center_point,box_diagonal_vector)
+            V_length = ghcomp.VectorLength(box_diagonal_vector)
+            line = ghcomp.LineSDL(box_center_point,box_diagonal_vector,V_length)
+            subtraction_result = ghcomp.Subtraction(right_up,left_down)
+            line_segment = ghcomp.LineSDL(right_down,subtraction_result,V_length)
+            _,end_pt = ghcomp.EndPoints(line_segment)
+            new_line = ghcomp.Line(left_up,end_pt)
+            length_newLine = ghcomp.Length(new_line)
+            newline_division = ghcomp.Division(length_newLine,2.397)
+            division_pts,_,_ = ghcomp.DivideCurve(new_line,newline_division,False)
+            all_refer_vector,_ = ghcomp.VectorXYZ(-1.2,-1.2,0)
+            all_refer_line = ghcomp.LineSDL(division_pts,all_refer_vector,V_length)
+            outer_crv_pts,_,_ = ghcomp.CurveXCurve(all_refer_line,up_outer_pre)#块状最外侧花点 OK 
+            #print(self.region.rows[0].round_rect_config.outer_block_k)
+            #print(self.region.rows[0].round_rect_config.outer_block_r)
+            domain_outer_block = self.region.rows[0].round_rect_config.outer_block_k/2
+            ##print(domain_outer_block)
+            Outer_Xsize = ghcomp.ConstructDomain(-domain_outer_block,domain_outer_block)
+            #print(Outer_Xsize)
+            Outer_Ysize = ghcomp.ConstructDomain(-domain_outer_block,domain_outer_block)
+            #print(Outer_Ysize)
+            outer_r = self.region.rows[0].round_rect_config.outer_block_r
+            #print(outer_r)
+            original_outer_frit,_ = ghcomp.Rectangle(outer_crv_pts,Outer_Xsize,Outer_Ysize,outer_r)
+            final_outer_frit,_ = ghcomp.RotateDirection(original_outer_frit,outer_crv_pts,ghcomp.UnitY(1),all_refer_vector)#旋转后的内部花点
+            for i in range(len(final_outer_frit)):
+                #self.display.AddCurve(final_outer_frit[i],self.display_color,1) #OK 
+                self.white_frit.append(final_outer_frit[i])#最外侧块状花点加入bake列表
+                
+            #开始处理大块状斜向参考线
+            outer_second_pts = []
+            for i in range(len(all_refer_line)):
+                result = ghcomp.CurveXCurve(all_refer_line[i],up_outer)
+                null = 'none'
+                if result:
+                    outer_second_pts.append(result)
+                else:
+                    outer_second_pts.append(null)
+                
+            inner_crv_pts = []
+            for i in range(len(all_refer_line)):
+                Result = ghcomp.CurveXCurve(all_refer_line[i],self.up_inner_line)
+                Null = 'none'
+                if result:
+                    inner_crv_pts.append(Result)
+                else:
+                    inner_crv_pts.append(Null)
             
-        #开始处理大块状斜向参考线
-        outer_second_pts = []
-        for i in range(len(all_refer_line)):
-            result = ghcomp.CurveXCurve(all_refer_line[i],up_outer)
-            null = 'none'
-            if result:
-                outer_second_pts.append(result)
-            else:
-                outer_second_pts.append(null)
+            inner_ray_line = []
+            for i in range(len(inner_crv_pts)):
+                Ruselt = inner_crv_pts[i][0]
+                
+                apd = 'none'
+                if Ruselt != 'none':
+                    data = ghcomp.LineSDL(inner_crv_pts[i][0],all_refer_vector,-1.25)
+                    inner_ray_line.append(data)
+                else:
+                    inner_ray_line.append(apd)
+            inner_ray_line_end = []
+            for i in range(len(inner_ray_line)):
+                apd1 = 'none'
+                if inner_ray_line[i] != 'none':
+                    _,results = ghcomp.EndPoints(inner_ray_line[i])
+                    inner_ray_line_end.append(results)
+                else:
+                    inner_ray_line_end.append(apd1)
             
-        inner_crv_pts = []
-        for i in range(len(all_refer_line)):
-            Result = ghcomp.CurveXCurve(all_refer_line[i],self.up_inner_line)
-            Null = 'none'
-            if result:
-                inner_crv_pts.append(Result)
-            else:
-                inner_crv_pts.append(Null)
-        
-        inner_ray_line = []
-        for i in range(len(inner_crv_pts)):
-            Ruselt = inner_crv_pts[i][0]
+            block_inner_refer_line = []
+            for i in range(len(outer_second_pts)):
+                block_inner_refer_line.append(ghcomp.Line(outer_second_pts[i][0],inner_ray_line_end[i]))
+            New_block_inner_refer_line = []
+            for i in range(len(block_inner_refer_line)):
+                if block_inner_refer_line[i] != None:
+                    New_block_inner_refer_line.append(block_inner_refer_line[i])
+                
+            #处理大块状斜向参考线结束
             
-            apd = 'none'
-            if Ruselt != 'none':
-                data = ghcomp.LineSDL(inner_crv_pts[i][0],all_refer_vector,-1.25)
-                inner_ray_line.append(data)
-            else:
-                inner_ray_line.append(apd)
-        inner_ray_line_end = []
-        for i in range(len(inner_ray_line)):
-            apd1 = 'none'
-            if inner_ray_line[i] != 'none':
-                _,results = ghcomp.EndPoints(inner_ray_line[i])
-                inner_ray_line_end.append(results)
-            else:
-                inner_ray_line_end.append(apd1)
-        
-        block_inner_refer_line = []
-        for i in range(len(outer_second_pts)):
-            block_inner_refer_line.append(ghcomp.Line(outer_second_pts[i][0],inner_ray_line_end[i]))
-        New_block_inner_refer_line = []
-        for i in range(len(block_inner_refer_line)):
-            if block_inner_refer_line[i] != None:
-                New_block_inner_refer_line.append(block_inner_refer_line[i])
             
-        #处理大块状斜向参考线结束
-        
-        
-        
-        fit_end = []
-        for i in range(len(New_block_inner_refer_line)):
-            fit_end.append(rg.NurbsCurve.CreateFromLine(New_block_inner_refer_line[i]))
-        
-        grid_crv = []
-        for i in range(len(all_refer_line)):
-            grid_crv.append(rg.NurbsCurve.CreateFromLine(all_refer_line[i]))
-        
-        pts,top_pts,bottom_pts,limbo_pts = self.block_inner_frit_fill(grid_crv,self.horizontal_up,self.vertical_up,self.aligned,fit_end)
-        
-        frits_one = ghcomp.Merge(pts,top_pts)#self.up_boundary_crv
-        frits_two = ghcomp.Merge(bottom_pts,limbo_pts)
-        block_inner_frits = ghcomp.Merge(frits_one,frits_two)
-        pts_in_boundarycrv,_ = ghcomp.PointInCurve(block_inner_frits,self.up_boundary_crv)
-        
-        pts_dispch,_ = ghcomp.Dispatch(block_inner_frits,pts_in_boundarycrv)
-        ##print(self.region.rows[0].round_rect_config.inner_block_k)
-        ##print(self.region.rows[0].round_rect_config.inner_block_r)
-        
-        inner_k = self.region.rows[0].round_rect_config.inner_block_k/2
-        #print(inner_k)
-        inner_r = self.region.rows[0].round_rect_config.inner_block_r
-        #print(inner_r)
-        
-        inner_Xsize = ghcomp.ConstructDomain(-inner_k,inner_k)
-        inner_Ysize = ghcomp.ConstructDomain(-inner_k,inner_k)
-        original_inner_frit,_ = ghcomp.Rectangle(pts_dispch,inner_Xsize,inner_Ysize,inner_r)
-        final_inner_frit,_ = ghcomp.RotateDirection(original_inner_frit,pts_dispch,ghcomp.UnitY(1),all_refer_vector)#旋转后的内部花点
-        for i in range(len(final_inner_frit)):
-            #for i in range(len(final_inner_frit)):
-            #self.display.AddCurve(final_inner_frit[i],self.display_color,1)
-            self.white_frit.append(final_inner_frit[i])#块状内部花点加入BAKE列表
-        short_refer_line = ghcomp.LineSDL(bottom_pts,all_refer_vector,2)
-        border_pts,_,_ = ghcomp.CurveXCurve(short_refer_line,self.up_inner_line)
-        
-        black_band = self.black_band_frit_fill(border_pts,self.up_bottom_line)
-        #print(len(black_band))
-        for i in range(len(black_band)):
-            #self.display.AddCurve(black_band[i],self.display_color,1)
-            self.black_frit.append(black_band[i])#块状内部花点加入BAKE列表
             
-        #print(self.region.rows[0].round_rect_config.border_k)
-        #print(self.region.rows[0].round_rect_config.border_r)
-        border_kk = self.region.rows[0].round_rect_config.border_k/2
-        border_rr = self.region.rows[0].round_rect_config.border_r
-        #print(border_kk)
-        #print(border_rr)
-        
-        
-        border_Xsize = ghcomp.ConstructDomain(-border_kk,border_kk)
-        border_Ysize = ghcomp.ConstructDomain(-border_kk,border_kk)
-        original_border_frit,_ = ghcomp.Rectangle(border_pts,border_Xsize,border_Ysize,border_rr)
-        final_border_frit,_ = ghcomp.RotateDirection(original_border_frit,border_pts,ghcomp.UnitY(1),all_refer_vector)
-        #print(len(final_border_frit))
-        for i in range(len(final_border_frit)):
-            self.border_frit.append(final_border_frit[i])#边界花点加入列表中
+            fit_end = []
+            for i in range(len(New_block_inner_refer_line)):
+                fit_end.append(rg.NurbsCurve.CreateFromLine(New_block_inner_refer_line[i]))
+            
+            grid_crv = []
+            for i in range(len(all_refer_line)):
+                grid_crv.append(rg.NurbsCurve.CreateFromLine(all_refer_line[i]))
+            
+            pts,top_pts,bottom_pts,limbo_pts = self.block_inner_frit_fill(grid_crv,self.horizontal_up,self.vertical_up,self.aligned,fit_end)
+            
+            frits_one = ghcomp.Merge(pts,top_pts)#self.up_boundary_crv
+            frits_two = ghcomp.Merge(bottom_pts,limbo_pts)
+            block_inner_frits = ghcomp.Merge(frits_one,frits_two)
+            pts_in_boundarycrv,_ = ghcomp.PointInCurve(block_inner_frits,self.up_boundary_crv)
+            
+            pts_dispch,_ = ghcomp.Dispatch(block_inner_frits,pts_in_boundarycrv)
+            ##print(self.region.rows[0].round_rect_config.inner_block_k)
+            ##print(self.region.rows[0].round_rect_config.inner_block_r)
+            
+            inner_k = self.region.rows[0].round_rect_config.inner_block_k/2
+            #print(inner_k)
+            inner_r = self.region.rows[0].round_rect_config.inner_block_r
+            #print(inner_r)
+            
+            inner_Xsize = ghcomp.ConstructDomain(-inner_k,inner_k)
+            inner_Ysize = ghcomp.ConstructDomain(-inner_k,inner_k)
+            original_inner_frit,_ = ghcomp.Rectangle(pts_dispch,inner_Xsize,inner_Ysize,inner_r)
+            final_inner_frit,_ = ghcomp.RotateDirection(original_inner_frit,pts_dispch,ghcomp.UnitY(1),all_refer_vector)#旋转后的内部花点
+            for i in range(len(final_inner_frit)):
+                #for i in range(len(final_inner_frit)):
+                #self.display.AddCurve(final_inner_frit[i],self.display_color,1)
+                self.white_frit.append(final_inner_frit[i])#块状内部花点加入BAKE列表
+            short_refer_line = ghcomp.LineSDL(bottom_pts,all_refer_vector,2)
+            border_pts,_,_ = ghcomp.CurveXCurve(short_refer_line,self.up_inner_line)
+            
+            black_band = self.black_band_frit_fill(border_pts,self.up_bottom_line)
+            #print(len(black_band))
+            for i in range(len(black_band)):
+                #self.display.AddCurve(black_band[i],self.display_color,1)
+                self.black_frit.append(black_band[i])#块状内部花点加入BAKE列表
+                
+            #print(self.region.rows[0].round_rect_config.border_k)
+            #print(self.region.rows[0].round_rect_config.border_r)
+            border_kk = self.region.rows[0].round_rect_config.border_k/2
+            border_rr = self.region.rows[0].round_rect_config.border_r
+            #print(border_kk)
+            #print(border_rr)
+            
+            
+            border_Xsize = ghcomp.ConstructDomain(-border_kk,border_kk)
+            border_Ysize = ghcomp.ConstructDomain(-border_kk,border_kk)
+            original_border_frit,_ = ghcomp.Rectangle(border_pts,border_Xsize,border_Ysize,border_rr)
+            final_border_frit,_ = ghcomp.RotateDirection(original_border_frit,border_pts,ghcomp.UnitY(1),all_refer_vector)
+            #print(len(final_border_frit))
+            for i in range(len(final_border_frit)):
+                self.border_frit.append(final_border_frit[i])#边界花点加入列表中
         if self.down_inner != None and self.down_boundary_crv != None:
+            self.display.AddCurve(self.down_boundary_crv,self.display_color,1)
             black_crv,white_crv = self.down_frit_fill(self.down_inner,self.down_boundary_crv)
             ##print(len(black_crv))
             #print(len(white_crv))
@@ -1906,26 +1912,14 @@ class AoDi_fill_holes:
                 self.white_frit.append(white_crv[i])#块状内部花点加入BAKE列表
         else:
             pass
-        layer_name = 'fuyao_black'
-        rs.AddLayer(layer_name, self.display_color)
-        for i in range(len(self.black_frit)):
-            obj = scriptcontext.doc.Objects.AddCurve(self.black_frit[i])
-            rs.ObjectLayer(obj, layer_name)
+            
+        return self.black_frit,self.white_frit,self.border_frit
         
-        layer_name = 'fuyao_white'
-        rs.AddLayer(layer_name, self.display_color)
-        for i in range(len(self.white_frit)):
-            obj = scriptcontext.doc.Objects.AddCurve(self.white_frit[i])
-            rs.ObjectLayer(obj, layer_name)
-        
-        layer_name = 'fuyao_bound'
-        rs.AddLayer(layer_name, self.display_color)
-        for i in range(len(self.border_frit)):
-            obj = scriptcontext.doc.Objects.AddCurve(self.border_frit[i])
-            rs.ObjectLayer(obj, layer_name)
+    
 
 class HoleFrits:
-    def __init__(self, hole_id, region):
+    def __init__(self, hole_id, region, kind = "preview"):
+        self.kind = kind
         self.hole_id = hole_id
         self.dot_type = FritType.CIRCLE_DOT
         self.dot_config = CircleDotConfig()
@@ -1942,29 +1936,43 @@ class HoleFrits:
         self.top_curve = None
         self.bottom_curve = None
         self.border_curve = None
+        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        self.display = rc.Display.CustomDisplay(True)
+        self.display.Clear()
+        self.frit_white = []
+        self.frit_black = []
+        self.frit_border = []
         #print(self.region.rows[0].stepping)
         #print(self.region.rows[0].position)
         #print(self.region.rows[0].round_rect_config.down_horizontal)
         #print(self.region.rows[0].round_rect_config.down_vertical)
     
-    def bake(self):
-        pass
-        
+
         
     def AoDi_fill(self):
         print('奥迪调用')
-        self.up_outer_crv = self.region.curves[0]
-        if self.region.is_flip[0] == True:
-            self.up_outer_crv, _ = ghcomp.FlipCurve(self.up_outer_crv)
-        
-        self.up_inner_crv = self.region.curves[1]
-        if self.region.is_flip[1] == True:
-            self.up_inner_crv, _ = ghcomp.FlipCurve(self.up_inner_crv)
-        
-        self.up_bottom_crv = self.region.curves[2]
-        if self.region.is_flip[2] == True:
-            self.up_bottom_crv, _ = ghcomp.FlipCurve(self.up_bottom_crv)
-        
+        try:
+            self.up_outer_crv = self.region.curves[0]
+            if self.region.is_flip[0] == True:
+                self.up_outer_crv, _ = ghcomp.FlipCurve(self.up_outer_crv)
+        except:
+            self.up_outer_crv = None
+            
+        try:
+            self.up_inner_crv = self.region.curves[1]
+            if self.region.is_flip[1] == True:
+                self.up_inner_crv, _ = ghcomp.FlipCurve(self.up_inner_crv)
+        except:
+            self.up_inner_crv = None
+            
+        try:
+            self.up_bottom_crv = self.region.curves[2]
+            if self.region.is_flip[2] == True:
+                self.up_bottom_crv, _ = ghcomp.FlipCurve(self.up_bottom_crv)
+        except:
+            self.up_bottom_crv = None
+            
+            
         try:
             self.down_inner_crv = self.region.curves[3]
             if self.region.is_flip[3] == True:
@@ -1981,21 +1989,25 @@ class HoleFrits:
             self.down_outer_crv = None
             pass
         #预处理函数变量
-        self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
-        self.display = rc.Display.CustomDisplay(True)
-        self.display.Clear()
+        #self.display_color = rc.Display.ColorHSL(0.83,1.0,0.5)
+        #self.display = rc.Display.CustomDisplay(True)
+        #self.display.Clear()
         
         #up_outer_pre = ghcomp.OffsetCurve(self.up_outer_crv, distance = -0.423, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)), corners=1)
         #up_outer = ghcomp.OffsetCurve(up_outer_pre, distance = -1, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
-        up_bottom = ghcomp.OffsetCurve(self.up_bottom_crv, distance = -0.275, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
-        #self.display.AddCurve(up_bottom,self.display_color,1)
-        
-        blocksrf_up = ghcomp.RuledSurface(self.up_outer_crv, self.up_inner_crv)
-        edgelist_up = []
-        for i in range(blocksrf_up.Edges.Count):
-            edgelist_up.append(blocksrf_up.Edges[i].EdgeCurve)
-        blockborder_up = ghcomp.JoinCurves(edgelist_up)
-        #self.display.AddCurve(blockborder_up,self.display_color,1)
+        if self.up_outer_crv != None and self.up_inner_crv != None and self.up_bottom_crv != None:
+            up_bottom = ghcomp.OffsetCurve(self.up_bottom_crv, distance = -0.275, plane = ghcomp.XYPlane(ghcomp.ConstructPoint(0,0,0)),corners=1)
+            #self.display.AddCurve(up_bottom,self.display_color,1)
+            
+            blocksrf_up = ghcomp.RuledSurface(self.up_outer_crv, self.up_inner_crv)
+            edgelist_up = []
+            for i in range(blocksrf_up.Edges.Count):
+                edgelist_up.append(blocksrf_up.Edges[i].EdgeCurve)
+            blockborder_up = ghcomp.JoinCurves(edgelist_up)
+            #self.display.AddCurve(blockborder_up,self.display_color,1)
+        else:
+            up_bottom = None
+            blockborder_up = None
         if self.region.curves[3] and self.region.curves[4]:
             blocksrf_down = ghcomp.RuledSurface(self.down_inner_crv, self.down_outer_crv)
             edgelist_down = []
@@ -2013,16 +2025,20 @@ class HoleFrits:
         vertical_up = self.region.rows[0].position
         horizontal_down = self.region.rows[0].round_rect_config.down_horizontal
         vertical_down = self.region.rows[0].round_rect_config.down_vertical
-        #horizontal_up = 2.4
-        #vertical_up = 1.2
-        #horizontal_down = 2
-        #vertical_down = 1.22
-        AoDi_frit_generator = AoDi_fill_holes(\
-                                up_outer_line = self.up_outer_crv, up_inner_line = self.up_inner_crv, \
-                                up_boundary_crv = blockborder_up,down_boundary_crv = blockborder, up_bottom_line = up_bottom, \
-                                down_inner_line = self.down_inner_crv,horizontal_up = horizontal_up, vertical_up = vertical_up,\
-                                horizontal_down = horizontal_down,vertical_down = vertical_down,region = self.region, aligned = False)
-        AoDi_frit_generator.run()
+        self.frit_black,self.frit_white,self.frit_border = AoDi_fill_holes(\
+                                    up_outer_line = self.up_outer_crv, up_inner_line = self.up_inner_crv, \
+                                    up_boundary_crv = blockborder_up,down_boundary_crv = blockborder, up_bottom_line = up_bottom, \
+                                    down_inner_line = self.down_inner_crv,horizontal_up = horizontal_up, vertical_up = vertical_up,\
+                                    horizontal_down = horizontal_down,vertical_down = vertical_down,region = self.region, aligned = False).run()
+        return self.frit_black,self.frit_white,self.frit_border
+        #if self.kind == "bake":
+            #self.bake(self.frit_white,self.frit_black,self.frit_border)
+        #elif self.kind == "preview":
+            #self.preview(self.frit_white,self.frit_black,self.frit_border)
+            
+        #elif self.kind == "clear":
+            #self.display.Clear()
+            #print('clear')
         
     def New165_fill_dots(self):
         print("165算法调用")
@@ -2102,8 +2118,8 @@ class HoleFrits:
                                 split_crv = split_crv, edge_crv = self.inner_crv, \
                                 horizontal = horizontal, vertical = vertical, \
                                 region = self.region, aligned = False)
-        New_165_frit_generator.run()
-        
+        self.frit_black = New_165_frit_generator.run()
+        return self.frit_black
         
     def dazhong_fill_dots(self):
         self.outer_crv = self.region.curves[0]
@@ -2159,7 +2175,8 @@ class HoleFrits:
                                     upline = upline_crv, midline = self.bottom_crv, downline = self.bottom1_crv, \
                                     boundary = boundary_crv, split_crv = self.refer_crv, edge_crv = self.inner_crv, \
                                     horizontal = self.region.rows[0].stepping, vertical = self.region.rows[0].position, region = self.region,aligned = False)
-        dazhong_frit_generator.run()
+        self.frit_black,self.frit_white,self.frit_border = dazhong_frit_generator.run()
+        return self.frit_black,self.frit_white,self.frit_border
     def fill_dots_88LFW(self):
         self.top_curve = self.region.curves[2]
         if self.region.is_flip[2] == True:
