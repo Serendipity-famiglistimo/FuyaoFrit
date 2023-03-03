@@ -1953,6 +1953,7 @@ class HoleFrits:
         print('奥迪调用')
         try:
             self.up_outer_crv = self.region.curves[0]
+            self.up_outer_crv, _ = ghcomp.FlipCurve(self.up_outer_crv)
             if self.region.is_flip[0] == True:
                 self.up_outer_crv, _ = ghcomp.FlipCurve(self.up_outer_crv)
         except:
@@ -1975,6 +1976,7 @@ class HoleFrits:
             
         try:
             self.down_inner_crv = self.region.curves[3]
+            self.down_inner_crv, _ = ghcomp.FlipCurve(self.down_inner_crv)
             if self.region.is_flip[3] == True:
                 self.down_inner_crv, _ = ghcomp.FlipCurve(self.down_inner_crv)
         except:
@@ -1983,6 +1985,7 @@ class HoleFrits:
         
         try:
             self.down_outer_crv = self.region.curves[4]
+            self.down_outer_crv, _ = ghcomp.FlipCurve(self.down_outer_crv)
             if self.region.is_flip[4] == True:
                 self.down_outer_crv, _ = ghcomp.FlipCurve(self.down_outer_crv)
         except:
